@@ -1,0 +1,44 @@
+
+- Fewer ".", ";", ",", and "end"
+- Tuples with parens
+- Easier fun syntax
+- Comments / Comment initiator
+- "Struct"
+
+- Proper inheritance (parent's calls look at child first)
+- spread out different patterns for the same function
+- don't have to use ';' between function defs (vs . if arity is different)
+- export fun-name without arity assumes all arity
+
+- better namespaces
+
+- DNRY!  (Do Not Repeat Yourself)
+
+
+---------------
+ifene
+---------------
+
+- initial function defs:
+    @public
+      handle_info() ->
+      handle_info(Blah) ->
+
+---------------
+NEW
+^some_public_fun ->
+
+BECOMES
+@public
+some_public_fun = fn()
+---------------
+NEW
+switch Blah
+  case false: nop
+
+BECOMES
+switch Blah
+  case false
+    nop
+---------------
+

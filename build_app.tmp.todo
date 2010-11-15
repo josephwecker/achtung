@@ -1,0 +1,35 @@
+
+
+App file:
+  - name, description, version      [(
+  - list of modules                 [(look in ebin)]
+  - list of registered server names [A]
+  - default config keys/values
+  - (external applications)
+  - (application module)
+
+Application module:
+  - (application behaviour)
+  - startup logic
+    - start up supervisors
+  - shutdown logic
+
+Supervisors:
+  - 
+
+Startup / Stop scripts;
+  - ability to easily pass in config-file / overrides
+  - daemonize or not, heartbeat or not...
+  - attach to running
+  - ...
+
+--------
+A.  Servers
+    * local or global
+    * registered name
+    * input values / thing that starts it (?)
+    * supervised?
+
+    maybe as module info stuff??
+
+B. Config values...
