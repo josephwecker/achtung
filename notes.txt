@@ -1,4 +1,6 @@
 
+=== Erlang ===
+
 - Fewer ".", ";", ",", and "end"
 - Tuples with parens
 - Easier fun syntax
@@ -15,22 +17,8 @@
 - DNRY!  (Do Not Repeat Yourself)
 
 
----------------
-ifene
----------------
+=== ifene ===
 
-- initial function defs:
-    @public
-      handle_info() ->
-      handle_info(Blah) ->
-
----------------
-NEW
-^some_public_fun ->
-
-BECOMES
-@public
-some_public_fun = fn()
 ---------------
 NEW
 switch Blah

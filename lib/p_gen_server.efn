@@ -1,12 +1,31 @@
-##  @right fjewiob
+##-----------------------------------------------------------------------------
+## @title     p_gen_server - Parent for quick gen_servers
+## @doc       Extend this module to get the basic (passthrough) gen_server
+##              functionality- then simply implement any of the calls (and make
+##              them public) that you will actively use.
+## @author    Joseph Wecker <joseph.wecker@gmail.com>
+## @copyright 2010 Joseph Wecker
+## @license   Simplified BSD License
+##-----------------------------------------------------------------------------
+
+
+## @doc Helper that points to the parent (this module). sometimes not easy to
+##        use though... Working on it.
 <super: $module
 
+## @doc Simplified start (which you still need to call from the inherited
+##        module)- assumes start_link, allows global or local, a name separate
+##        from the module if desired and of course anything to pass in
 <start(Module): start(Module, [])
 <start(Module, Opts): start(local, Module, Module, Opts)
 <start(Context, Name, Module, Opts)
   gen_server.start_link((Context, Name), Module, Opts, [])
 
-<stop(Name): gen_server.cast(Name, stop, 3.7)
+## @doc Stops the server.  If you override handle-cast and want this to keep
+##      working you'll need to implement it.")
+<stop(Name): gen_server.cast(Name, stop)
+
+##### gen_server callbacks
 
 <init(Opts): (ok, Opts)
 <handle_call(stop, _From, State): (stop, normal, stopped, State)

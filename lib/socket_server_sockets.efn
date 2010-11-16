@@ -1,0 +1,61 @@
+## @doc Try to listen on a port, given options
+<listen (Opts)
+    SockOpts = [binary,
+                (nodelay,     struct.getdef(Opts, nodelay,     true)),
+                (reuseaddr,   struct.getdef(Opts, reuseaddr,   true)),
+                (packet,      struct.getdef(Opts, packet,      raw)),
+                (packet_size, struct.getdef(Opts, packet_size, 1024))]
+    Port = struct.getdef(Opts, port, 4113)
+    gen_tcp.listen(Port, SockOpts)
+
+<send(Sock, Data)
+    switch gen_tcp.send(Sock, Data)
+        case ok {ok}
+        case (error, Reason)
+            error("Worker crash: ~p", [Reason])
+            exit(normal)
+
+## @doc Closes a given socket
+<close(Socket)
+    try
+        gen_tcp.close(Socket)
+    catch Err
+        error("Error when closing socket: ~p", [Err])
+
+## @doc Starts up the acceptor, given a listening socket and options
+<start_link(Server, Listener, Opts)
+    spawn_link($module, acceptor, [Server, Listener, Opts])
+
+<acceptor(Server, Listener, Opts)
+    switch gen_tcp.accept(Listener)
+        case (ok, Sock)
+            create_handler(Server, Sock, Opts)
+            acceptor(Server, Listener, Opts)
+        case (error, Error)
+            error("Accept failed with error: ~p", [Error])
+            acceptor(Server, Listener, Opts)
+        case ('EXIT', Error)
+            error("Accept exited with error: \"~p\" - Quitting", [Error])
+            exit((error, (accept_failed, Error)))
+
+create_handler(Server, Sock, Opts)
+    info("Accepted connection on ~p", [Sock])
+    WaitAndHandle = fn()
+        receive set
+            F = Opts.handler
+            F(Sock, Opts)
+            sockserve.rm_persistent(Server, self())
+        after 60000
+            error("Timeout waiting for set in controlling process, closing socket.", [])
+            close(Sock)
+    Pid = spawn(WaitAndHandle)
+    switch gen_tcp.controlling_process(Sock, Pid)
+        case ok
+            Pid ! set
+            sockserve.add_persistent(Server, Pid)
+        case (error, Reason)
+            error("Couldn't set the controlling process- closing. ~p", [Reason])
+
+error(Msg,Dat): error_logger.error_msg(Msg,Dat)
+info(Msg): info(Msg,[])
+info(Msg,Dat): error_logger.info_msg(Msg,Dat)

@@ -1,0 +1,96 @@
+@@behaviour(gen_server)
+
+#-- API ----------------------------------------------------------------------
+
+@public
+start =          fn(Name) {start(Name, {port: 4113})}
+@public
+start =          fn(Name, Opts) {gen_server.start_link((local,Name), $module, [Opts], [])}
+@public
+stop  =          fn(Name) {gen_server.cast(Name, stop)}
+@public
+add_persistent = fn(Name, Pid) {gen_server.cast(Name, (add_persistent, Pid))}
+@public
+rm_persistent  = fn(Name, Pid) {gen_server.cast(Name, (rm_persistent,  Pid))}
+@public
+broadcast_to_persistents = fn(Name, Msg){gen_server.cast(Name,(broadcast_to_persistents, Msg))}
+
+
+#-- gen_server callbacks ------------------------------------------------------
+@public
+init = fn([Opts])
+    switch sockserve_socket.listen(Opts)
+        case (ok, ListenSocket)
+            AcceptorPid = sockserve_socket.start_link(self(), ListenSocket, Opts)
+            (ok, {proto_:      {getdef: fn struct.getdef:3},
+                  opts:        Opts,
+                  listener_s:  ListenSocket,
+                  acceptor:    AcceptorPid,
+                  persistents: []})
+        case (error, Reason)
+            error("Couldn't seem to listen: ~p", [Reason])
+            (stop, Reason)
+        case ('EXIT', Reason)
+            error("Bad error when listening: ~p", [Reason])
+            (stop, Reason)
+
+@public
+handle_call = fn(_, _, State){(reply, undefined, State)}
+@public
+handle_cast = fn(stop, State)
+    info("Socket server was told to stop.  It will comply.")
+    (stop, normal, State)
+fn((add_persistent, SubscPid), State)
+    Pers = [SubscPid : State.persistents]
+    info("Persistent connection added")
+    (noreply, State.persistents := Pers)
+fn((rm_persistent, SubscPid), State)
+    info("Persistent connection removed")
+    (noreply, State.persistents := lists.delete(SubscPid, State.persistents))
+fn((broadcast_to_persistents, Msg), State)
+    #info("Broadcast going out: ~p", [Msg])
+    multisend(State.persistents, (data, Msg))
+    (noreply, State)
+fn(Msg, State)
+    warn("Received unknown message in main gen_server: ~p", [Msg])
+    (noreply, State)
+
+@public
+handle_info = fn(('EXIT', _Pid, (error, ((accept_failed, (shutdown,_))))), State)
+    # Shutdown in progress- ignore
+    (noreply, State)
+fn(('EXIT', _Pid, Reason), State)
+    error("Acceptor has died with reason: \"~p\" - Reinitializing", [Reason])
+    AcceptorPid = sockserve_socket.start_link(self(), State.listener_s, State.opts)
+    (noreply, State.acceptor := AcceptorPid)
+fn(Info, State)
+    warn("Received unknown info in main gen_server: ~p", [Info])
+    (noreply, State)
+
+@public
+terminate = fn(_Reason, State)
+    info("Shutting down server ~p and any current connections", [self()])
+    sockserve_socket.close(State.listener_s)
+    exit(State.acceptor, kill)
+    multisend(State.persistents, shutdown)
+    terminated
+
+@public
+code_change = fn(_Old, State, _Extra){(ok, State)}
+
+multisend =
+fn([], _Msg)
+    ok
+fn(Pids, Msg)
+    #info("Sending to all of ~p", [Pids])
+    Send = fn(Pid){try{Pid ! Msg} catch _ {noop}}
+    [Send(Pid) for Pid in Pids]
+    ok
+
+# Small helpers
+#error=fn(Msg){info(Msg,[])}
+error=fn(Msg,Dat){error_logger.error_msg(Msg,Dat)}
+#warn=fn(Msg){info(Msg,[])}
+warn=fn(Msg,Dat){error_logger.warning_msg(Msg,Dat)}
+info=fn(Msg){info(Msg,[])}
+info=fn(Msg,Dat){error_logger.info_msg(Msg,Dat)}
