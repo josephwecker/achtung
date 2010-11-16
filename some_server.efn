@@ -1,8 +1,7 @@
 @@extends(p_gen_server)
 
-^start
-    super().start($module)
+^start: p_gen_server.start($module)
 
 ^handle_cast("hiya", State)
-    io.format("Well Hi back at you!", [])
-    (noreply, State)
+  io.format("Well Hi back at you!", [])
+  (noreply, State)
