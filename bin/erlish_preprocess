@@ -2,12 +2,12 @@
 
 ARGV.each do |in_file|
   source = IO.read(in_file)
-  functions = source.split /(?=^\^?[a-z_]+)/
+  functions = source.split /(?=^<?[a-z_]+)/
   print functions.shift  # Top part before function defs begin
   last_fname = ''
   last_arity = 0
   reformatted = functions.map do |fun|
-    vis, fname, params, col, rest = fun.scan(/^(\^)?([a-z_]+)\s*(\([^)]*\))?\s*(:)?\s*(.*)\Z/m)[0]
+    vis, fname, params, col, rest = fun.scan(/^(<)?([a-z_]+)\s*(\([^)]*\))?\s*(:)?\s*(.*)\Z/m)[0]
 
     if params.nil?
       params = '()'

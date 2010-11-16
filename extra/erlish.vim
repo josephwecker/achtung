@@ -41,8 +41,8 @@ syn match   erlishIgnoredVar      /\<_\w*\>/
 
 syn match   erlishModule          /\<[a-z]\w*\.\@=/ contained
 syn match   erlishFunction        /\<[a-z][A-Za-z_\.]*\s*(\@=/ contains=erlishModule
-syn match   erlishVisibility      /\^/ contained
-syn match   erlishTopFunction     /^\^*[a-z]\w*\s*/ contains=erlishVisibility
+syn match   erlishVisibility      /</ contained
+syn match   erlishTopFunction     /^<*[a-z]\w*\s*/ contains=erlishVisibility
 
 syn match   erlishNumber          "\<0[oO]\=\o\+[Ll]\=\>"
 syn match   erlishNumber          "\<0[xX]\x\+[Ll]\=\>"
