@@ -3,7 +3,7 @@
 ARGV.each do |in_file|
   source = IO.read(in_file)
   functions = source.split /(?=^\^?[a-z_]+)/
-  top = functions.shift
+  print functions.shift  # Top part before function defs begin
   last_fname = ''
   last_arity = 0
   reformatted = functions.map do |fun|

@@ -4,7 +4,17 @@ currloc = File.expand_path(File.dirname(__FILE__))
 
 args = ARGV.dup
 
-args.each do |a|
-  if a =~ /\.efn/
-    # TODO: preprocess and alter args
+transformed = []
+args = args.map do |a|
+  if a =~ /\.efn$/
+    b = a.sub /\.efn$/,'.ifn'
+    transformed << b
+    system("#{currloc}/erlish_preprocess #{a} > #{b}")
+    b
+  else
+    a
+  end
+end
 
+system("fnc '#{args.join("' '")}'")
+system("rm -f '#{transformed.join("' '")}'")
