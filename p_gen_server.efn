@@ -1,11 +1,10 @@
-# TODO: Do some stuff
 ##  @right fjewiob
 ^super: $module
 
 ^start(Module): start(Module, [])
 ^start(Module, Opts): start(local, Module, Module, Opts)
 ^start(Context, Name, Module, Opts)
-  gen_server.start_link({Context, Name}, Module, Opts, [])
+  gen_server.start_link((Context, Name), Module, Opts, [])
 
 ^stop(Name): gen_server.cast(Name, stop, 3.7)
 
@@ -25,4 +24,4 @@
 
 ^terminate(_Reason, _State): ok
 
-code_change(_OldVsn, State, _Extra): (ok, State)
+^code_change(_OldVsn, State, _Extra): (ok, State)
