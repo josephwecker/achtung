@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+currloc = File.expand_path(File.dirname(__FILE__))
+
+args = ARGV.dup
+
+args.each do |a|
+  if a =~ /\.efn/
+    # TODO: preprocess and alter args
+
