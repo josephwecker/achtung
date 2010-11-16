@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+
+ARGV.each do |in_file|
+  source = IO.read(in_file)
+  functions = source.split /(?=^\^?[a-z_]+)/
+  top = functions.shift
+  last_fname = ''
+  last_arity = 0
+  reformatted = functions.map do |fun|
+    vis, fname, params, col, rest = fun.scan(/^(\^)?([a-z_]+)\s*(\([^)]*\))?\s*(:)?\s*(.*)\Z/m)[0]
+
+    if params.nil?
+      params = '()'
+      arity = 0
+    else
+      # Arity hack without doing a full parse.  Probably will fail on rainy days.
+      p2 = params[1..-2]
+      p2.gsub! /(\\\[|\\\(|\\"|\\\]|\\\))/, ''
+      p2.gsub! /\[[^\]+]\]/, ''
+      p2.gsub! /"[^"]+"/, ''
+      p2.gsub! /\([^\)]+\)/, ''
+
+      arity = p2.split(',').count
+    end
+    if last_fname == fname && last_arity == arity
+      out = 'fn' + params + "\n  "
+    else
+      out  = vis.nil? ? '' : "@public\n"
+      out += fname + " = fn" + params + "\n  "
+    end
+    out += rest
+    last_fname = fname
+    last_arity = arity
+    print out
+  end
+end
