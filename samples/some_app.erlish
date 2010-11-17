@@ -1,0 +1,46 @@
+#!/usr/bin/env erlish_run
+
+development:
+
+production:
+  smp: auto
+  library_paths:
+    - /home/jwecker/gtd/projects/efene/ebin  # Should be automatic via env.
+    - ./ebin                                 # Should be fully automatic
+
+  daemon:
+
+  config: some_config_file.conf  # Already part of erl!
+
+
+  # daemon, shell, shell-debug, 
+
+
+  startup:  # Functions to call...  always use main instead?
+
+  main: blah
+
+# High-level
+# environment, program to run it (erl vs escript vs fnc)
+
+# Shortcuts
+# libraries instead of pa, pz
+# something to simplify -run, -s, and -eval
+# "extra" arguments for the application
+
+# FROM erl
+#
+
+- config_variables:
+  - application: my_application
+    some_variable: Something
+# --> -my_application some_variable "Something"
+
+
+- async_shell_start
+- boot: File
+- boot_var
+
+
+
+

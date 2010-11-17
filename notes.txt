@@ -1,4 +1,46 @@
 
+
+
+[ ] - Make sure that there is a locally accessable lib directory for erlang-
+      set it up if necessary and store any environment variables etc. needed
+      (similar to haxe for haxelib setup - which drops the location in
+      ~/.haxelib)
+
+[ ] - Easy scripts for all release-management / application stuff
+
+[ ] - Run in such a way that upgrades / hot code swapping works correctly
+      (embedded system, using heart, etc.)
+
+ERL_LIBS can hold all the library directories (see http://medevyoujane.com/blog/2008/11/13/adding-erlang-library-locations.html )
+
+
+[ ] - Something similar to cean.process-one.net or erlware.org, but make it
+      very easy to simply install something from github etc.- that is, simply
+      have one "erlapp.xml" file or something that explains everything else
+      needed.
+
+
+[ ] - Auto handle .erl, .ifn, .efn, and .fn (and in the future some of the lisp
+      variants as well?
+
+
+[ ] - Some replacement for term files that's more ifn-ish, or with even fewer
+      commas- so more s-expression-ish
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 === Erlang ===
 
 - Fewer ".", ";", ",", and "end"

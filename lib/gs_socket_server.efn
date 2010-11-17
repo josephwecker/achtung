@@ -1,0 +1,24 @@
+@@extends(p_gen_server)
+
+add_persistent(Pid): gen_server.cast(self(), (add_p, Pid))
+rm_persistent(Pid):  gen_server.cast(self(), (rm_p, Pid))
+
+<init(Opts)
+  io.format("~n---~n~p~n---~n", [socket_listen(Opts)])
+  (ok, Opts)
+  #switch socket_listen()
+  #  case (ok, ListenSock)
+  #    AcceptorPid = start_acceptor(ListenSock
+
+<handle_cast("wow", State)
+  io.format("Wow what?", [])
+  (noreply, State)
+
+socket_listen(Opts)
+  SockOpts = [binary,
+              (nodelay,     struct.getdef(Opts, nodelay,     true)),
+              (reuseaddr,   struct.getdef(Opts, reuseaddr,   true)),
+              (packet,      struct.getdef(Opts, packet,      raw)),
+              (packet_size, struct.getdef(Opts, packet_size, 1024))]
+  Port = struct.getdef(Opts, port, 4113)
+  gen_tcp.listen(Port, SockOpts)
