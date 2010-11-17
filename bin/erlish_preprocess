@@ -7,7 +7,7 @@ ARGV.each do |in_file|
   last_fname = ''
   last_arity = 0
   reformatted = functions.map do |fun|
-    vis, fname, params, col, rest = fun.scan(/^(<)?([a-z_]+)\s*(\([^)]*\))?\s*(:)?\s*(.*)\Z/m)[0]
+    vis, fname, params, col, rest = fun.scan(/^(<)?([a-z_]+)\s*(\|[^\|]*\|)?\s*(:)?\s*(.*)\Z/m)[0]
 
     if params.nil?
       params = '()'
@@ -15,6 +15,7 @@ ARGV.each do |in_file|
     else
       # Arity hack without doing a full parse.  Probably will fail on rainy days.
       p2 = params[1..-2]
+      params = '(' + p2 + ')'
       p2.gsub! /(\\\[|\\\(|\\"|\\\]|\\\))/, ''
       p2.gsub! /\[[^\]+]\]/, ''
       p2.gsub! /"[^"]+"/, ''

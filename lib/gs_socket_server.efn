@@ -1,20 +1,40 @@
 @@extends(p_gen_server)
+@@import(error_logger, [error_msg::2, warning_msg::2])
 
-add_persistent(Pid): gen_server.cast(self(), (add_p, Pid))
-rm_persistent(Pid):  gen_server.cast(self(), (rm_p, Pid))
+add_persistent|Server, Pid|: gen_server.cast(Server, (add_p, Pid))
+rm_persistent |Server, Pid|: gen_server.cast(Server, (rm_p, Pid))
 
-<init(Opts)
-  io.format("~n---~n~p~n---~n", [socket_listen(Opts)])
-  (ok, Opts)
-  #switch socket_listen()
-  #  case (ok, ListenSock)
-  #    AcceptorPid = start_acceptor(ListenSock
+<init|Opts|
+  switch socket_listen()
+    case (ok, ListenSock)
+      AcceptorPid = start_acceptor(ListenSock, Opts)
+      State = {opts:        Opts,
+               listener:    ListenSock,
+               acceptor:    AcceptorPid,
+               persistents: []}
+      (ok, State)
+    case (error, Err)
+      error_msg("Couldn't seem to listen: ~p", [Err])
+      (stop, Err)
+    case ('EXIT', Reason)
+      error_msg("Bad error while listening: ~p", [Reason])
+      (stop, Reason)
 
-<handle_cast("wow", State)
-  io.format("Wow what?", [])
+<handle_cast|stop, State|
+  (stop, normal, State)
+<handle_cast|(add_p, Pid), State|
+  Pers = [Pid : State.persistents]
+  (noreply, State.persistents := Pers)
+<handle_cast|(rm_p, Pid), State|
+  (noreply, State.persistents := lists.delete(Pid, State.persistents))
+<handle_cast|(multicast, Msg), State|
+  send_to_pids(State.persistents, Msg)
+  (noreply, State)
+<handle_cast|Msg, State|
+  warning_msg("Received unknown message ~p", [Msg])
   (noreply, State)
 
-socket_listen(Opts)
+socket_listen|Opts|
   SockOpts = [binary,
               (nodelay,     struct.getdef(Opts, nodelay,     true)),
               (reuseaddr,   struct.getdef(Opts, reuseaddr,   true)),
@@ -22,3 +42,48 @@ socket_listen(Opts)
               (packet_size, struct.getdef(Opts, packet_size, 1024))]
   Port = struct.getdef(Opts, port, 4113)
   gen_tcp.listen(Port, SockOpts)
+
+socket_close|Socket|
+  try
+    gen_tcp.close(Socket)
+  catch Err
+    error_logger.error_msg("Error when closing socket: ~p", [Err])
+
+start_acceptor|ListenSock, Opts|
+  spawn_link($module, acceptor_loop, [self(), ListenSock, Opts])
+
+acceptor_loop|Server, Sock, Opts|
+  switch gen_tcp.accept(Sock)
+    case (ok, Sock)
+      spawn_handler(Server, Sock, Opts)
+      acceptor_loop(Server, Sock, Opts)
+    case (error, Error)
+      error_logger.error_msg("Accept failed with error: ~p", [Error])
+      acceptor_loop(Server, Sock, Opts)
+    case ('EXIT', Error)
+      error_logger.error_msg("Accept exited with error: ~p", [Error])
+      exit( (error, (accept_failed, Error)) )
+
+spawn_handler|Server, Sock, Opts|
+  HandoffFun = fn()
+    receive set
+      F = Opts.worker_loop
+      F(Sock, Opts)
+    after 60000
+      error_logger.error_msg("Timeout waiting for set in controller. Closing.", [])
+      socket_close(Sock)
+  Pid = spawn(HandoffFun)
+  switch gen_tcp.controlling_process(Sock, Pid)
+    case ok
+      Pid ! set
+      add_persistent(Server, Pid)
+    case (error, Err)
+      error_logger.error_msg("Couldn't set the controlling process. Closing. ~p", [Err])
+      socket_close(Sock)
+
+send_to_pids|[], _Msg|: ok
+send_to_pids|Pids, Msg|
+  Send = fn(P){ try {P ! Msg} catch _ {nop}}
+  [Send(P) for P in Pids]
+  ok
+

@@ -1,6 +1,9 @@
-@mod(socket_server) -> (Name, ListenPort)
+@mod(socket_server) -> (Name, ListenPort, WorkerLoop)
 
-<start:              p_gen_server.start(local, Name, gs_socket_server, {port: ListenPort})
+<start:
+  Opts = {port:        ListenPort,
+          worker_loop: WorkerLoop}
+  p_gen_server.start(local, Name, gs_socket_server, Opts)
 <stop:               gen_server.cast(Name, stop)
 <cast(Msg):          gen_server.cast(Name, Msg)
 <call(Msg):          gen_server.call(Name, Msg)

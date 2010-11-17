@@ -92,5 +92,6 @@ hi link erlishParens              Type
 hi link erlishMacro               Macro
 hi link erlishProcessor           PreProc
 hi link erlishAtom                Constant
+hi link erlishException           Exception
 
 let b:current_syntax = "erlish"
