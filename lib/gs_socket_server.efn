@@ -1,11 +1,13 @@
 @@extends(p_gen_server)
-@@import(error_logger, [error_msg::2, warning_msg::2])
+
+error|Txt, Dat|: error_logger.error_msg(Txt, Dat)
+warn |Txt, Dat|: error_logger.warning_msg(Txt, Dat)
 
 add_persistent|Server, Pid|: gen_server.cast(Server, (add_p, Pid))
 rm_persistent |Server, Pid|: gen_server.cast(Server, (rm_p, Pid))
 
 <init|Opts|
-  switch socket_listen()
+  switch socket_listen(Opts)
     case (ok, ListenSock)
       AcceptorPid = start_acceptor(ListenSock, Opts)
       State = {opts:        Opts,
@@ -14,10 +16,10 @@ rm_persistent |Server, Pid|: gen_server.cast(Server, (rm_p, Pid))
                persistents: []}
       (ok, State)
     case (error, Err)
-      error_msg("Couldn't seem to listen: ~p", [Err])
+      error("Couldn't seem to listen: ~p", [Err])
       (stop, Err)
     case ('EXIT', Reason)
-      error_msg("Bad error while listening: ~p", [Reason])
+      error("Bad error while listening: ~p", [Reason])
       (stop, Reason)
 
 <handle_cast|stop, State|
@@ -31,7 +33,7 @@ rm_persistent |Server, Pid|: gen_server.cast(Server, (rm_p, Pid))
   send_to_pids(State.persistents, Msg)
   (noreply, State)
 <handle_cast|Msg, State|
-  warning_msg("Received unknown message ~p", [Msg])
+  warn("Received unknown message ~p", [Msg])
   (noreply, State)
 
 socket_listen|Opts|
@@ -47,7 +49,7 @@ socket_close|Socket|
   try
     gen_tcp.close(Socket)
   catch Err
-    error_logger.error_msg("Error when closing socket: ~p", [Err])
+    error("Error when closing socket: ~p", [Err])
 
 start_acceptor|ListenSock, Opts|
   spawn_link($module, acceptor_loop, [self(), ListenSock, Opts])
@@ -58,10 +60,10 @@ acceptor_loop|Server, Sock, Opts|
       spawn_handler(Server, Sock, Opts)
       acceptor_loop(Server, Sock, Opts)
     case (error, Error)
-      error_logger.error_msg("Accept failed with error: ~p", [Error])
+      error("Accept failed with error: ~p", [Error])
       acceptor_loop(Server, Sock, Opts)
     case ('EXIT', Error)
-      error_logger.error_msg("Accept exited with error: ~p", [Error])
+      error("Accept exited with error: ~p", [Error])
       exit( (error, (accept_failed, Error)) )
 
 spawn_handler|Server, Sock, Opts|
@@ -70,7 +72,7 @@ spawn_handler|Server, Sock, Opts|
       F = Opts.worker_loop
       F(Sock, Opts)
     after 60000
-      error_logger.error_msg("Timeout waiting for set in controller. Closing.", [])
+      error("Timeout waiting for set in controller. Closing.", [])
       socket_close(Sock)
   Pid = spawn(HandoffFun)
   switch gen_tcp.controlling_process(Sock, Pid)
@@ -78,7 +80,7 @@ spawn_handler|Server, Sock, Opts|
       Pid ! set
       add_persistent(Server, Pid)
     case (error, Err)
-      error_logger.error_msg("Couldn't set the controlling process. Closing. ~p", [Err])
+      error("Couldn't set the controlling process. Closing. ~p", [Err])
       socket_close(Sock)
 
 send_to_pids|[], _Msg|: ok

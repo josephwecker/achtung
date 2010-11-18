@@ -2,6 +2,6 @@
 
 <start: p_gen_server.start($module)
 
-<handle_cast("hiya", State)
+<handle_cast|"hiya", State|
   io.format("Well Hi back at you!", [])
   (noreply, State)
