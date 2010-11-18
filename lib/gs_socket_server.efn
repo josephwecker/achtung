@@ -2,6 +2,7 @@
 
 error|Txt, Dat|: error_logger.error_msg(Txt, Dat)
 warn |Txt, Dat|: error_logger.warning_msg(Txt, Dat)
+info |Txt, Dat|: error_logger.info_msg(Txt, Dat)
 
 add_persistent|Server, Pid|: gen_server.cast(Server, (add_p, Pid))
 rm_persistent |Server, Pid|: gen_server.cast(Server, (rm_p, Pid))
@@ -38,6 +39,24 @@ rm_persistent |Server, Pid|: gen_server.cast(Server, (rm_p, Pid))
   warn("Received unknown message ~p", [Msg])
   (noreply, State)
 
+<handle_info|('EXIT', _Pid, (error, ((accept_failed, (shutdown,_))))), State|
+  # Shutdown in progress.  Ignore.
+  (noreply, State)
+<handle_info|('EXIT', _Pid, Reason), State|
+  error("Acceptor has died with reason: \"~p\" - Reinitializing", [Reason])
+  AcceptorPid = start_acceptor(State.listener, State.opts)
+  (noreply, State.acceptor := AcceptorPid)
+<handle_info|Info, State|
+  warn("Received unknown info in ~p: ~p", [$module, Info])
+  (noreply, State)
+
+<terminate|_Reason, State|
+  info("Shutting down socket server ~p and any connections.", [self()])
+  socket_close(State.listener)
+  exit(State.acceptor, kill)
+  send_to_pids(State.persistents, shutdown)
+  terminated
+
 socket_listen|Opts|
   SockOpts = [binary,
               (nodelay,     struct.getdef(Opts, nodelay,     true)),
@@ -56,7 +75,7 @@ socket_close|Socket|
 start_acceptor|ListenSock, Opts|
   spawn_link($module, acceptor_loop, [self(), ListenSock, Opts])
 
-acceptor_loop|Server, Sock, Opts|
+<acceptor_loop|Server, Sock, Opts|
   switch gen_tcp.accept(Sock)
     case (ok, Sock)
       spawn_handler(Server, Sock, Opts)
@@ -73,6 +92,7 @@ spawn_handler|Server, Sock, Opts|
     receive set
       F = Opts.worker_loop
       F(Sock, Opts)
+      rm_persistent(Server, self())
     after 60000
       error("Timeout waiting for set in controller. Closing.", [])
       socket_close(Sock)
@@ -90,4 +110,3 @@ send_to_pids|Pids, Msg|
   Send = fn(P){ try {P ! Msg} catch _ {nop}}
   [Send(P) for P in Pids]
   ok
-
