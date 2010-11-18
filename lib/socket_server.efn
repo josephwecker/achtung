@@ -1,6 +1,6 @@
 @mod(socket_server) -> (Name, ListenPort, WorkerLoop)
 
-<start:
+<start
   Opts = {port:        ListenPort,
           worker_loop: WorkerLoop}
   p_gen_server.start(local, Name, gs_socket_server, Opts)

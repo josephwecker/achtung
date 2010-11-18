@@ -22,17 +22,19 @@ rm_persistent |Server, Pid|: gen_server.cast(Server, (rm_p, Pid))
       error("Bad error while listening: ~p", [Reason])
       (stop, Reason)
 
-<handle_cast|stop, State|
-  (stop, normal, State)
-<handle_cast|(add_p, Pid), State|
+<handle_cast|stop,             State|: (stop, normal, State)
+<handle_cast|(add_p, Pid),     State|
   Pers = [Pid : State.persistents]
   (noreply, State.persistents := Pers)
-<handle_cast|(rm_p, Pid), State|
+
+<handle_cast|(rm_p, Pid),      State|
   (noreply, State.persistents := lists.delete(Pid, State.persistents))
+
 <handle_cast|(multicast, Msg), State|
   send_to_pids(State.persistents, Msg)
   (noreply, State)
-<handle_cast|Msg, State|
+
+<handle_cast|Msg,              State|
   warn("Received unknown message ~p", [Msg])
   (noreply, State)
 
@@ -83,7 +85,7 @@ spawn_handler|Server, Sock, Opts|
       error("Couldn't set the controlling process. Closing. ~p", [Err])
       socket_close(Sock)
 
-send_to_pids|[], _Msg|: ok
+send_to_pids|[],  _Msg|: ok
 send_to_pids|Pids, Msg|
   Send = fn(P){ try {P ! Msg} catch _ {nop}}
   [Send(P) for P in Pids]
