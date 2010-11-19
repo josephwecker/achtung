@@ -19,6 +19,7 @@
 <start|Module, Opts|:                start(local, Module, Opts)
 <start|Context, Module, Opts|:       gen_server.start_link((Context, Module), Module, Opts, [])
 <start|Context, Name, Module, Opts|: gen_server.start_link((Context, Name), Module, Opts, [])
+<start_anon|Module, Opts|:           gen_server.start_link(Module, Opts, [])
 
 ## @doc Stops the server.  If you override handle-cast and want this to keep
 ##      working you'll need to implement it.")
