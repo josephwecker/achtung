@@ -9,10 +9,10 @@ rm_persistent |Server, Pid|: gen_server.cast(Server, (rm_p, Pid))
 
 <init|Opts|
   switch socket_listen(Opts)
-    case (ok, ListenSock)
-      AcceptorPid = start_acceptor(ListenSock, Opts)
+    case (ok, Listener)
+      AcceptorPid = start_acceptor(Listener, Opts)
       State = {opts:        Opts,
-               listener:    ListenSock,
+               listener:    socket.new(Listener),
                acceptor:    AcceptorPid,
                persistents: []}
       (ok, State)
@@ -52,7 +52,8 @@ rm_persistent |Server, Pid|: gen_server.cast(Server, (rm_p, Pid))
 
 <terminate|_Reason, State|
   info("Shutting down socket server ~p and any connections.", [self()])
-  socket_close(State.listener)
+  L = State.listener
+  L.close()
   exit(State.acceptor, kill)
   send_to_pids(State.persistents, shutdown)
   terminated
@@ -66,28 +67,25 @@ socket_listen|Opts|
   Port = struct.getdef(Opts, port, 4113)
   gen_tcp.listen(Port, SockOpts)
 
-socket_close|Socket|
-  try
-    gen_tcp.close(Socket)
-  catch Err
-    error("Error when closing socket: ~p", [Err])
+start_acceptor|Listener, Opts|
+  spawn_link($module, acceptor_loop, [self(), Listener, Opts])
 
-start_acceptor|ListenSock, Opts|
-  spawn_link($module, acceptor_loop, [self(), ListenSock, Opts])
-
-<acceptor_loop|Server, Sock, Opts|
-  switch gen_tcp.accept(Sock)
+<acceptor_loop|Server, Listener, Opts|
+  switch gen_tcp.accept(Listener)
     case (ok, Sock)
-      spawn_handler(Server, Sock, Opts)
-      acceptor_loop(Server, Sock, Opts)
+      spawn_handler(Server, socket.new(Sock), Opts)
+      acceptor_loop(Server, Listener, Opts)
     case (error, Error)
       error("Accept failed with error: ~p", [Error])
-      acceptor_loop(Server, Sock, Opts)
+      acceptor_loop(Server, Listener, Opts)
     case ('EXIT', Error)
       error("Accept exited with error: ~p", [Error])
       exit( (error, (accept_failed, Error)) )
 
 spawn_handler|Server, Sock, Opts|
+  io.format("SPAWN: ~p | ~p | ~p~n~n", [Server, Sock, Opts])
+  S = @Sock.raw_socket()
+  io.format("S: ~p ~n", [S])
   HandoffFun = fn()
     receive set
       F = Opts.worker_loop
@@ -95,15 +93,19 @@ spawn_handler|Server, Sock, Opts|
       rm_persistent(Server, self())
     after 60000
       error("Timeout waiting for set in controller. Closing.", [])
-      socket_close(Sock)
+      @Sock.close()
   Pid = spawn(HandoffFun)
-  switch gen_tcp.controlling_process(Sock, Pid)
+  io.format("TRYING ~p", [S])
+  switch gen_tcp.controlling_process(S, Pid)
     case ok
       Pid ! set
       add_persistent(Server, Pid)
     case (error, Err)
       error("Couldn't set the controlling process. Closing. ~p", [Err])
-      socket_close(Sock)
+      @Sock.close()
+    case Other
+      error("Got back ~p", [Other])
+      @Sock.close()
 
 send_to_pids|[],  _Msg|: ok
 send_to_pids|Pids, Msg|

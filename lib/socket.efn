@@ -1,0 +1,17 @@
+@mod(socket) -> (RawSocket,)
+
+<socket_close|RawSocket|
+  try
+    gen_tcp.close(RawSocket)
+  catch Err
+    error_logger.error_msg("Error when closing socket: ~p", [Err])
+
+<raw_socket: RawSocket
+
+
+<send|Data|
+  switch gen_tcp.send(RawSocket, Data)
+    case ok {ok}
+    case (error, Reason)
+      error_logger.error_msg("Worker crash: ~p", [Reason])
+      exit(normal)
