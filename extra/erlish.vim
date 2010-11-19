@@ -34,6 +34,7 @@ syn keyword erlishGuard           is_float is_function is_constant
 syn keyword erlishGuard           is_pid is_port is_reference
 syn keyword erlishGuard           is_record is_process_alive
 
+syn match   erlishParamMod        /@[A-Z_]\w*/ contains=erlishVariable
 syn match   erlishAtom            /\%(\%(^-\)\|#\)\@<!\<[a-z]\w*\>(\@!/
 syn match   erlishAtom            /\\\@<!'[^']*\\\@<!'/
 syn match   erlishVariable        /\<[A-Z_]\w*\>/
@@ -93,5 +94,6 @@ hi link erlishMacro               Macro
 hi link erlishProcessor           PreProc
 hi link erlishAtom                Constant
 hi link erlishException           Exception
+hi link erlishParamMod            Typedef
 
 let b:current_syntax = "erlish"
