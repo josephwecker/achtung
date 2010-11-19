@@ -1,5 +1,11 @@
 
 
+Convention over configuration everywhere possible (ebin, paths, versions, etc. etc.)
+  - pull app description from edoc
+
+
+=-----------------=
+
 
 [ ] - Make sure that there is a locally accessable lib directory for erlang-
       set it up if necessary and store any environment variables etc. needed
