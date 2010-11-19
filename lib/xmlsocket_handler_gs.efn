@@ -1,0 +1,25 @@
+@@extends(gen_server_basic)
+
+<send|Dat, State| when is_list(Dat) or is_binary(Dat)
+  S = State.sock
+  @S.send([Dat, "\0"])
+
+
+<init|[Sock, Opts]|
+  State = {sock: Sock, opts: Opts, acc: <[ ]>}
+  (ok, State)
+
+<handle_info|shutdown,        State|: (stop, normal, State)
+<handle_info|(tcp_closed, _), State|: (stop, normal, State)
+<handle_info|(tcp, _RawSocket, Data), State|
+  Acc = State.acc
+  NewAcc = process_data(Data, State.opts.recipient)
+  (noreply, State.acc := NewAcc)
+<handle_info|Outbound, State|
+  send(Outbound, State)
+  (noreply, State)
+
+<terminate|_Reason, State|
+  S = State.sock
+  @S.close()
+

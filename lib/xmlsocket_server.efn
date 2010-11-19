@@ -1,0 +1,13 @@
+@mod(xmlsocket_server) -> (Name, ListenPort)
+
+<start
+  Opts = {port: ListenPort, worker_loop: xml_startup_worker, recipient: self()}
+  gen_server_basic.start(local, Name, socket_server_gs, Opts)
+
+<stop: erlang.send(Name, shutdown)
+
+xml_startup_worker|Sock, Opts|
+  nyi
+  # TODO: basically start up an anon instance of xmlsocket_handler
+
+
