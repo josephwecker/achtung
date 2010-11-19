@@ -15,6 +15,7 @@ endif
 syn match   erlishStringModifier  /\\./ contained
 syn match   erlishStringModifier  /\~\%(-\?[0-9*]\+\)\?\%(\.[0-9*]\+\..\?\)\?\%(c\|f\|e\|g\|s\|w\|p\|W\|P\|B\|X\|#\|b\|+\|n\|i\)/ contained
 syn region  erlishString          start=+"+  skip=+\n\\\\\|\\"+  end=+"+ contains=@Spell,erlishStringModifier
+syn region  erlishBinaryString    start=+"+  skip=+\n\\\\\|\\"+  end=+"+ contained contains=@Spell,erlishStringModifier
 
 syn keyword erlishTodo            TODO FIXME XXX NOTE NOTES contained
 syn match   erlishDoc             /\(##\s*\)\@<=@\w\+/ contained
@@ -57,6 +58,7 @@ syn match   erlishNumber          "\%(^\|\W\)\@<=\d*\.\d\+\%([eE][+-]\=\d\+\)\=[
 syn match   erlishSpaceError      display "\t"
 syn match   erlishSpecialChar     "'\\.'"
 
+syn match   erlishBitString       "<\[[^\]]\+\]>" contains=erlishBinaryString,erlishSep,erlishNumber
 syn match   erlishBraces          "[{}\[\]\.,]"
 syn match   erlishParens          "[()]"
 syn match   erlishOperator        "[\$\+\-\*/\|\&~=]"
@@ -66,7 +68,7 @@ syn match   erlishSep             ":"
 syn match   erlishSep             "::"
 syn match   erlishSep             "->"
 syn match   erlishMacro           "\$[a-z_]\+"
-syn match   erlishProcessor	      "^@@\=\a\+"
+syn match   erlishProcessor	  "^@@\=\a\+"
 
 hi link erlishString              String
 hi link erlishStringModifier      SpecialChar
@@ -95,5 +97,7 @@ hi link erlishProcessor           PreProc
 hi link erlishAtom                Constant
 hi link erlishException           Exception
 hi link erlishParamMod            Typedef
+hi link erlishBitString           StorageClass
+hi link erlishBinaryString        Character
 
 let b:current_syntax = "erlish"
