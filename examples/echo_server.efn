@@ -2,8 +2,10 @@
 <start
   Serv = socket_server.new(echo_server, 1228, fn echo_stuff:2)
   @Serv.start()
+  (ok, _Ref) = timer.apply_interval(5000, $module, send_hello, [Serv])
+  Serv
 
-<echo_stuff|Sock, Opts|
+echo_stuff|Sock, Opts|
   receive shutdown
     done
   else receive (tcp_closed, _)
@@ -12,3 +14,9 @@
     io.format("~nGOT DATA: ~p~n", [Msg])
     @Sock.send(Msg)
     echo_stuff(Sock, Opts)
+  else receive (outbound, OutMsg)
+    @Sock.send(OutMsg)
+    echo_stuff(Sock, Opts)
+
+<send_hello|Serv|
+  @Serv.multicast((outbound, "Hope you're having fun echoing. Keep up the great work.\r\n"))
