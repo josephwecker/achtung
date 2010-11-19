@@ -3,7 +3,7 @@
 <start
   Opts = {port:        ListenPort,
           worker_loop: WorkerLoop}
-  p_gen_server.start(local, Name, gs_socket_server, Opts)
+  gen_server_basic.start(local, Name, socket_server_gs, Opts)
 <stop:      gen_server.cast(Name, stop)
 <cast|Msg|: gen_server.cast(Name, Msg)
 <call|Msg|: gen_server.call(Name, Msg)

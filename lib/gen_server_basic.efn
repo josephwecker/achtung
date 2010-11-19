@@ -1,5 +1,5 @@
 ##-----------------------------------------------------------------------------
-## @title     p_gen_server - Parent for quick gen_servers
+## @title     gen_server_basic - Parent for quick gen_servers
 ## @doc       Extend this module to get the basic (passthrough) gen_server
 ##              functionality- then simply implement any of the calls (and make
 ##              them public) that you will actively use.

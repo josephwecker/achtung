@@ -1,4 +1,4 @@
-@@extends(p_gen_server)
+@@extends(gen_server_basic)
 
 error|Txt, Dat|: error_logger.error_msg(Txt, Dat)
 warn |Txt, Dat|: error_logger.warning_msg(Txt, Dat)
@@ -83,9 +83,7 @@ start_acceptor|Listener, Opts|
       exit( (error, (accept_failed, Error)) )
 
 spawn_handler|Server, Sock, Opts|
-  io.format("SPAWN: ~p | ~p | ~p~n~n", [Server, Sock, Opts])
   S = @Sock.raw_socket()
-  io.format("S: ~p ~n", [S])
   HandoffFun = fn()
     receive set
       F = Opts.worker_loop
@@ -95,7 +93,6 @@ spawn_handler|Server, Sock, Opts|
       error("Timeout waiting for set in controller. Closing.", [])
       @Sock.close()
   Pid = spawn(HandoffFun)
-  io.format("TRYING ~p", [S])
   switch gen_tcp.controlling_process(S, Pid)
     case ok
       Pid ! set
