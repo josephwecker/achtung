@@ -1,0 +1,14 @@
+
+<start
+  Serv = socket_server.new(echo_server, 1228, fn echo_stuff:2)
+  @Serv.start()
+
+<echo_stuff|Sock, Opts|
+  receive shutdown
+    done
+  else receive (tcp_closed, _)
+    done
+  else receive (tcp, _RawSocket, Msg)
+    io.format("~nGOT DATA: ~p~n", [Msg])
+    @Sock.send(Msg)
+    echo_stuff(Sock, Opts)
