@@ -22,7 +22,8 @@ syn match   erlishDoc             /\(##\s*\)\@<=@\w\+/ contained
 syn match   erlishComment         /#.*$/ contains=erlishTodo,erlishDoc,@Spell
 
 syn keyword erlishBoolean         true false
-syn keyword erlishConditional     if else case switch when
+syn keyword erlishConditional     if else switch when
+syn keyword erlishUserLabel       case
 syn keyword erlishMessage         receive after
 syn keyword erlishOperator        and in not or xor orr andd
 syn keyword erlishFunction        fn begin
@@ -33,7 +34,7 @@ syn keyword erlishGuard           is_bitstring is_boolean
 syn keyword erlishGuard           is_tuple is_number is_integer
 syn keyword erlishGuard           is_float is_function is_constant
 syn keyword erlishGuard           is_pid is_port is_reference
-syn keyword erlishGuard           is_record is_process_alive
+syn keyword erlishGuard           is_record hd length size tl trunc tuple_size abs bit_size byte_size element float node round self
 
 syn match   erlishParamMod        /@[A-Z_]\w*/ contains=erlishVariable
 syn match   erlishAtom            /\%(\%(^-\)\|#\)\@<!\<[a-z]\w*\>(\@!/
@@ -70,13 +71,16 @@ syn match   erlishSep             "->"
 syn match   erlishMacro           "\$[a-z_]\+"
 syn match   erlishProcessor	  "^@@\=\a\+"
 
+syn keyword erlishSpecial         adler32 adler32_combine apply atom_to_binary atom_to_list binary_to_atom binary_to_existing_atom binary_to_list bitstring_to_list binary_to_term check_process_code concat_binary crc32 crc32_combine date decode_packet delete_module disconnect_node erase exit float_to_list garbage_collect get get_keys group_leader halt integer_to_list iolist_to_binary iolist_size is_alive is_process_alive link list_to_atom list_to_binary list_to_bitstring list_to_existing_atom list_to_float list_to_integer list_to_pid list_to_tuple load_module make_ref monitor_node nodes now open_port pid_to_list port_close port_command port_connect port_control pre_loaded process_flag process_info processes purge_module put register registered setelement spawn spawn_link spawn_monitor spawn_opt split_binary statistics term_to_binary throw time tuple_to_list unlink unregister whereis
+
 hi link erlishString              String
 hi link erlishStringModifier      SpecialChar
 hi link erlishComment             Comment
 hi link erlishTodo                Todo
 hi link erlishDoc                 SpecialComment
 hi link erlishConditional         Conditional
-hi link erlishGuard               Conditional
+hi link erlishUserLabel           Tag
+hi link erlishGuard               Keyword
 hi link erlishBoolean             Boolean
 hi link erlishAtom                Normal
 hi link erlishVariable            Identifier
@@ -99,5 +103,6 @@ hi link erlishException           Exception
 hi link erlishParamMod            Typedef
 hi link erlishBitString           StorageClass
 hi link erlishBinaryString        Character
+hi link erlishSpecial             Special
 
 let b:current_syntax = "erlish"
