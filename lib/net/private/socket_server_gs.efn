@@ -64,6 +64,8 @@ info |Txt, Dat|: error_logger.info_msg(Txt, Dat)
   error("Acceptor has died with reason: \"~p\" - Reinitializing", [Reason])
   AcceptorPid = start_acceptor(State.listener, State.opts)
   (noreply, State.acceptor := AcceptorPid)
+<handle_info|shutdown, State|
+  (stop, normal, State)
 <handle_info|Info, State|
   warn("Received unknown info in ~p: ~p", [$module, Info])
   (noreply, State)
@@ -93,6 +95,8 @@ start_acceptor|Listener, Opts|
     case (ok, Sock)
       spawn_handler(Server, socket.new(Sock), Opts)
       acceptor_loop(Server, Listener, Opts)
+    case (error, closed)
+      exit(closing)
     case (error, Error)
       error("Accept failed with error: ~p", [Error])
       acceptor_loop(Server, Listener, Opts)
