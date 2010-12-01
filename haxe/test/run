@@ -1,0 +1,35 @@
+#!/bin/bash
+set -o errexit
+
+# Determine actual script location
+SCRIPT_PATH="${BASH_SOURCE[0]}";
+if([ -h "${SCRIPT_PATH}" ]) then
+  while([ -h "${SCRIPT_PATH}" ]) do SCRIPT_PATH=`readlink "${SCRIPT_PATH}"`; done
+fi
+pushd . > /dev/null
+cd `dirname ${SCRIPT_PATH}` > /dev/null
+#SCRIPT_PATH=`pwd`;
+#popd  > /dev/null
+
+# Create temporary build directory
+mkdir -p .build/swfs
+
+# Make swf
+haxe -cp '../haxe-src/' -cp '.' -swf9 '.build/swfs/erlish_test.swf' \
+  -swf-version 10 -lib utest -main 'ErlishTest' -debug
+
+# Start up a server temporarily (so security etc. works as expected) in the
+# background and save the PID
+perl -MIO::All -e \
+  'io(":8488")->fork->accept->(sub { $_[0] < io(-x $1 ? "./$1 |" : $1) if /^GET \/(.*) / })' &
+tmp_server=$!
+
+# Get firefox to open it (I doubt this'll work in Mac)
+firefox http://localhost:8488/erlish_test.html
+sleep 3
+rm -rf .build
+
+kill $tmp_server
+
+# Go back to wherever we came from
+popd > /dev/null
