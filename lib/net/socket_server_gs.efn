@@ -84,6 +84,11 @@ start_acceptor|Listener, Opts|
 
 spawn_handler|Server, Sock, Opts|
   S = @Sock.raw_socket()
+
+  # TODO: YOU ARE HERE- need a way to pass in a gen-server interface instead of
+  # just a handler function so that we don't have to set the controlling
+  # process twice in a row.  Would look at Opts and basically start_anon
+  # instead of HandoffFun
   HandoffFun = fn()
     receive set
       F = Opts.worker_loop
