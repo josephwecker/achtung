@@ -1,0 +1,22 @@
+#!/bin/bash
+set -o errexit
+# Determine actual script location
+SCRIPT_PATH="${BASH_SOURCE[0]}";
+if([ -h "${SCRIPT_PATH}" ]) then
+  while([ -h "${SCRIPT_PATH}" ]) do SCRIPT_PATH=`readlink "${SCRIPT_PATH}"`; done
+fi
+pushd . > /dev/null
+cd `dirname ${SCRIPT_PATH}` > /dev/null
+####################################################
+
+pushd . > /dev/null
+cd ../../
+./build_lib.sh
+popd > /dev/null
+
+erl -smp -pa ../../../efene/ebin -pa ../../../efene/lib -pa ../../ebin \
+	-eval 'S=etf_server:new(etfy, 4114), S:start()'
+
+####################################################
+# Go back to wherever we came from
+popd > /dev/null
