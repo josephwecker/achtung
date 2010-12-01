@@ -2,12 +2,8 @@
 
 <start
   Opts =
-    port:        ListenPort,
-    worker_loop: etf_worker
+    port:         ListenPort,
+    worker_serve: etf_handler_gs
   gen_server_basic.start(local, Name, socket_server_gs, Opts)
 
 <stop: erlang.send(Name, shutdown)
-
-etf_worker|Sock, Opts|
-  gen_server_basic.start_anon(etf_handler_gs, [Sock, Opts])
-

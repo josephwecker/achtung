@@ -7,28 +7,38 @@
   S = State.sock
   # An uncompressed binary wraps the real term so that we have the full size on
   # the client side without having to do zlib stuff.
-  Encoded = term_to_binary(term_to_binary(Dat, [compressed, {minor_version, 1}]))
+  Encoded = term_to_binary(term_to_binary(Dat, [compressed, (minor_version, 1)]))
   @S.send(Encoded)
 
-<init|[Sock, Opts]|
-  State = {sock: Sock, opts: Opts, acc: <[ ]>}
+<init|[Server, Sock, Opts]|
+  State =
+    sock:   Sock,
+    opts:   Opts,
+    server: Server,
+    acc:    <[ ]>
   (ok, State)
 
-<handle_info|shutdown,        State|: (stop, normal, State)
-<handle_info|(tcp_closed, _), State|: (stop, normal, State)
-<handle_info|(tcp, _RawSocket, Data), State|
+<handle_info|set,                 State|: (noreply, State)
+<handle_info|shutdown,            State|: (stop, normal, State)
+<handle_info|(tcp_closed, _),     State|: (stop, normal, State)
+<handle_info|(tcp, _RSock, Data), State|
   Acc = State.acc
   NewAcc = process_data(Data, State.opts.recipient, Acc)
   (noreply, State.acc := NewAcc)
+
 <handle_info|Outbound, State|
   send(Outbound, State)
   (noreply, State)
 
 <terminate|_Reason, State|
+  Server = State.server
+  Server.rm_persistent(self())
   S = State.sock
   @S.close()
 
-process_data|_, _, Acc|: Acc  # nyi
+process_data|New, _, Acc|:
+  io.format("Got data: ~p", [New])
+  [Acc, New]  # which is to say, nyi
+
 #process_data|_Server, Buff, [] |: binary_to_term(Buff, [safe])
 #process_data|Server,  Buff, New|
-  
