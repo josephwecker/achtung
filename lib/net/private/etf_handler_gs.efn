@@ -23,7 +23,8 @@
 <handle_info|(tcp_closed, _),     State|: (stop, normal, State)
 <handle_info|(tcp, _RSock, Data), State|
   Acc = State.acc
-  NewAcc = process_data(Data, State.opts.recipient, Acc)
+  #NewAcc = process_data(Data, State.opts.recipient, Acc)
+  NewAcc = process_data(Data, none, Acc)
   (noreply, State.acc := NewAcc)
 
 <handle_info|Outbound, State|

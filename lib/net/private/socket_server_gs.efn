@@ -107,7 +107,7 @@ spawn_handler|Server, Sock, Opts|
   # just a handler function so that we don't have to set the controlling
   # process twice in a row.  Would look at Opts and basically start_anon
   # instead of HandoffFun
-  Pid = switch struct.getdef(Opts, worker_fn, none)
+  (ok, Pid) = switch struct.getdef(Opts, worker_fn, none)
     case none
       gen_server_basic.start_anon(struct.get(Opts, worker_serve), [Server, Sock, Opts])
     case WorkerFn
@@ -118,7 +118,7 @@ spawn_handler|Server, Sock, Opts|
         after 60000
           error("Timeout waiting for set in controller. Closing.")
           @Sock.close()
-      spawn(HandOffFun)
+      (ok, spawn(HandOffFun))
   switch gen_tcp.controlling_process(S, Pid)
     case ok
       Pid ! set

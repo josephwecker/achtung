@@ -6,4 +6,7 @@
     worker_serve: etf_handler_gs
   gen_server_basic.start(local, Name, socket_server_gs, Opts)
 
+<send_to_all|Msg|
+  gen_server.cast(Name, (multicast, Msg))
+
 <stop: erlang.send(Name, shutdown)
