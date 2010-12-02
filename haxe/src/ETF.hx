@@ -144,7 +144,7 @@ class ErlRef {
 
 class ErlPort {
     public var node      :ErlAtom;
-    public var id        :Array<UInt>;
+    public var id        :UInt;
     public var creation  :UInt;
 
     public function new(node, id, creation) {
@@ -214,6 +214,6 @@ class ErlBits {
         data = d; last_bits = l;
     }
     public function toString() {
-        return 'ErlBits('+data.size()+'|'+last_bits+')';
+        return 'ErlBits('+data.length+'|'+last_bits+')';
     }
 }
