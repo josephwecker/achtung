@@ -81,7 +81,11 @@ send_test_data|State|
   # Combinations
   send(State, [hey => there, <["partner!"]>, 7])
   send(State, ("Whatever", [], none, null, ok))
-  send(State, [([(atomish), []], "There you go"), 332.778, 1..45])
+  send(State, [([(atomish), []], "There you go"), 332.778, 96..120])
+  send(State, 1..9000) # Large Tuple
+  send(State, 1..900) # Large Tuple
+  send(State, list_to_tuple(1..900)) # Large Tuple
+  send(State, list_to_tuple(1..9000)) # Large Tuple
 
 #process_data|_Server, Buff, [] |: binary_to_term(Buff, [safe])
 #process_data|Server,  Buff, New|

@@ -100,9 +100,9 @@ class ETF {
             // Bit Binary
             case 77:  var len = dat.readUnsignedInt();
                       var last_bits = dat.readUnsignedByte();
-                      var data = new ByteArray();
-                      dat.readBytes(data, 0, len);
-                      return new ErlBits(dat, last_bits);
+                      var inner_data = new ByteArray();
+                      dat.readBytes(inner_data, 0, len);
+                      return new ErlBits(inner_data, last_bits);
             // Float (new)
             case 70:  return dat.readDouble();
 
@@ -201,7 +201,7 @@ class ErlExport {
     public var fun       :ErlAtom;
     public var arity     :UInt;
     public function new(m,f,a) {
-        module = m; fun = f; a = arity;
+        module = m; fun = f; arity = a;
     }
     public function toString() {
         return 'ErlExport('+module+'.'+fun+'/'+arity+')';
