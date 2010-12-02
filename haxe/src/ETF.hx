@@ -8,9 +8,11 @@ class ETF {
             case 131: return(decode(dat));
             // Compressed Term
             case 80:  var len = dat.readUnsignedInt();
-                      dat.uncompress();
-                      if(dat.length != len) return null;
-                      else return decode(dat);
+                      var newdat = new ByteArray();
+                      dat.readBytes(newdat);
+                      newdat.uncompress();
+                      if(newdat.length != len) return null;
+                      else return decode(newdat);
             // Smallint (unsigned byte)
             case 97:  return(dat.readUnsignedByte());
             // Integer
