@@ -59,9 +59,7 @@ class ErlangBridge {
         if(state == WAITING_FOR_NEW) {
             if(socket.bytesAvailable < 6) return;
             var ver = socket.readUnsignedByte();
-            trace("Version (should be 131): " + ver);
             var type= socket.readUnsignedByte();
-            trace("Type (should be 109): " + type);
             read_len = socket.readUnsignedInt();
             state = WAITING_FOR_BODY;
         }
