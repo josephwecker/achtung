@@ -93,6 +93,7 @@ start_acceptor|Listener, Opts|
 <acceptor_loop|Server, Listener, Opts|
   switch gen_tcp.accept(Listener)
     case (ok, Sock)
+      info("Connection coming in.", [])
       spawn_handler(Server, socket.new(Sock), Opts)
       acceptor_loop(Server, Listener, Opts)
     case (error, closed)
