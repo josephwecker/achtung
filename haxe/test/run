@@ -18,18 +18,21 @@ mkdir -p .build/swfs
 haxe -cp '../src/' -cp '.' -swf9 '.build/swfs/erlish_test.swf' \
   -swf-version 10 -lib utest -main 'ErlishTest' -debug
 
+sudo python -m SimpleHTTPServer
+#tmp_server=$!
+
 # Start up a server temporarily (so security etc. works as expected) in the
 # background and save the PID
-perl -MIO::All -e \
-  'io(":8488")->fork->accept->(sub { $_[0] < io(-x $1 ? "./$1 |" : $1) if /^GET \/(.*) / })' &
-tmp_server=$!
+#perl -MIO::All -e \
+#  'io(":8488")->fork->accept->(sub { $_[0] < io(-x $1 ? "./$1 |" : $1) if /^GET \/(.*) / })' &
+#tmp_server=$!
 
 # Get firefox to open it (I doubt this'll work in Mac)
-firefox http://localhost:8488/erlish_test.html &
-sleep 3
-rm -rf .build
+#firefox http://localhost:8488/erlish_test.html &
+#sleep 3
+#rm -rf .build
 
-kill $tmp_server
+#kill $tmp_server
 
 # Go back to wherever we came from
 popd > /dev/null
