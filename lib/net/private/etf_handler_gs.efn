@@ -63,7 +63,7 @@ send_test_data|State|
   # Basic types
   send(State, [])                    # Nil / Empty List
   send(State, 1)                     # Small Int
-  send(State, 0xffffff01)            # Int
+  send(State, 0xffffff)              # Int
   send(State, an_atom)               # Atom
   send(State, spawn(fn(){[]}))       # PID
   send(State, ([], [], []))          # Small Tuple
