@@ -21,7 +21,6 @@
 <handle_info|set,                 State|: (noreply, State)
 <handle_info|shutdown,            State|: (stop, normal, State)
 <handle_info|(tcp_closed, _),     State|: (stop, normal, State)
-#<handle_info|(tcp, _RSock, <[131,109,0,0,0,11,131,107,0,7,84,69,83,84,68,65,84]>), State|
 <handle_info|(tcp, _RSock, <["TESTDAT\r\n"]>), State|
   send_test_data(State)
   (noreply, State)

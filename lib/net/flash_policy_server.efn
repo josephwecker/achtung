@@ -1,0 +1,14 @@
+# Quickly serves up policy-files
+
+<start
+  Serv = socket_server.new(flash_policy_server, 843, fn policy_respond:2)
+  @Serv.start()
+  Serv
+
+policy_respond|Sock, _Opts|
+  receive (tcp, _RawSock, <["<policy-file-request/>",0]>)
+    @Sock.send(<["<cross-domain-policy>",
+      "<allow-access-from domain=\"localhost\" ",
+      "to-ports=\"*\"/></cross-domain-policy>",0]>)
+  after 1000
+    done

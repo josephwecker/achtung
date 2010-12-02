@@ -2,7 +2,7 @@
 
 <start
   Opts = {port:        ListenPort,
-          worker_loop: WorkerLoop}
+          worker_fn:   WorkerLoop}
   gen_server_basic.start(local, Name, socket_server_gs, Opts)
 <stop:      gen_server.cast(Name, stop)
 <cast|Msg|: gen_server.cast(Name, Msg)
