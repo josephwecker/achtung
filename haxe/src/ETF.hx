@@ -1,18 +1,31 @@
 import flash.utils.ByteArray;
 
 class ETF {
+    static var _instance :ETF;
+
+    static function instance() :ETF {
+        if (_instance == null) _instance = new ETF();
+        return _instance;
+    }
+
+    private function new();
+
     static public function decode(dat :ByteArray) :Dynamic {
+        return instance()._decode(dat);
+    }
+
+    function _decode(dat :ByteArray) :Dynamic {
         var identifier_byte = dat.readUnsignedByte();
         switch(identifier_byte) {
             // Term
-            case 131: return(decode(dat));
+            case 131: return(_decode(dat));
             // Compressed Term
             case 80:  var len = dat.readUnsignedInt();
                       var newdat = new ByteArray();
                       dat.readBytes(newdat);
                       newdat.uncompress();
                       if(newdat.length != len) return null;
-                      else return decode(newdat);
+                      else return _decode(newdat);
             // Smallint (unsigned byte)
             case 97:  return(dat.readUnsignedByte());
             // Integer
@@ -25,28 +38,28 @@ class ETF {
                       return new ErlAtom(dat.readUTFBytes(len));
             // Reference (old)
             case 101: var id = new Array<UInt>();
-                      var node = decode(dat);
+                      var node = _decode(dat);
                       id.push(dat.readUnsignedInt());
                       return new ErlRef(node, id, dat.readUnsignedByte());
             // Port
             case 102: return new ErlPort(
-                              decode(dat),             // Node
+                              _decode(dat),             // Node
                               dat.readUnsignedInt(),   // ID
                               dat.readUnsignedByte()); // Creation
             // PID
-            case 103: return new ErlPID(decode(dat),   // Node
+            case 103: return new ErlPID(_decode(dat),   // Node
                               dat.readUnsignedInt(),   // ID
                               dat.readUnsignedInt(),   // Serial
                               dat.readUnsignedByte()); // Creation
             // Small Tuple
             case 104: var arity = cast(dat.readUnsignedByte(), Int);
                       var tuple = new ErlTuple(arity, true);
-                      for(i in 0...arity) tuple[i] = decode(dat);
+                      for(i in 0...arity) tuple[i] = _decode(dat);
                       return tuple;
             // Large Tuple
             case 105: var arity = cast(dat.readUnsignedInt(), Int);
                       var tuple = new ErlTuple(arity, true);
-                      for(i in 0...arity) tuple[i] = decode(dat);
+                      for(i in 0...arity) tuple[i] = _decode(dat);
                       return tuple;
             // Nil / Empty List
             case 106: return null;
@@ -57,8 +70,8 @@ class ETF {
             // TODO: The len cast here for haXe may break big lists!
             case 108: var len = cast(dat.readUnsignedInt(), Int);
                       var list = new ErlList();
-                      for(i in 0...len) list.push(decode(dat));
-                      var tail = decode(dat);
+                      for(i in 0...len) list.push(_decode(dat));
+                      var tail = _decode(dat);
                       if(tail != null) list.push(tail);
                       return list;
             // Binary
@@ -68,7 +81,7 @@ class ETF {
                       return bin;
             // Reference (new)
             case 114: var id_len =   cast(dat.readUnsignedShort(), Int);
-                      var node =     decode(dat);
+                      var node =     _decode(dat);
                       var creation = dat.readUnsignedByte();
                       var id = new Array<UInt>();
                       for(i in 0...id_len) id.push(dat.readUnsignedInt());
@@ -84,19 +97,19 @@ class ETF {
                       dat.readBytes(uniq, 0, 16);
                       var index = dat.readUnsignedInt();
                       var num_free = cast(dat.readUnsignedInt(), Int);
-                      var module = decode(dat);
-                      var old_index = decode(dat);
-                      var old_uniq = decode(dat);
-                      var pid = decode(dat);
+                      var module = _decode(dat);
+                      var old_index = _decode(dat);
+                      var old_uniq = _decode(dat);
+                      var pid = _decode(dat);
                       var free_vars = new Array<Dynamic>();
-                      for(i in 0...num_free) free_vars.push(decode(dat));
+                      for(i in 0...num_free) free_vars.push(_decode(dat));
                       return new ErlFun(arity, uniq, index, module, old_index,
                               old_uniq, pid, free_vars);
             // Export
             case 113: return new ErlExport(
-                              decode(dat),   // Module
-                              decode(dat),   // Fun (atom)
-                              decode(dat));  // Arity
+                              _decode(dat),   // Module
+                              _decode(dat),   // Fun (atom)
+                              _decode(dat));  // Arity
             // Bit Binary
             case 77:  var len = dat.readUnsignedInt();
                       var last_bits = dat.readUnsignedByte();
@@ -115,12 +128,16 @@ class ETF {
     }
 
     static public function encode(obj :Dynamic) :ByteArray {
-        return null;
+        var enc = new ByteArray();
+        return instance()._encode(obj, enc);
+    }
+
+    function _encode(obj :Dynamic, acc :ByteArray) :ByteArray {
+        //switch(Type.type(obj)) {
+        return acc;
+        //}
     }
 }
-
-//class ErlTuple extends flash.Vector<Dynamic> {}
-//class ErlList  extends flash.Vector<Dynamic> {}
 
 typedef ErlTuple = flash.Vector<Dynamic>;
 typedef ErlList  = flash.Vector<Dynamic>;
