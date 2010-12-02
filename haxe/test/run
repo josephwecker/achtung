@@ -15,7 +15,7 @@ cd `dirname ${SCRIPT_PATH}` > /dev/null
 mkdir -p .build/swfs
 
 # Make swf
-haxe -cp '../haxe-src/' -cp '.' -swf9 '.build/swfs/erlish_test.swf' \
+haxe -cp '../src/' -cp '.' -swf9 '.build/swfs/erlish_test.swf' \
   -swf-version 10 -lib utest -main 'ErlishTest' -debug
 
 # Start up a server temporarily (so security etc. works as expected) in the
@@ -25,7 +25,7 @@ perl -MIO::All -e \
 tmp_server=$!
 
 # Get firefox to open it (I doubt this'll work in Mac)
-firefox http://localhost:8488/erlish_test.html
+firefox http://localhost:8488/erlish_test.html &
 sleep 3
 rm -rf .build
 

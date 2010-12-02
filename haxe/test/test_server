@@ -14,8 +14,9 @@ cd ../../
 ./build_lib.sh
 popd > /dev/null
 
-erl -smp -pa ../../../efene/ebin -pa ../../../efene/lib -pa ../../ebin \
-	-eval 'S=etf_server:new(etfy, 4114), S:start()'
+sudo erl -smp -pa ../../../efene/ebin -pa ../../../efene/lib -pa ../../ebin \
+	-eval 'S=etf_server:new(etfy, 4114), S:start()' \
+  -eval 'flash_policy_server:start()'
 
 ####################################################
 # Go back to wherever we came from
