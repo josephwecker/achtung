@@ -73,9 +73,8 @@ class ErlangBridge {
                 inbound_msg_queue.push(msg);
                 var re_enc = ETF.encode(msg);
                 var str = '';
-                for(i in 0...re_enc.length) str +=
-                    StringTools.hex(re_enc.readUnsignedByte(), 1) + ',';
-                trace("Rencoded: " + str);
+                for(i in 0...re_enc.length) str += re_enc.readUnsignedByte() + ',';
+                trace("Re-encoded: " + str);
                 state = WAITING_FOR_NEW;
                 attempt_decode_message();
             }
