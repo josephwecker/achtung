@@ -64,6 +64,8 @@ send_test_data|State|
   send(State, [])                    # Nil / Empty List
   send(State, 1)                     # Small Int
   send(State, 0xffffff)              # Int
+  send(State, -4)                    # Negative small int
+  send(State, -968)                  # Bigger negative int
   send(State, an_atom)               # Atom
   send(State, spawn(fn(){[]}))       # PID
   send(State, ([], [], []))          # Small Tuple
