@@ -69,8 +69,13 @@ class ErlangBridge {
                 var raw_dat = new flash.utils.ByteArray();
                 socket.readBytes(raw_dat, 0, read_len);
                 var msg :Dynamic = ETF.decode(raw_dat);
-                trace(msg);
+                trace('[' + Type.typeof(msg)+ '] ' +msg);
                 inbound_msg_queue.push(msg);
+                var re_enc = ETF.encode(msg);
+                var str = '';
+                for(i in 0...re_enc.length) str +=
+                    StringTools.hex(re_enc.readUnsignedByte(), 1) + ',';
+                trace("Rencoded: " + str);
                 state = WAITING_FOR_NEW;
                 attempt_decode_message();
             }

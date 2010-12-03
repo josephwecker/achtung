@@ -11,7 +11,9 @@ class ETF {
     private function new();
 
     static public function decode(dat :ByteArray) :Dynamic {
-        return instance()._decode(dat);
+        var res = instance()._decode(dat);
+        dat.clear();
+        return res;
     }
 
     function _decode(dat :ByteArray) :Dynamic {
@@ -129,13 +131,20 @@ class ETF {
 
     static public function encode(obj :Dynamic) :ByteArray {
         var enc = new ByteArray();
-        return instance()._encode(obj, enc);
+        instance()._encode(obj, enc);
+        enc.position = 0;
+        var len = enc.length;
+        var full_res = new ByteArray();
+        //full_res.
+        // TODO: compress - but only if size is larger than 1000bytes or so
+        // otherwise just stick the normal 131 on it.
+        return enc;
     }
 
-    function _encode(obj :Dynamic, acc :ByteArray) :ByteArray {
-        //switch(Type.type(obj)) {
-        return acc;
-        //}
+    function _encode(obj :Dynamic, acc :ByteArray) :Void {
+        switch(Type.typeof(obj)) {
+            case TNull: acc.writeUnsignedByte(106);
+        }
     }
 }
 
