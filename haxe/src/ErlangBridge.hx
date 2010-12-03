@@ -72,9 +72,14 @@ class ErlangBridge {
                 trace('[' + Type.typeof(msg)+ '] ' +msg);
                 inbound_msg_queue.push(msg);
                 var re_enc = ETF.encode(msg);
+                var wrapped = ETF.encode(re_enc, false);
+                re_enc.clear();
+
+                // DEBUG
                 var str = '';
-                for(i in 0...re_enc.length) str += re_enc.readUnsignedByte() + ',';
-                trace("Re-encoded: " + str);
+                for(i in 0...wrapped.length) str += wrapped.readUnsignedByte() + ',';
+                trace("Wrapped: " + str);
+
                 state = WAITING_FOR_NEW;
                 attempt_decode_message();
             }

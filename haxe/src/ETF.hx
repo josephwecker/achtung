@@ -129,24 +129,34 @@ class ETF {
         }
     }
 
-    static public function encode(obj :Dynamic) :ByteArray {
+    static public function encode(obj :Dynamic, ?allow_compress=true) :ByteArray {
         var enc = new ByteArray();
-        enc.writeByte(131);
         instance()._encode(obj, enc);
         enc.position = 0;
         var len = enc.length;
-        if(len > 500) {
-            var full_res = new ByteArray();
-            enc.compress();
-            full_res.writeByte(131);
-            full_res.writeByte(80);
-            full_res.writeUnsignedInt(len);
-            full_res.writeBytes(enc);
-            enc.clear();
-            return full_res;
+        var enc_res = new ByteArray();
+        if(allow_compress && len > 500) {
+            var compressed = new ByteArray();
+            compressed.writeBytes(enc);
+            compressed.compress();
+            if(compressed.length < cast((len - 1),UInt)) {
+                enc_res.writeByte(131);
+                enc_res.writeByte(80);
+                enc_res.writeUnsignedInt(len);
+                enc_res.writeBytes(compressed);
+            } else {
+                enc_res.writeByte(131);
+                enc.position = 0;
+                enc_res.writeBytes(enc);
+            }
+            compressed.clear();
         } else {
-            return enc;
+            enc_res.writeByte(131);
+            enc_res.writeBytes(enc);
         }
+        enc.clear();
+        enc_res.position = 0;
+        return enc_res;
     }
 
     function _encode(obj :Dynamic, acc :ByteArray) :Void {
@@ -175,8 +185,27 @@ class ETF {
                         acc.writeByte(107);
                         acc.writeUTF(obj);
                     case '__AS3__.vec.Vector.<Object>':
-                        trace("GOT A VECTOR!");
-                    //case 'flash.utils.ByteArray':
+                        var v :flash.Vector<Dynamic> = obj;
+                        if(v.fixed) {  // Tuple
+                            if(v.length < 256) {
+                                acc.writeByte(104);
+                                acc.writeByte(v.length);
+                            } else {
+                                acc.writeByte(105);
+                                acc.writeUnsignedInt(v.length);
+                            }
+                            for(i in 0...v.length) {
+                                _encode(v[i], acc);
+                            }
+                        } else {  // List
+
+                        }
+                    case 'flash.utils.ByteArray': // Binary
+                        var b :flash.utils.ByteArray = obj;
+                        b.position = 0;
+                        acc.writeByte(109);
+                        acc.writeUnsignedInt(b.length);
+                        acc.writeBytes(b);
                     default:
                         trace("Class was: >" + Type.getClassName(c) + "<");
                 }
