@@ -1,4 +1,5 @@
 import flash.utils.ByteArray;
+using StringTools;
 
 class ETF {
     static var _instance :ETF;
@@ -182,30 +183,57 @@ class ETF {
             case TClass(c):
                 switch(Type.getClassName(c)) {
                     case 'String':
-                        acc.writeByte(107);
-                        acc.writeUTF(obj);
+                        var s :String = obj;
+                        if(s.startsWith(':') && s.endsWith(':')) {
+                            encode_atom(acc, s.substr(1,s.length-2));
+                        } else {
+                            acc.writeByte(107);
+                            acc.writeUTF(s);
+                        }
                     case '__AS3__.vec.Vector.<Object>':
-                        var v :flash.Vector<Dynamic> = obj;
-                        if(v.fixed) {  // Tuple
-                            if(v.length < 256) {
+                        if(obj.fixed) {  // Tuple
+                            if(obj.length < 256) {
                                 acc.writeByte(104);
-                                acc.writeByte(v.length);
+                                acc.writeByte(obj.length);
                             } else {
                                 acc.writeByte(105);
-                                acc.writeUnsignedInt(v.length);
+                                acc.writeUnsignedInt(obj.length);
                             }
-                            for(i in 0...v.length) {
-                                _encode(v[i], acc);
-                            }
+                            for(i in 0...obj.length) _encode(obj[i], acc);
                         } else {  // List
-
+                            acc.writeByte(108);
+                            acc.writeUnsignedInt(obj.length);
+                            for(i in 0...obj.length) _encode(obj[i], acc);
+                            acc.writeByte(106);
                         }
                     case 'flash.utils.ByteArray': // Binary
-                        var b :flash.utils.ByteArray = obj;
-                        b.position = 0;
+                        obj.position = 0;
                         acc.writeByte(109);
-                        acc.writeUnsignedInt(b.length);
-                        acc.writeBytes(b);
+                        acc.writeUnsignedInt(obj.length);
+                        acc.writeBytes(obj);
+                    case 'ErlAtom':
+                        encode_atom(acc, obj.atom);
+                    case 'ErlRef':
+                        acc.writeByte(114);
+                        acc.writeShort(obj.id.length);
+                        encode_atom(acc, obj.node.atom);
+                        acc.writeByte(obj.creation);
+                        for(id in cast(obj.id, Array<Dynamic>)) acc.writeUnsignedInt(id);
+                    case 'ErlPort':
+                        acc.writeByte(102);
+                        encode_atom(acc, obj.node.atom);
+                        acc.writeUnsignedInt(obj.id);
+                        acc.writeByte(obj.creation);
+                    case 'ErlPID':
+                        acc.writeByte(103);
+                        encode_atom(acc, obj.node.atom);
+                        acc.writeUnsignedInt(obj.id);
+                        acc.writeUnsignedInt(obj.serial);
+                        acc.writeByte(obj.creation);
+                    case 'ErlFun':
+                    case 'ErlExport':
+                    case 'ErlBits':
+
                     default:
                         trace("Class was: >" + Type.getClassName(c) + "<");
                 }
@@ -222,10 +250,6 @@ class ETF {
             acc.writeByte(100);
             acc.writeUTF(val);
         }
-    }
-
-    inline function encode_list(acc :ByteArray, val :flash.Vector<Dynamic>) {
-
     }
 }
 
