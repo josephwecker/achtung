@@ -131,20 +131,72 @@ class ETF {
 
     static public function encode(obj :Dynamic) :ByteArray {
         var enc = new ByteArray();
+        enc.writeByte(131);
         instance()._encode(obj, enc);
         enc.position = 0;
         var len = enc.length;
-        var full_res = new ByteArray();
-        //full_res.
-        // TODO: compress - but only if size is larger than 1000bytes or so
-        // otherwise just stick the normal 131 on it.
-        return enc;
+        if(len > 500) {
+            var full_res = new ByteArray();
+            enc.compress();
+            full_res.writeByte(131);
+            full_res.writeByte(80);
+            full_res.writeUnsignedInt(len);
+            full_res.writeBytes(enc);
+            enc.clear();
+            return full_res;
+        } else {
+            return enc;
+        }
     }
 
     function _encode(obj :Dynamic, acc :ByteArray) :Void {
         switch(Type.typeof(obj)) {
-            case TNull: acc.writeUnsignedByte(106);
+            case TNull:
+                acc.writeByte(106);
+            case TInt:
+                var i :Int = obj;
+                if(i > 0 && i < 256) {
+                    acc.writeByte(97);
+                    acc.writeByte(i);
+                } else {
+                    acc.writeByte(98);
+                    acc.writeInt(i);
+                }
+            case TFloat:
+                acc.writeByte(70);
+                acc.writeFloat(obj);
+            case TBool:
+                var b :Bool = obj;
+                encode_atom(acc, (b ? 'true' : 'false'));
+                encode_atom(acc, (obj ? 'true' : 'false'));
+            case TClass(c):
+                switch(Type.getClassName(c)) {
+                    case 'String':
+                        acc.writeByte(107);
+                        acc.writeUTF(obj);
+                    case '__AS3__.vec.Vector.<Object>':
+                        trace("GOT A VECTOR!");
+                    //case 'flash.utils.ByteArray':
+                    default:
+                        trace("Class was: >" + Type.getClassName(c) + "<");
+                }
+            default:
         }
+    }
+
+    inline function encode_atom(acc :ByteArray, val :String) {
+        if(val.length < 256) {
+            acc.writeByte(115);
+            acc.writeByte(val.length);
+            acc.writeUTFBytes(val);
+        } else {
+            acc.writeByte(100);
+            acc.writeUTF(val);
+        }
+    }
+
+    inline function encode_list(acc :ByteArray, val :flash.Vector<Dynamic>) {
+
     }
 }
 
