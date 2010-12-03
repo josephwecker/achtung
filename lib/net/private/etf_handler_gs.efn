@@ -71,6 +71,7 @@ send_test_data|State|
   send(State, ([], [], []))          # Small Tuple
   send(State, list_to_tuple(1..257)) # Large Tuple
   send(State, "string")              # String
+  send(State, ":atomish:")           # String that will become an atom
   send(State, [[], []])              # List (normal)
   send(State, [1:2])                 # List (improper)
   send(State, <["binary"]>)          # Binary
