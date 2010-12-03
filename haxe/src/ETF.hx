@@ -1,6 +1,20 @@
 import flash.utils.ByteArray;
 using StringTools;
 
+/**
+ * Main Erlang External Term Format encoder / decoder.  Implemented as a
+ * singleton so that it's basically static access but fast when recursing the
+ * structures.
+ *
+ *  Erlang      | HaXe
+ * -------------+-------------
+ *
+ *
+ * @todo Decode/encode hashes (either proplists or structs)
+ * @todo Records into anon objects with __record_name__
+ * @todo
+ *
+ */
 class ETF {
     static var _instance :ETF;
 
@@ -38,7 +52,7 @@ class ETF {
                       return Std.parseFloat(float_string);
             // Atom (old)
             case 100: var len = dat.readUnsignedShort();
-                      return new ErlAtom(dat.readUTFBytes(len));
+                      return ':' + dat.readUTFBytes(len) + ':';
             // Reference (old)
             case 101: var id = new Array<UInt>();
                       var node = _decode(dat);
@@ -91,7 +105,7 @@ class ETF {
                       return new ErlRef(node, id, creation);
             // Small Atom
             case 115: var len = dat.readUnsignedByte();
-                      return new ErlAtom(dat.readUTFBytes(len));
+                      return ':' + dat.readUTFBytes(len) + ':';
             // Function
             // TODO: The num_free cast here for haXe may break big lists!
             case 112: dat.readUnsignedInt(); // Size, which we don't need
@@ -185,7 +199,7 @@ class ETF {
                     case 'String':
                         var s :String = obj;
                         if(s.startsWith(':') && s.endsWith(':')) {
-                            encode_atom(acc, s.substr(1,s.length-2));
+                            encode_atom(acc, s);
                         } else {
                             acc.writeByte(107);
                             acc.writeUTF(s);
@@ -211,22 +225,20 @@ class ETF {
                         acc.writeByte(109);
                         acc.writeUnsignedInt(obj.length);
                         acc.writeBytes(obj);
-                    case 'ErlAtom':
-                        encode_atom(acc, obj.atom);
                     case 'ErlRef':
                         acc.writeByte(114);
                         acc.writeShort(obj.id.length);
-                        encode_atom(acc, obj.node.atom);
+                        encode_atom(acc, obj.node);
                         acc.writeByte(obj.creation);
                         for(id in cast(obj.id, Array<Dynamic>)) acc.writeUnsignedInt(id);
                     case 'ErlPort':
                         acc.writeByte(102);
-                        encode_atom(acc, obj.node.atom);
+                        encode_atom(acc, obj.node);
                         acc.writeUnsignedInt(obj.id);
                         acc.writeByte(obj.creation);
                     case 'ErlPID':
                         acc.writeByte(103);
-                        encode_atom(acc, obj.node.atom);
+                        encode_atom(acc, obj.node);
                         acc.writeUnsignedInt(obj.id);
                         acc.writeUnsignedInt(obj.serial);
                         acc.writeByte(obj.creation);
@@ -241,14 +253,15 @@ class ETF {
         }
     }
 
-    inline function encode_atom(acc :ByteArray, val :String) {
-        if(val.length < 256) {
+    inline function encode_atom(acc :ByteArray, s :String) {
+        if(s.startsWith(':') && s.endsWith(':')) s=s.substr(1,s.length-2);
+        if(s.length < 256) {
             acc.writeByte(115);
-            acc.writeByte(val.length);
-            acc.writeUTFBytes(val);
+            acc.writeByte(s.length);
+            acc.writeUTFBytes(s);
         } else {
             acc.writeByte(100);
-            acc.writeUTF(val);
+            acc.writeUTF(s);
         }
     }
 }
@@ -256,14 +269,8 @@ class ETF {
 typedef ErlTuple = flash.Vector<Dynamic>;
 typedef ErlList  = flash.Vector<Dynamic>;
 
-class ErlAtom {
-    public var atom      :String;
-    public function new(atom) {this.atom = atom;}
-    public function toString() {return ':'+atom+':';}
-}
-
 class ErlRef {
-    public var node      :ErlAtom;
+    public var node      :String;
     public var id        :Array<UInt>;
     public var creation  :UInt;
 
@@ -276,7 +283,7 @@ class ErlRef {
 }
 
 class ErlPort {
-    public var node      :ErlAtom;
+    public var node      :String;
     public var id        :UInt;
     public var creation  :UInt;
 
@@ -289,7 +296,7 @@ class ErlPort {
 }
 
 class ErlPID {
-    public var node      :ErlAtom;
+    public var node      :String;
     public var id        :UInt;
     public var serial    :UInt;
     public var creation  :UInt;
@@ -310,7 +317,7 @@ class ErlFun {
     public var arity     :UInt;
     public var uniq      :ByteArray;
     public var index     :UInt;
-    public var module    :ErlAtom;
+    public var module    :String;
     public var old_index :UInt;
     public var old_uniq  :UInt;
     public var pid       :ErlPID;
@@ -328,8 +335,8 @@ class ErlFun {
 
 
 class ErlExport {
-    public var module    :ErlAtom;
-    public var fun       :ErlAtom;
+    public var module    :String;
+    public var fun       :String;
     public var arity     :UInt;
     public function new(m,f,a) {
         module = m; fun = f; arity = a;
