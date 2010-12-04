@@ -6,13 +6,45 @@ using StringTools;
  * singleton so that it's basically static access but fast when recursing the
  * structures.
  *
- *  Erlang      | HaXe
- * -------------+-------------
+ *  Type       | Erlang            | HaXe             | Status
+ * ------------+-------------------+------------------+-------------
+ *  atom       | hello :atom      <|> ':hello:':String | done
+ *  null       | [] :list         <|> null :Null       | done
+ *  bool       | true/false :atom <|> true/false :Bool | done
+ *  smallint   | 123 :smallint    <|> 123 :Int         | done
+ *  int        | 1234 :int        <|> 1234 :Int        | done
+ *  int        | -1234 :int       <|> -1234 :Int       | done
+ *  uint       | 0xFFFFFFFF :int  <|> 0xFFFFFFFF :UInt | nyi
+ *  bignum     | 999999999999 :int |                   | no support
+ *  double     | 13.123 :float    <|> 13.123 :Float    | done
  *
+ * (Structures)
+ *  binary     | <<1,2,3>> :bin   <|> :ByteArray       | done
+ *  bitstring  | <<1:3>> :bitstr  <|> :ErlBits         | partial
+ *  utf-string | "hello" :list    <|> "hello" :String  | done
+ *  tuple      | {1, 2, 3} :tuple <|> [1,2,3] :Vector^1| done
+ *             |                  <|  [1,2,3] :Array   | nyi
+ *  list       | [1,2,3] :list    <|> [1,2,3] :Vector^2| done
+ *             |                  <|  :List            | nyi
+ *             |                  <|  :FastList        | nyi
  *
- * @todo Decode/encode hashes (either proplists or structs)
- * @todo Records into anon objects with __record_name__
- * @todo
+ * (Complex Structures)
+ *  hash       | [{key,val},...]  <|> :Hash            | nyi
+ *  object     | {struct, [{}...]}<|> :Klass (cast)^3  | nyi
+ *
+ * (Erlang special structures)
+ *  reference  | #Ref<0.0.0.1>    <|> :ErlRef          | done
+ *  port       | :port-identifier <|> :ErlPort         | done
+ *  lambda     | #Fun<...>        <|> :ErlFun          | partial
+ *             |                   |  :(function)      | no support
+ *  pid        | #PID<0.0.0.1>    <|> :ErlPID          | done
+ *  export     | math:pow/2       <|> :ErlExport       | partial
+ *
+ *  Notes:
+ *  ^1: Tuple if the vector has 'fixed' set to true or if just a normal array.
+ *  ^2: List only if the vector is not 'fixed.'
+ *  ^3: Metadat can be stored as some of the fields, esp. class name, which
+ *      will otherwise be anonymous
  *
  */
 class ETF {
@@ -52,7 +84,10 @@ class ETF {
                       return Std.parseFloat(float_string);
             // Atom (old)
             case 100: var len = dat.readUnsignedShort();
-                      return ':' + dat.readUTFBytes(len) + ':';
+                      var str = dat.readUTFBytes(len);
+                      if(str == 'true') return true;
+                      if(str == 'false') return false;
+                      return ':' + str + ':';
             // Reference (old)
             case 101: var id = new Array<UInt>();
                       var node = _decode(dat);
