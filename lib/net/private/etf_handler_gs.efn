@@ -12,38 +12,47 @@
 
 <init|[Server, Sock, Opts]|
   State =
-    sock:   Sock,
-    opts:   Opts,
-    server: Server,
-    acc:    <[ ]>
+    sock:          Sock,
+    opts:          Opts,
+    server:        Server,
+    acc:           <[ ]>,
+    wait_len:      0,
+    inbound_state: waiting_for_new
+
   (ok, State)
 
 <handle_info|set,                 State|: (noreply, State)
 <handle_info|shutdown,            State|: (stop, normal, State)
 <handle_info|(tcp_closed, _),     State|: (stop, normal, State)
-<handle_info|(tcp, _RSock, <["TESTDAT\r\n"]>), State|
-  send_test_data(State)
-  (noreply, State)
-<handle_info|(tcp, _RSock, Data), State|
-  Acc = State.acc
-  #NewAcc = process_data(Data, State.opts.recipient, Acc)
-  NewAcc = process_data(Data, none, Acc)
-  (noreply, State.acc := NewAcc)
-
+<handle_info|(tcp, _RSock, Data), State|: handle_data(Data, State)
 <handle_info|Outbound, State|
   send(State, Outbound)
   (noreply, State)
-
 <terminate|_Reason, State|
   Server = State.server
   Server.rm_persistent(self())
   S = State.sock
   @S.close()
 
-process_data|New, _, Acc|:
-  io.format("Got data: ~p", [New])
-  [Acc, New]  # which is to say, nyi
 
+handle_data|<["TESTDAT\r\n"]>, State|
+  send_test_data(State)
+  (noreply, State)
+handle_data|Data, State|
+  #Acc = State.acc
+  #NewAcc = process_data(Data, State.opts.recipient, Acc)
+  #NewAcc = process_data(Data, none, Acc)
+  #(noreply, State.acc := NewAcc)
+
+#process_data|New, _, Acc|:
+  #io.format("Got data: ~p", [New])
+  #[Acc, New]  # which is to say, nyi
+
+
+
+
+
+###############################################################################
 
 ## @doc Sends a bunch of encoded data types in order to help the client test.
 ## The following are not sent out because they are not needed:
