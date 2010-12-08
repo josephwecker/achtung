@@ -1,0 +1,142 @@
+@@extends(gen_server_basic)
+
+## Implements the main socket server: listening, accepting, and spawning.
+## When this is initialized, the Opts structure can have any of the following:
+##
+## @param worker_fn     A simple fn for handling communications w/ socket
+## @param worker_serve  A gen_server module for handling communications w/
+##                      socket. A worker_serve needs to accept the "set"
+##                      message and do rm_persistent(Server, self()) when it is
+##                      all done.
+## @param port          Port that will be listened to - defaults to 4113
+## @param nodelay       Socket option - defaults to true
+## @param reuseaddr     Socket option - defaults to true
+## @param packet        Socket option - defaults to raw
+## @param packet_size   Socket option - defaults to 1024
+##
+
+
+error|Txt|: error(Txt, [])
+error|Txt, Dat|: error_logger.error_msg(Txt, Dat)
+warn |Txt, Dat|: error_logger.warning_msg(Txt, Dat)
+info |Txt, Dat|: error_logger.info_msg(Txt, Dat)
+
+<add_persistent|Server, Pid|: gen_server.cast(Server, (add_p, Pid))
+<rm_persistent |Server, Pid|: gen_server.cast(Server, (rm_p, Pid))
+
+<init|Opts|
+  # TODO: Make sure that required properties are sent in
+  switch socket_listen(Opts)
+    case (ok, Listener)
+      AcceptorPid = start_acceptor(Listener, Opts)
+      State = {opts:        Opts,
+               listener:    socket.new(Listener),
+               acceptor:    AcceptorPid,
+               persistents: []}
+      (ok, State)
+    case (error, Err)
+      error("Couldn't seem to listen: ~p", [Err])
+      (stop, Err)
+    case ('EXIT', Reason)
+      error("Bad error while listening: ~p", [Reason])
+      (stop, Reason)
+
+<handle_cast|stop,             State|: (stop, normal, State)
+<handle_cast|(add_p, Pid),     State|
+  Pers = [Pid : State.persistents]
+  (noreply, State.persistents := Pers)
+
+<handle_cast|(rm_p, Pid),      State|
+  (noreply, State.persistents := lists.delete(Pid, State.persistents))
+
+<handle_cast|(multicast, Msg), State|
+  send_to_pids(State.persistents, Msg)
+  (noreply, State)
+
+<handle_cast|Msg,              State|
+  warn("Received unknown message ~p", [Msg])
+  (noreply, State)
+
+<handle_info|('EXIT', _Pid, (error, ((accept_failed, (shutdown,_))))), State|
+  # Shutdown in progress.  Ignore.
+  (noreply, State)
+<handle_info|('EXIT', _Pid, Reason), State|
+  error("Acceptor has died with reason: \"~p\" - Reinitializing", [Reason])
+  AcceptorPid = start_acceptor(State.listener, State.opts)
+  (noreply, State.acceptor := AcceptorPid)
+<handle_info|shutdown, State|
+  (stop, normal, State)
+<handle_info|Info, State|
+  warn("Received unknown info in ~p: ~p", [$module, Info])
+  (noreply, State)
+
+<terminate|_Reason, State|
+  info("Shutting down socket server ~p and any connections.", [self()])
+  L = State.listener
+  L.close()
+  exit(State.acceptor, kill)
+  send_to_pids(State.persistents, shutdown)
+  terminated
+
+socket_listen|Opts|
+  SockOpts = [binary,
+              (nodelay,     struct.getdef(Opts, nodelay,     true)),
+              (reuseaddr,   struct.getdef(Opts, reuseaddr,   true)),
+              (packet,      struct.getdef(Opts, packet,      raw)),
+              (packet_size, struct.getdef(Opts, packet_size, 1024))]
+  Port = struct.getdef(Opts, port, 4113)
+  gen_tcp.listen(Port, SockOpts)
+
+start_acceptor|Listener, Opts|
+  spawn_link($module, acceptor_loop, [self(), Listener, Opts])
+
+<acceptor_loop|Server, Listener, Opts|
+  switch gen_tcp.accept(Listener)
+    case (ok, Sock)
+      info("Connection coming in.", [])
+      spawn_handler(Server, socket.new(Sock), Opts)
+      acceptor_loop(Server, Listener, Opts)
+    case (error, closed)
+      exit(closing)
+    case (error, Error)
+      error("Accept failed with error: ~p", [Error])
+      acceptor_loop(Server, Listener, Opts)
+    case ('EXIT', Error)
+      error("Accept exited with error: ~p", [Error])
+      exit( (error, (accept_failed, Error)) )
+
+spawn_handler|Server, Sock, Opts|
+  S = @Sock.raw_socket()
+
+  # TODO: YOU ARE HERE- need a way to pass in a gen-server interface instead of
+  # just a handler function so that we don't have to set the controlling
+  # process twice in a row.  Would look at Opts and basically start_anon
+  # instead of HandoffFun
+  (ok, Pid) = switch struct.getdef(Opts, worker_fn, none)
+    case none
+      gen_server_basic.start_anon(struct.get(Opts, worker_serve), [Server, Sock, Opts])
+    case WorkerFn
+      HandOffFun = fn()
+        receive set
+          WorkerFn(Sock, Opts)
+          rm_persistent(Server, self())
+        after 60000
+          error("Timeout waiting for set in controller. Closing.")
+          @Sock.close()
+      (ok, spawn(HandOffFun))
+  switch gen_tcp.controlling_process(S, Pid)
+    case ok
+      Pid ! set
+      add_persistent(Server, Pid)
+    case (error, Err)
+      error("Couldn't set the controlling process. Closing. ~p", [Err])
+      @Sock.close()
+    case Other
+      error("Got back ~p", [Other])
+      @Sock.close()
+
+send_to_pids|[],  _Msg|: ok
+send_to_pids|Pids, Msg|
+  Send = fn(P){ try {P ! Msg} catch _ {nop}}
+  [Send(P) for P in Pids]
+  ok

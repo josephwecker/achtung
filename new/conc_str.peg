@@ -1,0 +1,10 @@
+
+
+%document    <- (string_part / ws / newline)* ~;
+document    <- string_part* ~;
+string_part <- newline? '"' (!'"' .)+ '"' newline? ~;
+%string_part <- '"'? (!'"' ("\\\\" / '\\"' / .))* '"\n'? ~;
+%string_part <- '"' chars:(!'"' ("\\\\" / '\\"' / .))* '"\n' ~;
+               %`lists:flatten(proplists:get_value(chars, Node))`;
+%ws          <- [ \t]+ `[]`;
+newline     <- ("\r\n" / "\r" / "\n")+ ~;
