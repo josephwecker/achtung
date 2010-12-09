@@ -1,6 +1,18 @@
-%% Run indent/detent algorithm and place appropriate strings in place for the
-%% PEG grammar to use.
+%% Run indent/detent algorithm and inject indent and dedent tokens (9 and 21)
+%% when appropriate.  Tabs are treates as 2 spaces. Returns either:
+%%  {ok, Result:list, State:tuple} or
+%%  {indent_error, ResultSoFar, State}
+%% The State tuple that is passed around is this:
+%%   {Aumulator, IndentStack, CurrentIndentLevel, CurrentState} where
+%%     CurrentState is one of 'start' or 'inline'
 %%
+%% It is made so that it can use streamed data- that's why it always hands back
+%% the current state- just in case you're not done yet. One problem with that
+%% though is that generally at the end of a file you want to generate dedent
+%% tokens.  Make sure and give it an EOF/EOT (4 or Ctrl-D) as the last token to
+%% have it generate the dedent tokens as appropriate.
+%%
+%% Algorithm (basically):
 %% From Python:
 %% Before the first line of the file is read, a single zero is pushed on the
 %% stack; this will never be popped off again. The numbers pushed on the stack
@@ -13,52 +25,70 @@
 %% the end of the file, a DEDENT token is generated for each number remaining on
 %% the stack that is larger than zero.
 %%
-%%
-%% This module replaces the first ws of any indent with 
 
 -module(indents).
+-export([file_scan/1, full_scan/1, scan/1, scan/2]).
+-define(REV(List), lists:reverse(List)).
+-define(INIT, {[],[0],0,start}).
 
+file_scan(FName)->
+  {ok, File} = file:open(FName, [raw, binary, {read_ahead, 512}]),
+  do_file_scan(File).
+full_scan(Data)->erlang:iolist_to_binary([Data|4],?INIT).
+scan(Data) -> dents(Data, ?INIT).
+scan(Data, State) when is_list(Data) -> dents(erlang:iolist_to_binary(Data), State);
+scan(Data, {_,_,_, inline} = State) -> next(Data, State);
+scan(Data, State) -> dents(Data, State).
 
-dents(Data) ->
-  dents(Data, {[], [], 0, line_start}).
+do_file_scan(File) ->
+  do_file_scan([], File, 1, ?INIT).
+do_file_scan(Acc, File, LineNum, State) ->
+  case file:read_line(File) of
+    eof ->
+      case dents(<<4>>, State) of
+        {ok, Res, _} -> erlang:iolist_to_binary([Acc | Res]);
+        Other -> {LineNum, Other}
+      end;
+    {ok, Data} ->
+      case dents(Data, State) of
+        {ok,Res,State2}->do_file_scan([Acc|Res],File,LineNum+1,State2);
+        Other -> {LineNum, Other}
+      end;
+    Other -> {LineNum, Other}
+  end.
 
-dents(Data, State) when is_list(Data) ->
-  dents(erlang:iolist_to_binary(Data), State);
+% Indents
+dents(<<32, R/binary>>, {A, IS, CI, _}) -> dents(R, {[32|A], IS, CI+1, start});
+dents(<<9, R/binary>>, {A, IS, CI, _}) -> dents(R, {[9|A], IS, CI+2, start});
 
-% dents(Data, {Acc, IStack, CurrILvl, State})
-dents(Data, {_,_,_, inline} = State) ->
-  to_nextline(Data, State);
-dents(<<32, Rest/binary>>, {Acc, IS, CIL, _}) ->
-  dents(Rest, {[32|Acc], IS, CIL+1, line_start});
-dents(<<9, Rest/binary>>, {Acc, IS, CIL, _}) ->
-  dents(Rest, {[9|Acc], IS, CIL+2, line_start});
-% Newlines before other characters- throw away current indent level
-dents(<<"\r\n", Rest/binary>>, {Acc, IS, _, _}) ->
-  dents(Rest, {["\r\n" | Acc], IS, 0, line_start});
-dents(<<"\n", Rest/binary>>, {Acc, IS, _, _}) ->
-  dents(Rest, {["\n" | Acc], IS, 0, line_start});
-dents(<<"\r", Rest/binary>>, {Acc, IS, _, _}) ->
-  dents(Rest, {["\r" | Acc], IS, 0, line_start});
+% Essentially blank lines- throw away current indent level & continue
+dents(<<"\r\n",R/binary>>,{A,IS,_,_})->dents(R,{[$\r|[$\n|A]],IS,0,start});
+dents(<<$\n,R/binary>>,{A,IS,_,_})->dents(R,{[$\n|A],IS,0,start});
+dents(<<$\r,R/binary>>,{A,IS,_,_})->dents(R,{[$\r|A],IS,0,start});
+dents(<<4>>,{A,IS,_,_})->
+  case dedents(A,IS,0) of {A2,_}->{ok,?REV(A2),{[],[0],0,start}};E->E end;
+
 % Same indent level as last.  Moving along...
-dents(<<C, Rest/binary>>, {Acc, [Last | _] = IS, Last, _}) ->
-  to_nextline(Rest, {[C | Acc], IS, 0, inline});
+dents(<<C,R/binary>>,{A,[L|_]=IS,L,_})->next(R,{[C|A],IS,0,inline});
+% Indent
+dents(<<C,R/binary>>,{A,[L|_]=IS,CI,_}) when CI>L->next(R,{[C|[6|A]],[CI|IS],0,inline});
+% Dedent and/or propagate error
+dents(<<C,R/binary>>,{A,IS,CI,_})->
+  case dedents(A, IS, CI) of {A2,IS2}->next(R,{[C|A2],IS2,0,inline});E->E end;
+% Done (... for now, muahaha)
+dents(<<>>,{A,IS,CI,_})->{ok,?REV(A),{[],IS,CI,start}}.
 
-% New indent level - indented more
-dents(<<C, Rest/binary>>, {[WS| Acc], [Last | _] = IS, CIL, _}) when CIL > Last ->
-  % replace last whitespace w/ indent token, push CIL onto stack, ...
-  to_nextline(Rest, {
-
-
-
+% Keep dedenting & popping until we're lined up again
+dedents(A,[],CI)->{indent_error,?REV(A),empty,CI};
+dedents(A,[L|R],L)->{A,[L|R]};
+dedents(A,[L|_R],CI)when CI>L->{indent_error,?REV(A),L,CI};
+dedents(A,[_L|R],CI)->dedents([21|A],R,CI).
 
 %% Skip ahead to right after the next newline
-to_nextline(<<>>, {Acc, _, _, _} = State) ->
-  {ok, lists:reverse(Acc), {[], 0, inline}};
-to_nextline(<<"\r\n", Rest/binary>>, {Acc, IS, _, _}) ->
-  dents(Rest, {["\n\r" | Acc], IS, 0, line_start});
-to_nextline(<<"\n", Rest/binary>>, {Acc, IS, _, _}) ->
-  dents(Rest, {["\n" | Acc], IS, 0, line_start});
-to_nextline(<<"\r", Rest/binary>>, {Acc, IS, _, _}) ->
-  dents(Rest, {["\r" | Acc], IS, 0, line_start});
-to_nextline(<<C, Rest/binary>>, {Acc, IS, _, _}) ->
-  to_nextline(Rest, {[C|Acc], IS, 0, inline}).
+next(<<>>,{A,IS,_,_})->{ok,?REV(A),{[],IS,0,inline}};
+next(<<"\r\n",R/bytes>>,{A,IS,_,_})->dents(R,{[$\n|[$\r|A]],IS,0,start});
+next(<<$\n,R/bytes>>,{A,IS,_,_})->dents(R,{[$\n|A],IS,0,start});
+next(<<$\r,R/bytes>>,{A,IS,_,_})->dents(R,{[$\r|A],IS,0,start});
+next(<<4>>,{A,IS,_,_})->
+  case dedents(A,IS,0) of {A2,_}->{ok,?REV(A2),{[],[0],0,start}};E->E end;
+next(<<C,R/bytes>>,{A,IS,_,_})->next(R,{[C|A],IS,0,inline}).
