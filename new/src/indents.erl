@@ -1,19 +1,17 @@
 %% Run indent/detent algorithm and inject indent and dedent tokens (9 and 21)
-%% when appropriate.  Tabs are treates as 2 spaces. Returns either:
-%%  {ok, Result:list, State:tuple} or
-%%  {indent_error, ResultSoFar, State}
-%% The State tuple that is passed around is this:
-%%   {Aumulator, IndentStack, CurrentIndentLevel, CurrentState} where
-%%     CurrentState is one of 'start' or 'inline'
+%% when appropriate.  Tabs are treated as 2 spaces.  An EOF (<<4>>) causes it
+%% to put on any remaining dedents it needs to.
 %%
-%% It is made so that it can use streamed data- that's why it always hands back
-%% the current state- just in case you're not done yet. One problem with that
-%% though is that generally at the end of a file you want to generate dedent
-%% tokens.  Make sure and give it an EOF/EOT (4 or Ctrl-D) as the last token to
-%% have it generate the dedent tokens as appropriate.
+%% file_scan(Filename) gives the result of scanning the file as a binary.  If
+%%    there are any errors it gives {LineNumber, Error} instead.
+%% full_scan(Data) automatically appends an EOF so it can be used for strings
+%%    etc. that you know are "complete"
+%% scan(Data) or scan(Data, PreviousState) allow you to get results back in a
+%%    streaming environment / continuous way. Gives back either
+%%    {ok, ResultSoFar, CurrentState} or an error.
 %%
-%% Algorithm (basically):
-%% From Python:
+%% == Implementation ==
+%% Algorithm (basically) - to quote documentation from Python:
 %% Before the first line of the file is read, a single zero is pushed on the
 %% stack; this will never be popped off again. The numbers pushed on the stack
 %% will always be strictly increasing from bottom to top. At the beginning of
@@ -25,6 +23,10 @@
 %% the end of the file, a DEDENT token is generated for each number remaining on
 %% the stack that is larger than zero.
 %%
+%% The State tuple that is passed around is this:
+%%   {Aumulator, IndentStack, CurrentIndentLevel, CurrentState} where
+%%     CurrentState is one of 'start' or 'inline'
+%%
 
 -module(indents).
 -export([file_scan/1, full_scan/1, scan/1, scan/2]).
@@ -32,6 +34,7 @@
 -define(INIT, {[],[0],0,start}).
 
 file_scan(FName)->
+  % We're going to be nice and not pull it all into memory to begin with.
   {ok, File} = file:open(FName, [raw, binary, {read_ahead, 512}]),
   do_file_scan(File).
 full_scan(Data)->erlang:iolist_to_binary([Data|4],?INIT).
