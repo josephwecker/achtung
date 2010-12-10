@@ -1,1 +1,4 @@
-Working on some quick transformations to make Erlang even more awesome
+Erlish: An alternate Erlang syntax that doesn't try to be anything other than
+Erlang (with an alternate syntax).  Inspired heavily by
+http://marianoguerra.com.ar/efene/ (highly recommended), but with my own biased
+asthetics.

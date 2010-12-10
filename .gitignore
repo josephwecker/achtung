@@ -1,4 +1,4 @@
 .*.swp
 .DS_Store
 *.beam
-haxe/test/.build/
+.attic/haxe/test/.build/
