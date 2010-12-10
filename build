@@ -1,4 +1,3 @@
 #!/bin/bash
 mkdir -p ebin
 erlc -o ebin src/indents.erl
-erlc -o ebin src/cerlish.erl
