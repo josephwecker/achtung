@@ -1,6 +1,13 @@
 #!/usr/bin/env escript
 %%! -smp enable +h 4096
 
+main(Opts) ->
+  {Flags, Files} = parse_opts([], Opts),
+  % lists:each
 
+parse_opts(Acc, ["-o", Outputdir | R]) ->
+  parse_opts([{outputdir, Outputdir} | Acc], R);
+parse_opts(Acc, Files) ->
+  {lists:reverse(Acc), Files}.
 
 % vim: set filetype=erlang:
