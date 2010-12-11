@@ -70,20 +70,6 @@ do_file_scan(File, LineNum, State) ->
       end;
     Other -> {LineNum, Other}
   end.
-%do_file_scan(Acc, File, LineNum, State) ->
-%  case file:read_line(File) of
-%    eof ->
-%      case dents(<<4>>, State) of
-%        {ok, State, _} -> erlang:iolist_to_binary([Acc | Res]);
-%        Other -> {LineNum, Other}
-%      end;
-%    {ok, Data} ->
-%      case dents(Data, State) of
-%        {ok,Res,State2}->do_file_scan([Acc|Res],File,LineNum+1,State2);
-%        Other -> {LineNum, Other}
-%      end;
-%    Other -> {LineNum, Other}
-%  end.
 
 % Indents
 dents(<<32, R/binary>>, {A, IS, CI, _}) -> dents(R, {<<A/binary,32>>, IS, CI+1, start});
