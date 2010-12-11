@@ -28,9 +28,10 @@
 %%     CurrentState is one of 'start' or 'inline'
 %%
 
--module(indents).
+-module(indents_l).
 -export([file_scan_test/0, file_scan/1, full_scan/1, scan/1, scan/2]).
--define(INIT, {<<>>,[0],0,start}).
+-define(REV(List), lists:reverse(List)).
+-define(INIT, {[],[0],0,start}).
 
 file_scan_test() ->
   fprof:trace(start),
@@ -42,81 +43,69 @@ file_scan_test() ->
   file_scan("test/indents-test-text.txt"),
   fprof:trace(stop),
   fprof:profile(),
-  fprof:analyse([{dest, "indents.analysis.erl"}, {cols, 50}, no_callers, {totals, true}]).
+  fprof:analyse([{dest, "indents_l.analysis.erl"}, {cols, 50}, no_callers, {totals, true}]).
 
 file_scan(FName)->
   % We're going to be nice and not pull it all into memory to begin with.
   {ok, File} = file:open(FName, [raw, binary, {read_ahead, 512}]),
   do_file_scan(File).
-
 full_scan(Data)->erlang:iolist_to_binary([Data|4],?INIT).
-
 scan(Data) -> dents(Data, ?INIT).
-scan(Data, {_,_,_, inline} = State) -> next(Data, State);
 scan(Data, State) when is_list(Data) -> dents(erlang:iolist_to_binary(Data), State);
+scan(Data, {_,_,_, inline} = State) -> next(Data, State);
 scan(Data, State) -> dents(Data, State).
 
 do_file_scan(File) ->
-  do_file_scan(File, 1, ?INIT).
-do_file_scan(File, LineNum, State) ->
+  do_file_scan([], File, 1, ?INIT).
+do_file_scan(Acc, File, LineNum, State) ->
   case file:read_line(File) of
-    eof -> case dents(<<4>>, State) of
-        {ok, {Fin, _, _, _}} -> Fin;
+    eof ->
+      case dents(<<4>>, State) of
+        {ok, Res, _} -> erlang:iolist_to_binary([Acc | Res]);
         Other -> {LineNum, Other}
       end;
-    {ok, Data} -> case dents(Data, State) of
-        {ok, State2} -> do_file_scan(File, LineNum+1, State2);
+    {ok, Data} ->
+      case dents(Data, State) of
+        {ok,Res,State2}->do_file_scan([Acc|Res],File,LineNum+1,State2);
         Other -> {LineNum, Other}
       end;
     Other -> {LineNum, Other}
   end.
-%do_file_scan(Acc, File, LineNum, State) ->
-%  case file:read_line(File) of
-%    eof ->
-%      case dents(<<4>>, State) of
-%        {ok, State, _} -> erlang:iolist_to_binary([Acc | Res]);
-%        Other -> {LineNum, Other}
-%      end;
-%    {ok, Data} ->
-%      case dents(Data, State) of
-%        {ok,Res,State2}->do_file_scan([Acc|Res],File,LineNum+1,State2);
-%        Other -> {LineNum, Other}
-%      end;
-%    Other -> {LineNum, Other}
-%  end.
 
 % Indents
-dents(<<32, R/binary>>, {A, IS, CI, _}) -> dents(R, {<<A/binary,32>>, IS, CI+1, start});
-dents(<<9, R/binary>>, {A, IS, CI, _}) -> dents(R, {<<A/binary,9>>, IS, CI+2, start});
+%dents(<<32, R/binary>>, {A, IS, CI, _}) -> dents(R, {[32|A], IS, CI+1, start});
+%dents(<<9, R/binary>>, {A, IS, CI, _}) -> dents(R, {[9|A], IS, CI+2, start});
+dents(<<32, R/binary>>, {A, IS, CI, _}) -> dents(R, {[32|A], IS, CI+1, start});
+dents(<<9, R/binary>>, {A, IS, CI, _}) -> dents(R, {[9|A], IS, CI+2, start});
 
 % Essentially blank lines- throw away current indent level & continue
-dents(<<"\r\n",R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\r,$\n>>,IS,0,start});
-dents(<<$\n,R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\n>>,IS,0,start});
-dents(<<$\r,R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\r>>,IS,0,start});
-dents(<<4>>,{A,IS,CI,CS})->
-  case dedents(A,IS,0) of {A2,_}->{ok,{A2,IS,CI,CS}};E->E end;
+dents(<<"\r\n",R/binary>>,{A,IS,_,_})->dents(R,{[$\r|[$\n|A]],IS,0,start});
+dents(<<$\n,R/binary>>,{A,IS,_,_})->dents(R,{[$\n|A],IS,0,start});
+dents(<<$\r,R/binary>>,{A,IS,_,_})->dents(R,{[$\r|A],IS,0,start});
+dents(<<4>>,{A,IS,_,_})->
+  case dedents(A,IS,0) of {A2,_}->{ok,?REV(A2),{[],[0],0,start}};E->E end;
 
 % Same indent level as last.  Moving along...
-dents(<<C,R/binary>>,{A,[L|_]=IS,L,_})->next(R,{<<A/binary,C>>,IS,0,inline});
+dents(<<C,R/binary>>,{A,[L|_]=IS,L,_})->next(R,{[C|A],IS,0,inline});
 % Indent
-dents(<<C,R/binary>>,{A,[L|_]=IS,CI,_}) when CI>L->next(R,{<<A/binary,6,C>>,[CI|IS],0,inline});
+dents(<<C,R/binary>>,{A,[L|_]=IS,CI,_}) when CI>L->next(R,{[C|[6|A]],[CI|IS],0,inline});
 % Dedent and/or propagate error
 dents(<<C,R/binary>>,{A,IS,CI,_})->
-  case dedents(A, IS, CI) of {A2,IS2}->next(R,{<<A2/binary,C>>,IS2,0,inline});E->E end;
+  case dedents(A, IS, CI) of {A2,IS2}->next(R,{[C|A2],IS2,0,inline});E->E end;
 % Done (... for now, muahaha)
-dents(<<>>,{A,IS,CI,_})->{ok,{A,IS,CI,start}}.
+dents(<<>>,{A,IS,CI,_})->{ok,?REV(A),{[],IS,CI,start}}.
 
 % Keep dedenting & popping until we're lined up again
-dedents(A,[],CI)->{indent_error,A,empty,CI};
+dedents(A,[],CI)->{indent_error,?REV(A),empty,CI};
 dedents(A,[L|R],L)->{A,[L|R]};
-dedents(A,[L|_R],CI)when CI>L->{indent_error,A,L,CI};
-dedents(A,[_L|R],CI)->dedents(<<A/binary,21>>,R,CI).
+dedents(A,[L|_R],CI)when CI>L->{indent_error,?REV(A),L,CI};
+dedents(A,[_L|R],CI)->dedents([21|A],R,CI).
 
 %% Skip ahead to right after the next newline
-next(<<>>,{A,IS,_,_})->{ok,{A,IS,0,inline}};
-next(<<"\r\n",R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\r,$\n>>,IS,0,start});
-next(<<$\n,R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\n>>,IS,0,start});
-next(<<$\r,R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\r>>,IS,0,start});
+next(<<>>,{A,IS,_,_})->{ok,?REV(A),{[],IS,0,inline}};
+next(<<"\r\n",R/bytes>>,{A,IS,_,_})->dents(R,{[$\n|[$\r|A]],IS,0,start});
+next(<<$\n,R/bytes>>,{A,IS,_,_})->dents(R,{[$\n|A],IS,0,start});
+next(<<$\r,R/bytes>>,{A,IS,_,_})->dents(R,{[$\r|A],IS,0,start});
 next(<<4>>,{A,IS,_,_})->
-  case dedents(A,IS,0) of {A2,_}->{ok,{A2,IS,0,start}};E->E end;
-next(<<C,R/binary>>,{A,IS,_,_})->next(R,{<<A/binary,C>>,IS,0,inline}).
+  case dedents(A,IS,0) of {A2,_}->{ok,?REV(A2),{[],[0],0,start}};E->E end;
+next(<<C,R/bytes>>,{A,IS,_,_})->next(R,{[C|A],IS,0,inline}).
