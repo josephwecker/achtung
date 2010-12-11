@@ -1,13 +1,15 @@
-#!/usr/bin/env escript
+-module(cerlish).
+%#!/usr/bin/env escript
 %%! -smp enable +h 4096
 
 main(Opts) ->
   {Flags, Files} = parse_opts([], Opts),
-  % lists:each
+  lists:foreach(fun(F)->cerlish(Flags,F) end, Files).
 
 parse_opts(Acc, ["-o", Outputdir | R]) ->
   parse_opts([{outputdir, Outputdir} | Acc], R);
 parse_opts(Acc, Files) ->
   {lists:reverse(Acc), Files}.
 
-% vim: set filetype=erlang:
+cerlish(Flags, F) ->
+  ReadyFile = 
