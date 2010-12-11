@@ -49,7 +49,7 @@ file_scan(FName)->
   {ok, File} = file:open(FName, [raw, binary, {read_ahead, 512}]),
   do_file_scan(File).
 
-full_scan(Data)->erlang:iolist_to_binary([Data|4],?INIT).
+full_scan(Data)->dents(erlang:iolist_to_binary([Data,4]),?INIT).
 
 scan(Data) -> dents(Data, ?INIT).
 scan(Data, {_,_,_, inline} = State) -> next(Data, State);
@@ -61,7 +61,7 @@ do_file_scan(File) ->
 do_file_scan(File, LineNum, State) ->
   case file:read_line(File) of
     eof -> case dents(<<4>>, State) of
-        {ok, {Fin, _, _, _}} -> Fin;
+        {ok, {Fin, _, _, _}} -> {ok, Fin};
         Other -> {LineNum, Other}
       end;
     {ok, Data} -> case dents(Data, State) of
@@ -79,6 +79,7 @@ dents(<<9, R/binary>>, {A, IS, CI, _}) -> dents(R, {<<A/binary,9>>, IS, CI+2, st
 dents(<<"\r\n",R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\r,$\n>>,IS,0,start});
 dents(<<$\n,R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\n>>,IS,0,start});
 dents(<<$\r,R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\r>>,IS,0,start});
+dents(<<$#,R/binary>>,{A,IS,_,_})->next(R,{<<A/binary,$#>>,IS,0,inline});
 dents(<<4>>,{A,IS,CI,CS})->
   case dedents(A,IS,0) of {A2,_}->{ok,{A2,IS,CI,CS}};E->E end;
 

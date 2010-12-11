@@ -1,6 +1,41 @@
 
+grammar    <- expr_list? ~;
+expr_list  <- (ws? expr ws?)* ~;
+expr       <- if_block / do_block ~;
+if_block   <- if ('(' / sp) bool_expr start_block expr_list? end_block ~;
+do_block   <- do start_block expr_list? end_block ~;
+bool_expr  <- true / false ~;
 
-grammar <- ws
+true       <- 'true'  sp `true`;
+false      <- 'false' sp `false`;
+fun        <- 'fun'   sp `'fun'`;
+do         <- 'do'    sp `'do'`;
+if         <- 'if'    sp `'if'`;
+
+%indent     <- "\x06" / "{" `[]`;
+%dedent     <- "\x15" / "}" `[]`;
+
+%blank_block <- sp start_block newline* end_block sp `[]`;
+
+start_block <- ws ("\x06" ws "{" / "{" ws "\x06" / "{" / "\x06") ws `[]`;
+end_block   <- ws ("\x15" ws "}" / "}" ws "\x15" / "}" / "\x15") ws `[]`;
+              
+
+ws         <- (space / eol)*             `[]`;
+eol        <- (newline sp)+              `[]`;
+newline    <- comment / endline          `[]`;
+comment    <- "#" (!endline .)* endline? `[]`;
+endline    <- ("\r\n" / "\n" / "\r") sp  `[]`;
+sp         <- space*                     `[]`;
+space      <- [ \t]                      `[]`;
+
+`
+%p1([R|_]) -> R.
+p2([_,R|_]) -> R.
+%p3([_,_,R|_]) -> R.
+
+
 
 
 % vim: set filetype=erlang:
+`

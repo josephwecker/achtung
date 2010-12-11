@@ -4,13 +4,16 @@ set -o errexit
 mkdir -p ebin
 erlc -o ebin src/indents.erl
 erlc -o ebin src/cerlish.erl
-echo '#!/usr/bin/env escript' > bin/cerlish
-echo '%%! -smp enable +h 4096' >> bin/cerlish
+erl -noinput -eval 'neotoma:file("grammar/erlish.peg").' -run init stop
+erlc -o ebin grammar/erlish.erl
+rm grammar/erlish.erl
 erl -noinput -eval '
 	zip:create(".cerlish.ez",
-		["cerlish.beam", "indents.beam"],
+		["cerlish.beam", "indents.beam", "erlish.beam"],
 		[{cwd,"ebin"},{compress, all}, {uncompress, [".beam", ".app"]}]).
 	' -run init stop
+echo '#!/usr/bin/env escript' > bin/cerlish
+echo '%%! -smp enable +h 4096' >> bin/cerlish
 cat .cerlish.ez >> bin/cerlish
 chmod u+x bin/cerlish
 rm .cerlish.ez
