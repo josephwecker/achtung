@@ -1,6 +1,5 @@
 -module(cerlish).
-%#!/usr/bin/env escript
-%%! -smp enable +h 4096
+-export([main/1]).
 
 main(Opts) ->
   {Flags, Files} = parse_opts([], Opts),
@@ -12,4 +11,4 @@ parse_opts(Acc, Files) ->
   {lists:reverse(Acc), Files}.
 
 cerlish(Flags, F) ->
-  ReadyFile = 
+  ok.
