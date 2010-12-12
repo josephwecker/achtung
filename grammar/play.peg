@@ -1,0 +1,18 @@
+
+grammar <- comment_block*;
+
+begin <- "(*" `'begin'`;
+end   <- "*)" `'end'`;
+
+comment <- comment_block / (!begin !end .)+ `
+  {comment, case Node of
+      [_|_] -> lists:flatten(Node);
+      _ -> Node
+  end}`;
+comment_block <- begin comment* end `{comment_block, p2(Node)}`;
+
+
+`
+p2([_,R|_]) -> R.
+
+`

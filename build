@@ -5,8 +5,11 @@ mkdir -p ebin
 erlc -o ebin src/indents.erl
 erlc -o ebin src/cerlish.erl
 erl -noinput -eval 'neotoma:file("grammar/erlish.peg").' -run init stop
+sed -i .bk 's/p(Inp, StartIndex, Name, ParseFun, TransformFun) ->/& io:format("~s | ~p~n", [Name, StartIndex]),/' grammar/erlish.erl
 erlc -o ebin grammar/erlish.erl
 rm grammar/erlish.erl
+rm -f erlish.erl.bk
+rm -f grammar/erlish.erl.bk
 erl -noinput -eval '
 	zip:create(".cerlish.ez",
 		["cerlish.beam", "indents.beam", "erlish.beam"],
