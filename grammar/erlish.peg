@@ -15,14 +15,11 @@ module     <- "@module" sp atom ("." atom)* (ws? list_expr)? ~;
 expr       <- ws? (variable / atom) ~;
 list_expr  <- null_list / n_list_expr / w_list_expr ~;
 null_list    <- "[" ws? "]" `{nil, Index}`;
-n_list_expr  <- "[" x:expr? (ws? "," x:expr)* ws? ","? ws? "]" `
-  [N || [_,N] <- get_nf(x, Node)]
-  `;
-w_list_expr  <- "[" expr (ws expr)+ ws? "]" `
-                {w_list, Node}
-                `;
-
-variable   <- [A-Z] [a-zA-Z0-9_]* `lists:flatten(Node)`;
+n_list_expr  <- "[" x:expr? (ws? "," x:expr)* ws? ","? ws? "]"
+  `[N || [_,N] <- get_nf(x, Node)]`;
+w_list_expr  <- "[" x:expr (ws x:expr)+ ws? "]"
+  `[N || [_,N] <- get_nf(x, Node)]`;
+variable   <- [A-Z] [a-zA-Z0-9_]* `a(Node)`;
 atom       <- [a-z] [a-z0-9_]* `list_to_atom(lists:flatten(Node))`;
 
 % Whitespace, newlines, end-of-statements, comments and block comments
@@ -43,6 +40,7 @@ dedent     <- "\x15"                                       `[]`;
 flat(L)        -> lists:flatten(L).
 get_n(Key, L)  -> proplists:get_all_values(Key, L).
 get_nf(Key, L) -> get_n(Key, flat(L)).
+a(L)           -> list_to_atom(flat(L)).
 
 % vim: set filetype=erlang:
 `

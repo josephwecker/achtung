@@ -7,5 +7,6 @@
 @module#|hey|#syntax.full# [Param, Another,
 #AndAnother] # Hope this goes well
 @module another.one [Oh, Yeah]
+@module another.one [Oh yeah Wowsers]
   # I mean, really really
 
