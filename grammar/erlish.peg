@@ -5,20 +5,23 @@ tl_exprs <- attribute_exprs+ ~;
 
 attribute_exprs <- module_expr ~;
 
-module_expr <- "@module" sp atom ("." atom)* eol ~; %ws? list_expr eol ~;
+module_expr <- "@module" sp atom ("." atom)* eos ~; %ws? list_expr eos ~;
 
-atom <- [a-z] [a-z_]* `list_to_atom(lists:flatten(Node))`;
-%atom <- [a-z] [a-z_]* ~;
+atom       <- [a-z] [a-z_]* `list_to_atom(lists:flatten(Node))`;
 
-%indent <- "\x06" `[]`;
-%dedent <- "\x15" `[]`;
-ws  <- (inline_comment / sp / nl)+ `[]`; % Required whitespace
-eol <- sp? (";" / (inline_comment / nl / sp)+ ) `[]`;
-inline_comment <- "#" (!nl .)* nl `[]`;
-nl      <- ("\r\n" / "\n" / "\r")+ `[]`;
-%nl      <- ("\r\n" / "\n" / "\r" / !.)+ `[]`;
-sp      <- space+  `[]`;
-space   <- [ \t]   `[]`;
+% Whitespace, newlines, end-of-statements, comments and block comments
+ws         <- (sp / comment / nl)+                         `[]`;
+eos        <- sp? (nl / [:;] / comment)                    `[]`;
+ml_begin   <- "#|"                                         `[]`;
+ml_end     <- "|#"                                         `[]`;
+ml_comment <- ml_block / (!ml_begin !ml_end .)+            `[]`;
+ml_block   <- ml_begin ml_comment* ml_end                  `[]`;
+comment    <- "#" (!nl .)* nl                              `[]`;
+nl         <- ("\r\n" / "\n" / "\r")+                      `[]`;
+sp         <- space+                                       `[]`;
+space      <- [ \t] / ml_block                             `[]`;
+indent     <- "\x06"                                       `[]`;
+dedent     <- "\x15"                                       `[]`;
 
 `
 
