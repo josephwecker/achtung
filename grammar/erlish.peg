@@ -13,13 +13,17 @@ module     <- "@module" sp atom ("." atom)* (ws? list_expr)? ~;
 %list_expr  <- "[]" ~;
 
 expr       <- ws? (variable / atom) ~;
-list_expr  <- null_list / n_list_expr / w_list_expr ~;
-null_list    <- "[" ws? "]" `{nil, Index}`;
-n_list_expr  <- "[" x:expr? (ws? "," x:expr)* ws? ","? ws? "]"
-  `[N || [_,N] <- get_nf(x, Node)]`;
-w_list_expr  <- "[" x:expr (ws x:expr)+ ws? "]"
-  `[N || [_,N] <- get_nf(x, Node)]`;
+
+% Lists
+list_expr  <- null_list / nlist_expr / wlist_expr ~;
+null_list  <- "[" ws? "]" `{nil, Index}`;
+nlist_expr <- "[" x:expr? (ws? "," x:expr)* ws? ","? ws? "]" `[N||[_,N]<-all(x,Node)]`;
+wlist_expr <- "[" x:expr (ws x:expr)+ ws? "]" `[N||[_,N]<-all(x,Node)]`;
+
+% Variables
 variable   <- [A-Z] [a-zA-Z0-9_]* `a(Node)`;
+
+% Atoms
 atom       <- [a-z] [a-z0-9_]* `list_to_atom(lists:flatten(Node))`;
 
 % Whitespace, newlines, end-of-statements, comments and block comments
@@ -36,11 +40,12 @@ space      <- [ \t] / ml_block                             `[]`;
 indent     <- "\x06"                                       `[]`;
 dedent     <- "\x15"                                       `[]`;
 
+
+% Shortcut & helper functions
 `
-flat(L)        -> lists:flatten(L).
-get_n(Key, L)  -> proplists:get_all_values(Key, L).
-get_nf(Key, L) -> get_n(Key, flat(L)).
-a(L)           -> list_to_atom(flat(L)).
+flat(L)     -> lists:flatten(L).
+all(Key, L) -> proplists:get_all_values(Key, flat(L)).
+a(L)        -> list_to_atom(flat(L)).
 
 % vim: set filetype=erlang:
 `
