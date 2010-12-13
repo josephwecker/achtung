@@ -1,44 +1,45 @@
 
-grammar    <- tl_exprs ws?;
+grammar    <- tl_exprs S;
 
-tl_exprs   <- (ws? attrs eos)* ~;
+tl_exprs   <- (S attrs eos)* ~;
 attrs      <- module ~;
-module     <- "@module" sp atom ("." atom)* (ws? list_expr)? ~;
+module     <- "@module" sp atom ("." atom)* (S list_expr)? ~;
 
-%expr       <- ws? (list_expr / atom / variable) ~;
+%expr       <- S (list_expr / atom / variable) ~;
 
 %list_expr  <- "[" expr? ("," expr)* "]" ~;
-%list_expr  <- ("[" ws? "]") / ("[" expr? ("," expr)* "]") ~;
+%list_expr  <- ("[" S "]") / ("[" expr? ("," expr)* "]") ~;
 
 %list_expr  <- "[]" ~;
 
-expr       <- ws? (variable / atom) ~;
+expr       <- S (variable / atom) ~;
 
 % Lists
 list_expr  <- null_list / nlist_expr / wlist_expr ~;
-null_list  <- "[" ws? "]" `{nil, Index}`;
-nlist_expr <- "[" x:expr? (ws? "," x:expr)* ws? ","? ws? "]" `[N||[_,N]<-all(x,Node)]`;
-wlist_expr <- "[" x:expr (ws x:expr)+ ws? "]" `[N||[_,N]<-all(x,Node)]`;
+null_list  <- "[" S "]" `{nil, Index}`;
+nlist_expr <- "[" x:expr? (S "," x:expr)* S ","? S "]" `[N||[_,N]<-all(x,Node)]`;
+wlist_expr <- "[" x:expr (s x:expr)+ S "]" `[N||[_,N]<-all(x,Node)]`;
 
 % Variables
 variable   <- [A-Z] [a-zA-Z0-9_]* `a(Node)`;
 
 % Atoms
-atom       <- [a-z] [a-z0-9_]* `list_to_atom(lists:flatten(Node))`;
+atom       <- [a-z] [a-z0-9_]* `a(Node)`;
 
 % Whitespace, newlines, end-of-statements, comments and block comments
-ws         <- (sp / comment / nl)+                         `[]`;
-eos        <- sp? (nl / [:;] / comment / !.)               `[]`;
-ml_begin   <- "#|"                                         `[]`;
-ml_end     <- "|#"                                         `[]`;
-ml_comment <- ml_block / (!ml_begin !ml_end .)+            `[]`;
-ml_block   <- ml_begin ml_comment* ml_end                  `[]`;
-comment    <- "#" (!nl .)* &nl                             `[]`;
-nl         <- ("\r\n" / "\n" / "\r")+                      `[]`;
-sp         <- space+                                       `[]`;
-space      <- [ \t] / ml_block                             `[]`;
-indent     <- "\x06"                                       `[]`;
-dedent     <- "\x15"                                       `[]`;
+S          <- s?                                `[]`;
+s          <- (sp / comment / nl)+              `[]`;
+eos        <- sp? (nl / [:;] / comment / !.)    `[]`;
+ml_begin   <- "#|"                              `[]`;
+ml_end     <- "|#"                              `[]`;
+ml_comment <- ml_block / (!ml_begin !ml_end .)+ `[]`;
+ml_block   <- ml_begin ml_comment* ml_end       `[]`;
+comment    <- "#" (!nl .)* &nl                  `[]`;
+nl         <- ("\r\n" / "\n" / "\r")+           `[]`;
+sp         <- space+                            `[]`;
+space      <- [ \t] / ml_block                  `[]`;
+indent     <- "\x06"                            `[]`;
+dedent     <- "\x15"                            `[]`;
 
 
 % Shortcut & helper functions
@@ -47,5 +48,5 @@ flat(L)     -> lists:flatten(L).
 all(Key, L) -> proplists:get_all_values(Key, flat(L)).
 a(L)        -> list_to_atom(flat(L)).
 
-% vim: set filetype=erlang:
+% vim: set filetype=erlang textwidth=100 noautoindent nocindent nosmartindent:
 `
