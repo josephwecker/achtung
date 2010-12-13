@@ -3,3 +3,4 @@
 *.beam
 .attic/haxe/test/.build/
 bin/cerlish
+grammar/*.erl
