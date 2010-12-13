@@ -27,6 +27,12 @@
 %%   {Aumulator, IndentStack, CurrentIndentLevel, CurrentState} where
 %%     CurrentState is one of 'start' or 'inline'
 %%
+%%
+%% TODO: If double the normal indent- no longer in indent mode until back to
+%%       single or lower.
+%% TODO: Any number of "Exclusion" tokens (like "#|" and "'''") that break it
+%%       out of indent mode until that thing is finished.
+%%
 
 -module(indents).
 -export([file_scan_test/0, file_scan/1, full_scan/1, scan/1, scan/2]).

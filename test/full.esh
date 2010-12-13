@@ -1,7 +1,11 @@
-## Top comment
-#
-#
+#| Top comment
+   Aren't nested block comments cool?
 
-@module syntax.full# [Param, Another,
-  #AndAnother] # Hope this goes well
+   P = fun(Str) -> {ok, T, _} = erl_scan:string(Str), {ok, F} = erl_parse:parse_form(T), io:format("~p", [F]) end.
+|#
+
+@module#|hey|#syntax.full# [Param, Another,
+#AndAnother] # Hope this goes well
+@module another.one [Oh, Yeah]
   # I mean, really really
+
