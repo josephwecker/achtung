@@ -1,0 +1,9 @@
+#!/usr/bin/env escript
+
+main([FName|_]) ->
+  {ok, M} = compile:file(FName, [debug_info, report, verbose]),
+  [BeamBase |_] = lists:reverse(string:tokens(atom_to_list(M), ".")),
+  {ok, {M, [{_, {_, A}}]}} = beam_lib:chunks([BeamBase, ".beam"], [abstract_code]),
+  io:format("% Ready for file:consult(...) and then compile:forms(...)~n",[]),
+  [io:format("~p.~n", [N]) || N <- A].
+
