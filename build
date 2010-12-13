@@ -2,6 +2,7 @@
 set -o errexit
 
 mkdir -p ebin
+mkdir -p bin
 erlc -o ebin src/indents.erl
 erlc -o ebin src/cerlish.erl
 erl -noinput -eval 'neotoma:file("grammar/erlish.peg").' -run init stop
