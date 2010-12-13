@@ -13,8 +13,10 @@ parse_opts(Acc, Files) ->
 cerlish(_Flags, F) ->
   {ok, DentedBin} = indents:file_scan(F),
   AST = erlish:parse(binary_to_list(DentedBin)),
-  io:format("~nPARSE RESULTS FOR ~s:~n~p~n~n(pausing)~n", [F, AST]),
+  io:format("~n~p~n", [compile:forms(AST)]),
+  io:format("~nPARSE RESULTS FOR ~s:~n~p~n", [F, AST]),
+  io:format("~n(pausing)~n",[]),
   receive
     nothing -> ok
-  after 5000 -> ok
+  after 3000 -> ok
   end.
