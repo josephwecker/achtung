@@ -1,24 +1,27 @@
 
-grammar    <- tl_exprs S;
+grammar    <- tl_exprs S `p1(Node)`;
 
-tl_exprs   <- (S attrs eos)* ~;
+% Toplevel expressions
+tl_exprs   <- (S attrs eos)* `[p2(A)||A<-Node]`;
 attrs      <- module ~;
-module     <- "@module" sp atom ("." atom)* (S list_expr)? ~;
+module     <- "@module" sp n:atom ("." n:atom)* params:list_expr?
+                `Mod = case all(n, Node) of [M] -> M; L -> L end,
+                 case all(params, Node) of
+                   [] -> {attribute, ?L, module, Mod};
+                   [Params] -> {attribute, ?L, module, {Mod, Params}}
+                 end`;
 
-%expr       <- S (list_expr / atom / variable) ~;
-
-%list_expr  <- "[" expr? ("," expr)* "]" ~;
-%list_expr  <- ("[" S "]") / ("[" expr? ("," expr)* "]") ~;
-
-%list_expr  <- "[]" ~;
-
-expr       <- S (variable / atom) ~;
+% Expressions
+expr       <- S (variable / atom / list_expr) `p2(Node)`;
 
 % Lists
-list_expr  <- null_list / nlist_expr / wlist_expr ~;
+list_expr  <- S (null_list / nlist_expr / wlist_expr) `p2(Node)`;
+% Empty list is actually its own data type in Erlang Abstract
 null_list  <- "[" S "]" `{nil, Index}`;
-nlist_expr <- "[" x:expr? (S "," x:expr)* S ","? S "]" `[N||[_,N]<-all(x,Node)]`;
-wlist_expr <- "[" x:expr (s x:expr)+ S "]" `[N||[_,N]<-all(x,Node)]`;
+% List with comma delimiters- allows dangling comment
+nlist_expr <- "[" x:expr? (S "," x:expr)* S ","? S "]" `all(x,Node)`;
+% List with spaces as delimiters
+wlist_expr <- "[" x:expr (s x:expr)+ S "]" `all(x,Node)`;
 
 % Variables
 variable   <- [A-Z] [a-zA-Z0-9_]* `a(Node)`;
@@ -27,9 +30,9 @@ variable   <- [A-Z] [a-zA-Z0-9_]* `a(Node)`;
 atom       <- [a-z] [a-z0-9_]* `a(Node)`;
 
 % Whitespace, newlines, end-of-statements, comments and block comments
-S          <- s?                                `[]`;
-s          <- (sp / comment / nl)+              `[]`;
-eos        <- sp? (nl / [:;] / comment / !.)    `[]`;
+S          <- s?                                `[]`; % Optional ws
+s          <- (sp / comment / nl)+              `[]`; % Required ws
+eos        <- sp? (nl / [:;] / comment / !.)    `[]`; % End of Statement
 ml_begin   <- "#|"                              `[]`;
 ml_end     <- "|#"                              `[]`;
 ml_comment <- ml_block / (!ml_begin !ml_end .)+ `[]`;
@@ -44,9 +47,14 @@ dedent     <- "\x15"                            `[]`;
 
 % Shortcut & helper functions
 `
+-define(L, line(Index)).
+
 flat(L)     -> lists:flatten(L).
 all(Key, L) -> proplists:get_all_values(Key, flat(L)).
 a(L)        -> list_to_atom(flat(L)).
+p1([R|_])   -> R.
+p2([_,R|_]) -> R.
 
-% vim: set filetype=erlang textwidth=100 noautoindent nocindent nosmartindent:
+
+% vim: set noai filetype=erlang textwidth=100:
 `
