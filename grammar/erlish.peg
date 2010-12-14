@@ -1,40 +1,45 @@
-%------------ Grammar --------------------------------------
-grammar       <- (_s form)* _s            `[p2(F)||F<-?N1]`;
-form          <- attribute / function                     ~;
+%------------ Grammar --------------------------------------------------------
+grammar       <- (_s form)* _s                              `[p2(F)||F<-?N1]`;
+form          <- attribute / function                                       ~;
 
-%------------ Attributes -----------------------------------
-attribute     <- module                      `{attr, Node}`;
-module        <- "@module" sp atom                    `?N3`;
+%------------ Attributes -----------------------------------------------------
+attribute     <- module                                        `{attr, Node}`;
+module        <- "@module" sp atom                                      `?N3`;
 
-%------------ Functions ------------------------------------
-function      <- atom expression     `{function, ?N1, ?N2}`;
+%------------ Functions ------------------------------------------------------
+function      <- atom expression              `{function, ?N1, listify(?N2)}`;
 
-%------------ Terms / Atomic Literals ----------------------
-term          <- atom                                     ~;
-atom          <- simple_atom                              ~;
-simple_atom   <- [a-z] [a-z0-9_]*                 `a(Node)`;
+%------------ Terms / Atomic Literals ----------------------------------------
+term          <- atom                                                       ~;
+atom          <- simple_atom                                                ~;
+simple_atom   <- [a-z] [a-z0-9_]*                                   `a(Node)`;
 
-%------------ Expressions ----------------------------------
-expression    <- _s (block / single_expr)             `?N2`;
-block         <- "|block|"                                ~;
-single_expr   <- term eos                             `?N1`;
-eos           <- _sp (";" / newline / !.)              `?X`;
+%------------ Expressions ----------------------------------------------------
+expression    <- _s (block / expr_with_end)                             `?N2`;
+block         <- block_b expression* expr? block_e         `append_(?N2,?N3)`;
+expr_with_end <- expr eos                                               `?N1`;
+expr          <- term                                                       ~;
 
-%------------ Comments & Whitespace ------------------------
+%------------ Whitespace, Comments, Delimiters -------------------------------
+eos           <- _sp (";" / newline / !.)                                `?X`;
+block_b       <- _s ("{" _s indent / indent _s "{" / "{" / indent)       `?X`;
+block_e       <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent)       `?X`;
+_s            <- ws?                                                     `?X`;
+ws            <- (newline / space)+                                      `?X`;
+newline       <- "\n" / "\r\n" / "\r"                                    `?X`;
+_sp           <- sp?                                                     `?X`;
+sp            <- space+                                                  `?X`;
+space         <- [ \t]                                                   `?X`;
+indent        <- "\x06"                                                  `?X`;
+dedent        <- "\x15"                                                  `?X`;
 
-_s            <- ws?                                   `?X`;
-ws            <- (newline / space)+                    `?X`;
-newline       <- "\n" / "\r\n" / "\r"                  `?X`;
-_sp           <- sp?                                   `?X`;
-sp            <- space+                                `?X`;
-space         <- [ \t]                                 `?X`;
-
-%------------ Shortcut / helper functions ------------------
+%------------ Shortcut / helper functions ------------------------------------
 `
 -define(L,       line(Index)).
 -define(N1,      p1(Node)).
 -define(N2,      p2(Node)).
 -define(N3,      p3(Node)).
+-define(GET(Key),all(Key, Node)).
 -define(X,       []).
 
 flat(L)       -> lists:flatten(L).
@@ -43,6 +48,10 @@ a(L)          -> list_to_atom(flat(L)).
 p1([R|_])     -> R.
 p2([_,R|_])   -> R.
 p3([_,_,R|_]) -> R.
+
+append_(L,V)  -> case V of [] -> L; _ -> lists:append(L,[V]) end.
+listify(V) when is_list(V) -> V;
+listify(V)    -> [V].
 
 % vim: set noai filetype=erlang textwidth=100:
 `

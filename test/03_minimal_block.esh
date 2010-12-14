@@ -1,0 +1,19 @@
+
+fn ok
+
+fn {ok}
+
+fn
+  ok
+
+fn {
+  ok
+}
+
+fn
+{
+  ok
+}
+
+fn {
+  ok}

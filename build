@@ -6,7 +6,7 @@ mkdir -p bin
 erlc -o ebin src/indents.erl
 erlc -o ebin src/cerlish.erl
 erl -noinput -eval 'neotoma:file("grammar/erlish.peg").' -run init stop
-#sed -i.bk 's/p(Inp, StartIndex, Name, ParseFun, TransformFun) ->/& [I|_]=Inp, io:format("~s | ~p | ~c~n", [Name, StartIndex, I]),/' grammar/erlish.erl
+#sed -i.bk 's/p(Inp, StartIndex, Name, ParseFun, TransformFun) ->/& io:format("~s | ~p | ~p~n", [Name, StartIndex, case Inp of [I,J,K|_]->[I,J,K];_->"eof" end]),/' grammar/erlish.erl
 erlc -o ebin grammar/erlish.erl
 #rm grammar/erlish.erl
 rm -f erlish.erl.bk
