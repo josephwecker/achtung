@@ -1,19 +1,22 @@
 
 
-whitespace deliniated lists
-dangling commas in lists
-"built-in" regular expressions
+Whitespace deliniated lists
+Dangling commas in lists
+"Built-in" regular expressions
 
-shortcut guard expressions
+Shortcut guard expressions
   - allow '?' at end of function defs
   - is_list()  -> l?() etc.
   - some_fun|Blah:atom, etc
+Take any spec/type or combo and turn it into a (possibly deeply nested) guard
+sequence?
 
-shortcuts for type conversion functions
+
+Shortcuts for type conversion functions
 
 
-syntax for function parameter defaults?
-more common use of packages?
+Syntax for function parameter defaults?
+More common use of packages?
 
 
 Expression ->

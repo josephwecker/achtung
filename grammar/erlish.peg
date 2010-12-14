@@ -28,25 +28,29 @@ functions  <- function* ~;
 %   - Separate into functions of same name and arity
 %   - Output them grouped into functions of same name etc.
 
-%function   <- ":"? name:atom S funparams? guards? funbody ~;
-%funparams  <- "|" (S pattern S ","?)* "|" ~;
+%function   <- ":"? name:atom S funargs? guards? funbody ~;
+%funargs  <- "|" (S pattern S ","?)* "|" ~;
 %guards     <- 
 
-function   <- ":"? S name:atom S fdef S block ~;
-fdef       <- (clause_delim fparams? clause_delim) ~;
-%fdef       <- (clause_delim fparams? guard_seq? clause_delim)
-%fparams    <- (S param:pattern S ","?)
-fparams    <- S atom S ~;
+%% TRY AGAIN vvv
+%function   <- ":"? S name:atom S fdef S block ~;
+%fdef       <- (clause_delim funargs? clause_delim) ~;
+%fargs     <- 
+
+%fdef       <- (clause_delim funargs? guard_seq? clause_delim)
+%funarg    <- (S arg:pattern S ","?)
+%funarg    <- S atom S ~;
 %guard_seq  <- clause_delim (S 
 clause_delim <- "|" !"|" `[]`;
 
+pattern <- term / match
+
 %------------- Expressions -------------
-expr       <- S (variable / atom / list_expr) `?N2`;
+expr       <- S (variable / atom / list_expr / block) `?N2`;
 
 
 %------------- Literals -------------
 % Blocks
-
 bl_begin   <- "{" S indent / indent S "{" / "{" / indent `[]`;
 bl_end     <- "}" S dedent / dedent S "}" / "}" / dedent `[]`;
 block      <- bl_begin (S expr eos)* bl_end `[p2(X)||X<-?N3]`;

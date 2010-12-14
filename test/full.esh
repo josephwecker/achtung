@@ -15,10 +15,18 @@
 
 #<first_thing|msg, Str:list|
 
-#<first_thing|msg, Wow:number | Wow > 3 |
+myfun
+  ok
+myfun()
+  ok
+myfun(ok,2,3)
+  ok
+myfun ok
+myfun() ok
+myfun(ok,2,3) ok
 
-#  receive|something : Wow > 3|
+myfun(A:atom,B:number,C:number)
+  ok
 
-:first_thing | hey |
-  something
+myfun(A,B:number,C | B > C) ok
 
