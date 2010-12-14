@@ -10,3 +10,15 @@
 @module another.one [Oh yeah [Wowsers, thats, cool]]
   # I mean, really really
 
+#<first_thing|msg, Str| is_list(Str) |
+#<first_thing|msg, Str| when is_list(Str):
+
+#<first_thing|msg, Str:list|
+
+#<first_thing|msg, Wow:number | Wow > 3 |
+
+#  receive|something : Wow > 3|
+
+:first_thing | hey |
+  something
+

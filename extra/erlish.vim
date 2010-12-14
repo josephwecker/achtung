@@ -44,8 +44,6 @@ syn match   erlishIgnoredVar      /\<_\w*\>/
 
 syn match   erlishModule          /\<[a-z]\w*\.\@=/ contained
 syn match   erlishFunction        /\<[a-z][A-Za-z_\.]*\s*(\@=/ contains=erlishModule
-syn match   erlishVisibility      /</ contained
-syn match   erlishTopFunction     /^<*[a-z]\w*\s*/ contains=erlishVisibility
 
 syn match   erlishNumber          "\<0[oO]\=\o\+[Ll]\=\>"
 syn match   erlishNumber          "\<0[xX]\x\+[Ll]\=\>"
@@ -70,6 +68,9 @@ syn match   erlishSep             "::"
 syn match   erlishSep             "->"
 syn match   erlishMacro           "\$[a-z_]\+"
 syn match   erlishProcessor	  "^@@\=\a\+"
+
+syn match   erlishVisibility      /[<:]/ contained
+syn match   erlishTopFunction     /^\(<\|:\)*[a-z]\w*\s*/ contains=erlishVisibility
 
 syn keyword erlishSpecial         adler32 adler32_combine apply atom_to_binary atom_to_list binary_to_atom binary_to_existing_atom binary_to_list bitstring_to_list binary_to_term check_process_code concat_binary crc32 crc32_combine date decode_packet delete_module disconnect_node erase exit float_to_list garbage_collect get get_keys group_leader halt integer_to_list iolist_to_binary iolist_size is_alive is_process_alive link list_to_atom list_to_binary list_to_bitstring list_to_existing_atom list_to_float list_to_integer list_to_pid list_to_tuple load_module make_ref monitor_node nodes now open_port pid_to_list port_close port_command port_connect port_control pre_loaded process_flag process_info processes purge_module put register registered setelement spawn spawn_link spawn_monitor spawn_opt split_binary statistics term_to_binary throw time tuple_to_list unlink unregister whereis
 

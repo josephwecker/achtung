@@ -1,9 +1,21 @@
 
+
 grammar    <- tl_exprs S `p1(Node)`;
 
-% Toplevel expressions
+%------------- Toplevel expressions -------------
 tl_exprs   <- (S attrs eos)* `[p2(A)||A<-Node]`;
-attrs      <- module ~;
+attrs      <- (module / export / import / compile /
+               record / define / type / spec / functions) ~;
+% Not Yet Implemented
+export     <- "@export" (!eos .) eos `nyi`;
+import     <- "@import" (!eos .) eos `nyi`;
+compile    <- "@compile" (!eos .) eos `nyi`;
+record     <- "@record" (!eos .) eos `nyi`;
+define     <- "@define" (!eos .) eos `nyi`;
+type       <- "@type" (!eos .) eos `nyi`;
+spec       <- "@spec" (!eos .) eos `nyi`;
+
+
 module     <- "@module" sp n:atom ("." n:atom)* params:list_expr?
                 `Mod = case all(n, Node) of [M] -> M; L -> L end,
                  case all(params, Node) of
@@ -11,23 +23,47 @@ module     <- "@module" sp n:atom ("." n:atom)* params:list_expr?
                    [Params] -> {attribute, ?L, module, {Mod, Params}}
                  end`;
 
-% Expressions
-expr       <- S (variable / atom / list_expr) `p2(Node)`;
+functions  <- function* ~;
+% TODO: Crazy stuff on transforming this:
+%   - Separate into functions of same name and arity
+%   - Output them grouped into functions of same name etc.
+
+%function   <- ":"? name:atom S funparams? guards? funbody ~;
+%funparams  <- "|" (S pattern S ","?)* "|" ~;
+%guards     <- 
+
+function   <- ":"? S name:atom S fdef S block ~;
+fdef       <- (clause_delim fparams? clause_delim) ~;
+%fdef       <- (clause_delim fparams? guard_seq? clause_delim)
+%fparams    <- (S param:pattern S ","?)
+fparams    <- S atom S ~;
+%guard_seq  <- clause_delim (S 
+clause_delim <- "|" !"|" `[]`;
+
+%------------- Expressions -------------
+expr       <- S (variable / atom / list_expr) `?N2`;
+
+
+%------------- Literals -------------
+% Blocks
+
+bl_begin   <- "{" S indent / indent S "{" / "{" / indent `[]`;
+bl_end     <- "}" S dedent / dedent S "}" / "}" / dedent `[]`;
+block      <- bl_begin (S expr eos)* bl_end `[p2(X)||X<-?N3]`;
 
 % Lists
-list_expr  <- S (null_list / nlist_expr / wlist_expr) `p2(Node)`;
-% Empty list is actually its own data type in Erlang Abstract
+list_expr  <- S (null_list / nlist_expr / wlist_expr) `?N2`;
 null_list  <- "[" S "]" `{nil, Index}`;
-% List with comma delimiters- allows dangling comment
 nlist_expr <- "[" x:expr? (S "," x:expr)* S ","? S "]" `all(x,Node)`;
-% List with spaces as delimiters
 wlist_expr <- "[" x:expr (s x:expr)+ S "]" `all(x,Node)`;
 
 % Variables
 variable   <- [A-Z] [a-zA-Z0-9_]* `a(Node)`;
 
 % Atoms
-atom       <- [a-z] [a-z0-9_]* `a(Node)`;
+atom       <- simple_atom ~;
+simple_atom <- [a-z] [a-z0-9_]* `a(Node)`;
+
 
 % Whitespace, newlines, end-of-statements, comments and block comments
 S          <- s?                                `[]`; % Optional ws
@@ -45,15 +81,19 @@ indent     <- "\x06"                            `[]`;
 dedent     <- "\x15"                            `[]`;
 
 
-% Shortcut & helper functions
+%------------- Shortcut / helper functions -------------
 `
--define(L, line(Index)).
+-define(L,       line(Index)).
+-define(N1,      p1(Node)).
+-define(N2,      p2(Node)).
+-define(N3,      p3(Node)).
 
-flat(L)     -> lists:flatten(L).
-all(Key, L) -> proplists:get_all_values(Key, flat(L)).
-a(L)        -> list_to_atom(flat(L)).
-p1([R|_])   -> R.
-p2([_,R|_]) -> R.
+flat(L)       -> lists:flatten(L).
+all(Key, L)   -> proplists:get_all_values(Key, flat(L)).
+a(L)          -> list_to_atom(flat(L)).
+p1([R|_])     -> R.
+p2([_,R|_])   -> R.
+p3([_,_,R|_]) -> R.
 
 
 % vim: set noai filetype=erlang textwidth=100:

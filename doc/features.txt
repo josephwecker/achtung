@@ -1,0 +1,52 @@
+
+
+whitespace deliniated lists
+dangling commas in lists
+"built-in" regular expressions
+
+shortcut guard expressions
+  - allow '?' at end of function defs
+  - is_list()  -> l?() etc.
+  - some_fun|Blah:atom, etc
+
+shortcuts for type conversion functions
+
+
+syntax for function parameter defaults?
+more common use of packages?
+
+
+Expression ->
+  Term -> Data (Number, Atom, List, Tuple, ...)
+  Variables -> Hold a term value (after bound)
+  Pattern -> like Term but with unbound variables
+  Match -> Assignment with pattern matching.  Pattern = Term
+  Function Calls ->
+  Fun Expressions ->
+  If
+  Case
+  Send
+  Receive
+  Term Comparisons
+  Arithmetic
+  Boolean & shortcircuit
+  List Operations
+  Binary Operations
+  Catch and Throw
+  Try
+  Parenthesized Expression
+  Block Expression (similar to clause body)
+  List comprehension
+  Binary comprehension
+  Guard sequence
+
+
+ <  >
+ {  }
+ [  ]
+ (  )
+ |  |
+<[  ]>
+<<  >>
+
+
