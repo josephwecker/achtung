@@ -1,19 +1,39 @@
 
-fn ok
+myfun1 ok
 
-fn {ok}
+myfun2 {ok}
 
-fn
+myfun3
   ok
 
-fn {
+myfun4 {
   ok
 }
 
-fn
+myfun5
 {
   ok
 }
 
-fn {
+myfun6 {
   ok}
+
+myfun7{ok
+}
+
+myfun8
+  ok
+  ok
+  really_ok
+  very_very_ok
+  ok
+    
+  ok_part2
+  ok_part3
+
+  ok_part4
+
+                     
+    ok_part5
+    second
+    third

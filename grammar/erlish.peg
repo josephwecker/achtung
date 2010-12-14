@@ -11,27 +11,31 @@ function      <- atom expression              `{function, ?N1, listify(?N2)}`;
 
 %------------ Terms / Atomic Literals ----------------------------------------
 term          <- atom                                                       ~;
-atom          <- simple_atom                                                ~;
-simple_atom   <- [a-z] [a-z0-9_]*                                   `a(Node)`;
+atom          <- simple_atom / complex_atom                                 ~;
+simple_atom   <- [a-z] [a-z0-9_@]*                                  `a(Node)`;
+complex_atom  <- "'" simple_atom "'"                                        ~;
 
 %------------ Expressions ----------------------------------------------------
 expression    <- _s (block / expr_with_end)                             `?N2`;
-block         <- block_b expression* expr? block_e         `append_(?N2,?N3)`;
+block         <- block_beg expression* expr? block_end     `append_(?N2,?N3)`;
 expr_with_end <- expr eos                                               `?N1`;
 expr          <- term                                                       ~;
 
 %------------ Whitespace, Comments, Delimiters -------------------------------
-eos           <- _sp (";" / newline / !.)                                `?X`;
-block_b       <- _s ("{" _s indent / indent _s "{" / "{" / indent)       `?X`;
-block_e       <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent)       `?X`;
-_s            <- ws?                                                     `?X`;
-ws            <- (newline / space)+                                      `?X`;
-newline       <- "\n" / "\r\n" / "\r"                                    `?X`;
-_sp           <- sp?                                                     `?X`;
-sp            <- space+                                                  `?X`;
-space         <- [ \t]                                                   `?X`;
+block_beg     <- _s ("{" _s indent / indent _s "{" / "{" / indent)       `?X`;
+block_end     <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent)       `?X`;
 indent        <- "\x06"                                                  `?X`;
 dedent        <- "\x15"                                                  `?X`;
+eos           <- _sp (";" / newline / !.)                                `?X`;
+_s            <- ws?                                                     `?X`;
+ws            <- (space / newline)+                                      `?X`;
+newline       <- comment? "\n" / "\r\n" / "\r"                           `?X`;
+_sp           <- sp?                                                     `?X`;
+sp            <- space+                                                  `?X`;
+space         <- [ \t] / ml_comment                                      `?X`;
+comment       <- "#" (!newline .)* &newline                              `?X`;
+ml_inner      <- ml_comment / (!"#|" !"|#" .)+                           `?X`;
+ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 
 %------------ Shortcut / helper functions ------------------------------------
 `

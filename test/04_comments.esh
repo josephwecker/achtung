@@ -1,0 +1,21 @@
+#!/usr/bin/env cerlish
+# ^^ I don't expect that to actually work
+
+#| And so the story begins.
+ |  It's been a long time.
+|#
+
+#|# Another story
+ |  That isn't #|very #|good (nested!)|#|#
+|##The end
+
+myfun # This function is lame
+  ok
+  # see?
+
+myfun2#| Am I a whitespace? # oh yeah|#ok
+
+
+#|# Same old story- just at the end of the file now
+ |  That isn't #|very #|good|#|#
+|##The end

@@ -1,0 +1,12 @@
+
+atomic_literals
+  some_atom
+  another@atom
+  'some % very complex atom!!*@#@!&*('
+  'here\'s another'
+
+  1234
+  8939198
+  
+  123.789
+
