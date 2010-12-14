@@ -1,0 +1,119 @@
+
+
+grammar    <- tl_exprs S `p1(Node)`;
+
+%------------- Toplevel expressions -------------
+tl_exprs   <- (S attrs)* `[p2(A)||A<-Node]`;
+attrs      <- (module / export / import / compile /
+               record / define / type / spec / functions) ~;
+% Not Yet Implemented
+export     <- "@export" (!eos .) eos `nyi`;
+import     <- "@import" (!eos .) eos `nyi`;
+compile    <- "@compile" (!eos .) eos `nyi`;
+record     <- "@record" (!eos .) eos `nyi`;
+define     <- "@define" (!eos .) eos `nyi`;
+type       <- "@type" (!eos .) eos `nyi`;
+spec       <- "@spec" (!eos .) eos `nyi`;
+
+
+module     <- "@module" sp n:atom ("." n:atom)* params:list_expr? eos
+                `Mod = case all(n, Node) of [M] -> M; L -> L end,
+                 case all(params, Node) of
+                   [] -> {attribute, ?L, module, Mod};
+                   [Params] -> {attribute, ?L, module, {Mod, Params}}
+                 end`;
+
+functions  <- (function S)* ~;
+function   <- ":" atom S expr ~;
+%function   <- ":"? name:atom S arg_seq? S expr eos? ~;
+%arg_seq    <- "(" (arg:pattern ",")* arg:pattern? guard_seq? ")" ~;
+%guard_seq  <- S pipe S (guard_expr ",")* guard_expr? ~;
+%pattern    <- S (match / term) S ~;
+%guard_expr <- S variable S ">" S variable ~;
+
+%match      <- term S "=" S expr ~;
+
+
+% TODO: Crazy stuff on transforming this:
+%   - Separate into functions of same name and arity
+%   - Output them grouped into functions of same name etc.
+
+%function   <- ":"? name:atom S funargs? guards? funbody ~;
+%funargs  <- "|" (S pattern S ","?)* "|" ~;
+%guards     <- 
+
+%% TRY AGAIN vvv
+%function   <- ":"? S name:atom S fdef S block ~;
+%fdef       <- (clause_delim funargs? clause_delim) ~;
+%fargs     <- 
+
+%fdef       <- (clause_delim funargs? guard_seq? clause_delim)
+%funarg    <- (S arg:pattern S ","?)
+%funarg    <- S atom S ~;
+%guard_seq  <- clause_delim (S 
+%clause_delim <- "|" !"|" `[]`;
+
+%pattern <- term / match
+
+%------------- Expressions -------------
+%expr       <- S (term / block) `?N2`;
+expr       <- S ( (term eos) / block ) `?N2`;
+term       <- atom / t_variable / variable / list_expr ~;
+
+
+%------------- Literals -------------
+% Blocks
+bl_begin   <- "{" S indent / indent S "{" / "{" / indent `[]`;
+bl_end     <- "}" S dedent / dedent S "}" / "}" / dedent `[]`;
+block      <- bl_begin (S expr eos)* bl_end `[p2(X)||X<-?N3]`;
+
+% Lists
+list_expr  <- S (null_list / nlist_expr / wlist_expr) `?N2`;
+null_list  <- "[" S "]" `{nil, Index}`;
+nlist_expr <- "[" x:expr? (S "," x:expr)* S ","? S "]" `all(x,Node)`;
+wlist_expr <- "[" x:expr (s x:expr)+ S "]" `all(x,Node)`;
+
+% Variables
+variable   <- [A-Z] [a-zA-Z0-9_]* `a(Node)`;
+t_variable <- variable ":" atom `{?N1, ?N3}`;
+
+% Atoms
+atom       <- simple_atom ~;
+simple_atom <- [a-z] [a-z0-9_]* `a(Node)`;
+
+
+% Whitespace, newlines, end-of-statements, comments and block comments
+S          <- s?                                `[]`; % Optional ws
+s          <- (sp / comment / nl)+              `[]`; % Required ws
+eos        <- sp? ((comment nl) / nl / !.)      `[]`; % End of Statement
+%eos        <- sp? (nl / [:;] / comment / !.)    `[]`; % End of Statement
+%pipe       <- !"|" "|" !"|"                     `[]`;
+ml_begin   <- "#|"                              `[]`;
+ml_end     <- "|#"                              `[]`;
+ml_comment <- ml_block / (!ml_begin !ml_end .)+ `[]`;
+ml_block   <- ml_begin ml_comment* ml_end       `[]`;
+comment    <- "#" (!nl .)* &nl                  `[]`;
+nl         <- ("\r\n" / "\n" / "\r")+           `[]`;
+sp         <- space+                            `[]`;
+space      <- [ \t] / ml_block                  `[]`;
+indent     <- "\x06"                            `[]`;
+dedent     <- "\x15"                            `[]`;
+
+
+%------------- Shortcut / helper functions -------------
+`
+-define(L,       line(Index)).
+-define(N1,      p1(Node)).
+-define(N2,      p2(Node)).
+-define(N3,      p3(Node)).
+
+flat(L)       -> lists:flatten(L).
+all(Key, L)   -> proplists:get_all_values(Key, flat(L)).
+a(L)          -> list_to_atom(flat(L)).
+p1([R|_])     -> R.
+p2([_,R|_])   -> R.
+p3([_,_,R|_]) -> R.
+
+
+% vim: set noai filetype=erlang textwidth=100:
+`

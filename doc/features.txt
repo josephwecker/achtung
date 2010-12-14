@@ -3,6 +3,7 @@
 Whitespace deliniated lists
 Dangling commas in lists
 "Built-in" regular expressions
+String interpolation
 
 Shortcut guard expressions
   - allow '?' at end of function defs

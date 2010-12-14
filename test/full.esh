@@ -1,32 +1,34 @@
 #| Top comment
    Aren't nested block comments cool?
-
-   P = fun(Str) -> {ok, T, _} = erl_scan:string(Str), {ok, F} = erl_parse:parse_form(T), io:format("~p", [F]) end.
 |#
 
 @module#|hey|#syntax.full# [Param, Another,
 #AndAnother] # Hope this goes well
 @module another.one [Oh, Yeah]
 @module another.one [Oh yeah [Wowsers, thats, cool]]
-  # I mean, really really
+# I mean, really really
 
 #<first_thing|msg, Str| is_list(Str) |
 #<first_thing|msg, Str| when is_list(Str):
 
 #<first_thing|msg, Str:list|
 
-myfun
-  ok
-myfun()
-  ok
-myfun(ok,2,3)
-  ok
-myfun ok
-myfun() ok
-myfun(ok,2,3) ok
-
-myfun(A:atom,B:number,C:number)
+:myfun
   ok
 
-myfun(A,B:number,C | B > C) ok
+#:myfun()
+#  ok
+#:myfun(ok,2,3)
+#  ok
+#:myfun ok
+#:myfun() ok
+#:myfun(ok,2,3) ok
+
+#:myfun(A:atom,B:number,C:number)
+#  ok
+
+#:myfun(A,B:number,C | B > C) ok
+
+#:myfun(A,B:number,C | C > B)
+#  ok
 
