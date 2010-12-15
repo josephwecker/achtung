@@ -1,26 +1,26 @@
 %------------ Grammar --------------------------------------------------------
-grammar       <- (_s form)* _s                              `[p2(F)||F<-?N1]`;
+grammar       <- (_s form)* _s                              `[p2(F)||F<-?P1]`;
 form          <- attribute / function                                       ~;
 
 %------------ Attributes -----------------------------------------------------
 attribute     <- module                                        `{attr, Node}`;
-module        <- "@module" sp atom                                      `?N3`;
+module        <- "@module" sp atom                                      `?P3`;
 
 %------------ Functions ------------------------------------------------------
-function      <- atom expression              `{function, ?N1, listify(?N2)}`;
+function      <- atom expression              `{function, ?P1, listify(?P2)}`;
 
 %------------ Terms / Atomic Literals ----------------------------------------
 term          <- atom                                                       ~;
 atom          <- simple_atom / complex_atom                          `?S2LIT`;
 simple_atom   <- [a-z] [a-z0-9_@]*                                          ~;
 complex_atom  <- "'" not_apos* "'"                                          ~;
-not_apos      <- !"'" ("\\" . / !"\\" .)                                `?N2`;
+not_apos      <- !"'" ("\\" . / !"\\" .)                                `?P2`;
 
 
 %------------ Expressions ----------------------------------------------------
-expression    <- _s (block / expr_with_end)                             `?N2`;
-block         <- block_beg expression* expr? block_end     `append_(?N2,?N3)`;
-expr_with_end <- expr eos                                               `?N1`;
+expression    <- _s (block / expr_with_end)                             `?P2`;
+block         <- block_beg expression* expr? block_end     `append_(?P2,?P3)`;
+expr_with_end <- expr eos                                               `?P1`;
 expr          <- term                                                       ~;
 
 %------------ Whitespace, Comments, Delimiters -------------------------------
@@ -42,23 +42,26 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 %------------ Shortcut / helper functions ------------------------------------
 `
 -define(L,       line(Index)).
--define(N1,      p1(Node)).
--define(N2,      p2(Node)).
--define(N3,      p3(Node)).
+-define(P1,      p1(Node)).
+-define(P2,      p2(Node)).
+-define(P3,      p3(Node)).
 -define(GET(Key),all(Key, Node)).
 -define(X,       []).
+
+% Basically let Erlang turn it into a literal
 -define(LITX(X), literal(X, ?L)).
 -define(S2LIT,   ?LITX(flat(Node))).
-%-define(ATOM(L), {atom, ?L, list_to_atom(flat(X
 
 flat(L)       -> lists:flatten(L).
 all(Key, L)   -> proplists:get_all_values(Key, flat(L)).
-%a(L)          -> list_to_atom(flat(L)).
 p1([R|_])     -> R.
 p2([_,R|_])   -> R.
 p3([_,_,R|_]) -> R.
 
+% Append V onto L only if V has something
 append_(L,V)  -> case V of [] -> L; _ -> lists:append(L,[V]) end.
+
+% Make sure it's a list
 listify(V) when is_list(V) -> V;
 listify(V)    -> [V].
 
