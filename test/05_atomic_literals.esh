@@ -2,11 +2,12 @@
 atomic_literals
   some_atom
   another@atom
-#|  'some % very complex atom!!*@#@!&*('
+  'and_another'
+  'some % very complex atom!!*@#@!&*('
   'here\'s another'
-
+  'and super \n \^A complex'
+#|
   1234
   8939198
-  
   123.789
 |#

@@ -11,9 +11,11 @@ function      <- atom expression              `{function, ?N1, listify(?N2)}`;
 
 %------------ Terms / Atomic Literals ----------------------------------------
 term          <- atom                                                       ~;
-atom          <- simple_atom / complex_atom                                 ~;
-simple_atom   <- [a-z] [a-z0-9_@]*                                  `a(Node)`;
-complex_atom  <- "'" simple_atom "'"                                        ~;
+atom          <- simple_atom / complex_atom                          `?S2LIT`;
+simple_atom   <- [a-z] [a-z0-9_@]*                                          ~;
+complex_atom  <- "'" not_apos* "'"                                          ~;
+not_apos      <- !"'" ("\\" . / !"\\" .)                                `?N2`;
+
 
 %------------ Expressions ----------------------------------------------------
 expression    <- _s (block / expr_with_end)                             `?N2`;
@@ -45,10 +47,13 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 -define(N3,      p3(Node)).
 -define(GET(Key),all(Key, Node)).
 -define(X,       []).
+-define(LITX(X), literal(X, ?L)).
+-define(S2LIT,   ?LITX(flat(Node))).
+%-define(ATOM(L), {atom, ?L, list_to_atom(flat(X
 
 flat(L)       -> lists:flatten(L).
 all(Key, L)   -> proplists:get_all_values(Key, flat(L)).
-a(L)          -> list_to_atom(flat(L)).
+%a(L)          -> list_to_atom(flat(L)).
 p1([R|_])     -> R.
 p2([_,R|_])   -> R.
 p3([_,_,R|_]) -> R.
@@ -56,6 +61,8 @@ p3([_,_,R|_]) -> R.
 append_(L,V)  -> case V of [] -> L; _ -> lists:append(L,[V]) end.
 listify(V) when is_list(V) -> V;
 listify(V)    -> [V].
+
+literal(X,L)  -> {ok,[{T,_,V}],_}=erl_scan:string(X), {T,L,V}.
 
 % vim: set noai filetype=erlang textwidth=100:
 `
