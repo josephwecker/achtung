@@ -17,14 +17,17 @@ complex_atom  <- "'" not_apos* "'"                                          ~;
 not_apos      <- !"'" ("\\" . / !"\\" .)                                `?P2`;
 %number        <- [+-]? (float / integer / character)
 % TODO: Set negative / positive
-number        <- integer                                            ~;
-%number        <- float / integer                                            ~;
-integer       <- base_int / normal_int / character               `?S2L(?RM_)`;
+number        <- [+-]? (float / integer)                            `?FIXNUM`;
+integer       <- base_int / normal_int / character                          ~;
 normal_int    <- [0-9] [0-9_]*                                              ~;
 base_int      <- base_prefix [A-Za-z0-9_]+                                  ~;
 base_prefix   <- "0" [xX] / "0" [oO] / "0" [bB] / ([1-9] [0-9]* [rR]) `?BASE`;
-character     <- "$" ("\\" . / .)                                           ~;
-%float         <- normal_int "." normal_int* ([eE] 
+character     <- "$" (char_escapes / .)                                     ~;
+char_escapes  <- "\\^" [a-zA-Z] / "\\" o (o o?)? / "\\x{" h+ "}" /
+                 "\\x" h h / "\\" .                                         ~;
+o             <- [0-7]                                                      ~;
+h             <- [0-9a-fA-F]                                                ~;
+float         <- normal_int "." normal_int+ ([eE] [-+]? normal_int)?        ~;
 
 %------------ Expressions ----------------------------------------------------
 expression    <- _s (block / expr_with_end)                             `?P2`;
@@ -58,10 +61,12 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 -define(P2,      p2(Node)).
 -define(P3,      p3(Node)).
 -define(GET(Key),all(Key, Node)).
+-define(FLAT,    flat(Node)).
+-define(RM(C),   rm_char(C, flat(Node),[])).
 
 % Used for numbers
--define(RM_,     rm_underscores(flat(Node),[])).
 -define(BASE,    base(Node)).
+-define(FIXNUM,  fix_num(Node, ?L)).
 
 % Basically let Erlang turn it into a literal
 -define(S2L(X),  literal(flat(X), ?L)).
@@ -83,11 +88,12 @@ listify(V)    -> [V].
 
 literal(X,L)  -> {ok,[{T,_,V}],_}=erl_scan:string(X), {T,L,V}.
 
-% Utilities used for numbers
-rm_underscores([],Acc)     -> lists:reverse(Acc);
-rm_underscores([$_|T],Acc) -> rm_underscores(T,Acc);
-rm_underscores([H|T],Acc)  -> rm_underscores(T,[H|Acc]).
+rm_char(C, L)            -> rm_char(C, L, []).
+rm_char(_, [], Acc)      -> lists:reverse(Acc);
+rm_char(C, [C | T], Acc) -> rm_char(C, T, Acc);
+rm_char(C, [H | T], Acc) -> rm_char(C, T, [H | Acc]).
 
+% Utilities used for numbers
 base(["0",$X])->"16#";
 base(["0",$x])->"16#";
 base(["0",$O])->"8#";
@@ -96,6 +102,12 @@ base(["0",$B])->"2#";
 base(["0",$b])->"2#";
 base([D1, DN, $R]) -> [flat([D1,DN,"#"])];
 base([D1, DN, $r]) -> [flat([D1,DN,"#"])].
+
+fix_num(Num, Line) -> fix_num2(rm_char($_,rm_char($+,flat(Num))), Line).
+fix_num2([$- | Num], Line) ->
+  {T, L, V} = literal(Num, Line),
+  {T, L, -V};
+fix_num2(Num, Line) -> literal(Num, Line).
 
 % vim: set noai filetype=erlang textwidth=100:
 `
