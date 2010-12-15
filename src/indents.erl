@@ -85,7 +85,7 @@ dents(<<9, R/binary>>, {A, IS, CI, _}) -> dents(R, {<<A/binary,9>>, IS, CI+2, st
 dents(<<"\r\n",R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\r,$\n>>,IS,0,start});
 dents(<<$\n,R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\n>>,IS,0,start});
 dents(<<$\r,R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\r>>,IS,0,start});
-dents(<<$#,R/binary>>,{A,IS,_,_})->next(R,{<<A/binary,$#>>,IS,0,inline});
+%dents(<<$#,R/binary>>,{A,IS,_,_})->next(R,{<<A/binary,$#>>,IS,0,inline});
 dents(<<4>>,{A,IS,CI,CS})->
   case dedents(A,IS,0) of {A2,_}->{ok,{A2,IS,CI,CS}};E->E end;
 

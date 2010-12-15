@@ -4,7 +4,7 @@ Whitespace deliniated lists
 Dangling commas in lists
 "Built-in" regular expressions
 String interpolation
-
+Ternary expressions
 Shortcut guard expressions
   - allow '?' at end of function defs
   - is_list()  -> l?() etc.
