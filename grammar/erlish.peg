@@ -10,12 +10,17 @@ module        <- "@module" sp atom                                      `?P3`;
 function      <- atom expression              `{function, ?P1, listify(?P2)}`;
 
 %------------ Terms / Atomic Literals ----------------------------------------
-term          <- atom                                                       ~;
+term          <- atom / number                                              ~;
 atom          <- simple_atom / complex_atom                          `?S2LIT`;
 simple_atom   <- [a-z] [a-z0-9_@]*                                          ~;
 complex_atom  <- "'" not_apos* "'"                                          ~;
 not_apos      <- !"'" ("\\" . / !"\\" .)                                `?P2`;
-
+%number        <- [+-]? (float / integer / character)
+number        <- integer                                                    ~;
+integer       <- base_int / normal_int                           `?S2L(?RM_)`;
+normal_int    <- [0-9] [0-9_]*                                              ~;
+base_int      <- base_prefix [A-Za-z0-9_]+                                  ~;
+base_prefix   <- "0x" / "0o" / "0b" / ([1-9] [0-9]* "r")              `?BASE`;
 
 %------------ Expressions ----------------------------------------------------
 expression    <- _s (block / expr_with_end)                             `?P2`;
@@ -41,17 +46,24 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 
 %------------ Shortcut / helper functions ------------------------------------
 `
--define(L,       line(Index)).
+-define(L,       line(Index)).     % Current line #
+-define(X,       []).              % Consume but ignore
+
+% Node unpacking
 -define(P1,      p1(Node)).
 -define(P2,      p2(Node)).
 -define(P3,      p3(Node)).
 -define(GET(Key),all(Key, Node)).
--define(X,       []).
+
+% Used for numbers
+-define(RM_,     rm_underscores(flat(Node),[])).
+-define(BASE,    base(Node)).
 
 % Basically let Erlang turn it into a literal
--define(LITX(X), literal(X, ?L)).
--define(S2LIT,   ?LITX(flat(Node))).
+-define(S2L(X),  literal(flat(X), ?L)).
+-define(S2LIT,   ?S2L(Node)).
 
+% For node unpacking
 flat(L)       -> lists:flatten(L).
 all(Key, L)   -> proplists:get_all_values(Key, flat(L)).
 p1([R|_])     -> R.
@@ -66,6 +78,16 @@ listify(V) when is_list(V) -> V;
 listify(V)    -> [V].
 
 literal(X,L)  -> {ok,[{T,_,V}],_}=erl_scan:string(X), {T,L,V}.
+
+% Utilities used for numbers
+rm_underscores([],Acc)     -> lists:reverse(Acc);
+rm_underscores([$_|T],Acc) -> rm_underscores(T,Acc);
+rm_underscores([H|T],Acc)  -> rm_underscores(T,[H|Acc]).
+
+base("0x")->"16#";
+base("0o")->"8#";
+base("0b")->"2#";
+base([D1, DN, "r"]) -> [flat([D1,DN,"#"])].
 
 % vim: set noai filetype=erlang textwidth=100:
 `

@@ -6,8 +6,15 @@ atomic_literals
   'some % very complex atom!!*@#@!&*('
   'here\'s another'
   'and super \n \^A complex'
-#|
   1234
   8939198
+  0xffFF22
+  0o12772
+  0b101
+  14r2811c
+  123_452_899
+  0xff_ff_77
+  0o2_3
+#|
   123.789
 |#
