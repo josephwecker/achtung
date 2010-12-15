@@ -16,12 +16,15 @@ simple_atom   <- [a-z] [a-z0-9_@]*                                          ~;
 complex_atom  <- "'" not_apos* "'"                                          ~;
 not_apos      <- !"'" ("\\" . / !"\\" .)                                `?P2`;
 %number        <- [+-]? (float / integer / character)
-number        <- integer                                                    ~;
+% TODO: Set negative / positive
+number        <- integer                                            ~;
+%number        <- float / integer                                            ~;
 integer       <- base_int / normal_int / character               `?S2L(?RM_)`;
 normal_int    <- [0-9] [0-9_]*                                              ~;
 base_int      <- base_prefix [A-Za-z0-9_]+                                  ~;
-base_prefix   <- "0x" / "0o" / "0b" / ([1-9] [0-9]* "r")              `?BASE`;
+base_prefix   <- "0" [xX] / "0" [oO] / "0" [bB] / ([1-9] [0-9]* [rR]) `?BASE`;
 character     <- "$" ("\\" . / .)                                           ~;
+%float         <- normal_int "." normal_int* ([eE] 
 
 %------------ Expressions ----------------------------------------------------
 expression    <- _s (block / expr_with_end)                             `?P2`;
@@ -85,10 +88,14 @@ rm_underscores([],Acc)     -> lists:reverse(Acc);
 rm_underscores([$_|T],Acc) -> rm_underscores(T,Acc);
 rm_underscores([H|T],Acc)  -> rm_underscores(T,[H|Acc]).
 
-base("0x")->"16#";
-base("0o")->"8#";
-base("0b")->"2#";
-base([D1, DN, "r"]) -> [flat([D1,DN,"#"])].
+base(["0",$X])->"16#";
+base(["0",$x])->"16#";
+base(["0",$O])->"8#";
+base(["0",$o])->"8#";
+base(["0",$B])->"2#";
+base(["0",$b])->"2#";
+base([D1, DN, $R]) -> [flat([D1,DN,"#"])];
+base([D1, DN, $r]) -> [flat([D1,DN,"#"])].
 
 % vim: set noai filetype=erlang textwidth=100:
 `

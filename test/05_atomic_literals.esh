@@ -11,6 +11,10 @@ atomic_literals
   0xffFF22
   0o12772
   0b101
+  0XFF
+  0B0001
+  0O1234
+  17R28FG
   14r2811c
   123_452_899
   0xff_ff_77
