@@ -17,10 +17,11 @@ complex_atom  <- "'" not_apos* "'"                                          ~;
 not_apos      <- !"'" ("\\" . / !"\\" .)                                `?P2`;
 %number        <- [+-]? (float / integer / character)
 number        <- integer                                                    ~;
-integer       <- base_int / normal_int                           `?S2L(?RM_)`;
+integer       <- base_int / normal_int / character               `?S2L(?RM_)`;
 normal_int    <- [0-9] [0-9_]*                                              ~;
 base_int      <- base_prefix [A-Za-z0-9_]+                                  ~;
 base_prefix   <- "0x" / "0o" / "0b" / ([1-9] [0-9]* "r")              `?BASE`;
+character     <- "$" ("\\" . / .)                                           ~;
 
 %------------ Expressions ----------------------------------------------------
 expression    <- _s (block / expr_with_end)                             `?P2`;
