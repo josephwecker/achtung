@@ -153,12 +153,11 @@ active(Dat,A,S) ->
     {{_,_,_,Ign}=BlockDef, StartTok, R}  ->
       % Inside a block- do indent/dedent unless ignored by this kind of block,
       % and then start running in block-mode.
-      A2 = ?ADD(A, StartTok),
-      {A3, S2} = case Ign of
-        false -> do_dent(A2, ?S.ci, ?S.ds, ?S.stdi, ?S.xt, S);
-        true -> {A2, ?S{ci=0}}
+      {A2, S2} = case Ign of
+        false -> do_dent(A, ?S.ci, ?S.ds, ?S.stdi, ?S.xt, S);
+        true -> {A, ?S{ci=0}}
       end,
-      launchblock(R,A3,BlockDef,S2);
+      launchblock(R,?ADD(A2, StartTok),BlockDef,S2);
     false ->
       {A2, S2} = do_dent(A, ?S.ci, ?S.ds, ?S.stdi, ?S.xt, S),
       inline(Dat, A2, S2)
@@ -187,12 +186,12 @@ dedents(A,[_|R],CI,S) -> dedents(?ADD(A, ?S.dt), R, CI, S).
 
 % BlockDef = {EscMF, EndMF, Contains, Ignored}
 launchblock(Dat, Acc, _BlockDef, S) ->
-  io:format("Starting a block: ~p | ~p~n", [Dat, Acc]),
+  io:format("~n---~nStarting a block: ~p | ~p~n---~n~n", [Acc, Dat]),
   % TODO: put new block on stack and start running through...
   {cont, ?S{a=Acc}}.
 
 inline(Dat, Acc, S) ->
-  io:format("Starting inline: ~p | ~p~n", [Dat, Acc]),
+  io:format("~n---~nStarting inline: ~p | ~p~n---~n~n", [Acc, Dat]),
   % TODO: march on through, watching for blocks, empty, newlines, and eof
   {cont, ?S{a=Acc}}.
 
