@@ -75,8 +75,10 @@
 file_scan(FName)-> file_scan(FName, []).
 file_scan(FName, Opts) ->
   % We're going to be nice and not pull it all into memory to begin with.
-  {ok, File} = file:open(FName, [raw, binary, {read_ahead, 512}]),
-  do_file_scan(File, 1, new_state(Opts)).
+  case file:open(FName, [raw, binary, {read_ahead, 512}]) of
+    {ok, File} -> do_file_scan(File, 1, new_state(Opts));
+    Other -> Other
+  end.
 
 full_scan(Data) -> full_scan(Data, []).
 full_scan(Data, Opts)-> scan([Data,<<?EOF>>], Opts).
@@ -90,9 +92,12 @@ scan(Data, Cont) when is_tuple(Cont) -> dents(Data, Cont).
 
 do_file_scan(File, L, S) ->
   case file:read_line(File) of
-    eof     ->case dents(<<?EOF>>,S) of {ok,S2}->{ok,S2}; O->{L,O} end;
-    {ok,Dat}->case dents(Dat,S) of {ok,S2}->do_file_scan(File,L+1,S2);O->{L,O} end;
-    Other   ->{L,Other}
+    eof -> case dents(<<?EOF>>,S) of {ok,S2}->{ok,S2}; O->{L,O} end;
+    {ok,Dat}->case dents(Dat,S) of
+        {cont, S2} -> do_file_scan(File, L+1, S2);
+        {ok, Result} -> {ok, Result};
+        O->{L,O} end;
+    Other -> {L,Other}
   end.
 
 new_state(Opts) -> new_state(Opts, #s{}).
@@ -132,7 +137,8 @@ bin_matcher(M, Succ, FailFun) ->
 
 dents(<<>>,S) -> {cont,S};
 dents(<<?EOF,_R/binary>>,S) -> eof(S);
-dents(Data, #s{st=active}=S) -> active(Data, ?S.a, S).
+dents(Data, #s{st=active}=S) -> active(Data, ?S.a, S);
+dents(Data, #s{st=inline}=S) -> inline(Data, ?S.a, S).
 % TODO - other continue states
 
 % active - calculating current indent level
@@ -155,7 +161,7 @@ active(Dat,A,S) ->
       % and then start running in block-mode.
       {A2, S2} = case Ign of
         false -> do_dent(A, ?S.ci, ?S.ds, ?S.stdi, ?S.xt, S);
-        true -> {A, ?S{ci=0}}
+        true -> {A, S}
       end,
       launchblock(R,?ADD(A2, StartTok),BlockDef,S2);
     false ->
@@ -165,22 +171,22 @@ active(Dat,A,S) ->
 
 % Same level as last- nothing to do
 do_dent(A, CI, [CI|_], _, _, S) ->
-  {A, ?S{ci=0}};
+  {A, S};
 % First indent of the day
 do_dent(A, CI, [0], auto, _, S) ->
-  {?ADD(A, ?S.it), ?S{ci=0, ds=[CI,0], stdi=(CI*2)}};
+  {?ADD(A, ?S.it), ?S{ds=[CI,0], stdi=(CI*2)}};
 % Ignored indent - Don't insert a token or modify dent-stack
 do_dent(A, CI, [L|_], StdI, true, S) when (CI - L) >= StdI ->
-  {A, ?S{ci=0}};
+  {A, S};
 % Indent that's good to go!
 do_dent(A, CI, [L|_], _, _, S) when CI > L ->
-  {?ADD(A, ?S.it), ?S{ci=0,ds=[CI|?S.ds]}};
+  {?ADD(A, ?S.it), ?S{ds=[CI|?S.ds]}};
 % Dedent that's good to go
 do_dent(A, CI, [L|_], _, _, S) when CI < L ->
   dedents(A, ?S.ds, CI, S).
 
 dedents(A,[],CI,_S) -> throw({indent_error, A, none, CI});
-dedents(A,[L|_]=DS,L,S) -> {A, ?S{ds=DS,ci=0}};
+dedents(A,[L|_]=DS,L,S) -> {A, ?S{ds=DS}};
 dedents(A,[L|_],CI,_S) when CI > L -> throw({indent_error, A, L, CI});
 dedents(A,[_|R],CI,S) -> dedents(?ADD(A, ?S.dt), R, CI, S).
 
@@ -190,14 +196,17 @@ launchblock(Dat, Acc, _BlockDef, S) ->
   % TODO: put new block on stack and start running through...
   {cont, ?S{a=Acc}}.
 
-inline(Dat, Acc, S) ->
-  io:format("~n---~nStarting inline: ~p | ~p~n---~n~n", [Acc, Dat]),
-  % TODO: march on through, watching for blocks, empty, newlines, and eof
-  {cont, ?S{a=Acc}}.
+inline(<<>>,A,S) -> {cont, ?S{a=A, st=inline}};
+inline(?NXT(?EOF,_),A,S) -> eof(?S{a=A});
+inline(?NXT(?N1,R),A,S) -> active(R,?ADD(A,?N1),?S{ci=0});
+inline(?NXT(?N2,R),A,S) -> active(R,?ADD(A,?N2),?S{ci=0});
+inline(?NXT(?N3,R),A,S) -> active(R,?ADD(A,?N3),?S{ci=0});
+% TODO: Check for blocks here
+inline(?NXT(C,R),A,S) -> inline(R,?ADD(A,C),S).
 
 % 
 % block runs drop into inline runs unless last token was a newline
 
 eof(S) ->
-  % TODO: rest of dedents
-  {ok, ?S.a}.
+  {A2, _S2} = dedents(?ADD(?S.a,"\n"), ?S.ds, 0, S),
+  {ok, A2}.

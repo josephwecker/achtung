@@ -61,7 +61,7 @@ atomic_literals
   $\x7f     # 2 hex digits
   $\x{ff3}  # Any number of hex digits
 
-  # Strings
+#|  # Strings
   "Simple string"
   nop # So strings don't combine
   "String with \"Stuff\" in it"
@@ -76,4 +76,4 @@ atomic_literals
   '''And now for that most 'special' string of all-
 The string that is "everywhere" and nowhere at once...
       The string that can do anything \n\n(almost)'''
-
+|#
