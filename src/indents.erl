@@ -53,8 +53,8 @@
     ds =   [0],   % Dent Stack
     ci =   0,     % Current Indent Level
     igs =  [],    % Ignore Stack
-    it =   <<"<<indent>>">>,    % Indent Token
-    dt =   <<"<<dedent>>">>,    % Dedent Token
+    it =   "<<indent>>",    % Indent Token
+    dt =   "<<dedent>>",    % Dedent Token
     xt =   true,  % Extra indentation doesn't count as indentation
     stdi = auto,  % Standard indentation length
     igb =  ?DEFAULT_IGN_BLOCKS, % Ignore blocks definition list
@@ -66,8 +66,8 @@
 -define(N2,  "\r\n").
 -define(N3,  $\r).
 
--define(A(Byte, Rest), <<Byte, Rest/binary>>).
--define(Z(Acc, Byte), <<Acc/binary, Byte>>).
+-define(NXT(Byte, Rest), <<Byte, Rest/binary>>).
+-define(ADD(Acc, ToAdd), list_to_binary([Acc, ToAdd])).
 -define(S, S#s).
 
 %-----------------------------------------------------------------------------
@@ -96,7 +96,7 @@ do_file_scan(File, L, S) ->
   end.
 
 new_state(Opts) -> new_state(Opts, #s{}).
-new_state([], S) -> create_ignoreblock_fun(S);
+new_state([], S) -> ?S{igb_fun=(create_ignoreblock_fun(?S.igb))};
 new_state([{indent_token,        V}|T], S) -> new_state(T, ?S{it=V});
 new_state([{dedent_token,        V}|T], S) -> new_state(T, ?S{dt=V});
 new_state([{extra_indent_ignored,V}|T], S) -> new_state(T, ?S{xt=V});
@@ -105,9 +105,7 @@ new_state([O|T], S) ->
   error_logger:warning("Unsupported indents option \"~p\". Ignoring.", [O]),
   new_state(T, S).
 
-create_ignoreblock_fun(#s{igb=IGB}=S) ->
-  ?S{igb_fun=create_ignoreblock_fun_inner(IGB)}.
-create_ignoreblock_fun_inner([{_,Start,End,Esc,Cont,Ign}|T]) ->
+create_ignoreblock_fun([{_,Start,End,Esc,Cont,Ign}|T]) ->
   % One function returns false or
   %  {{Escaped matcher, End matcher, Contains?, Ignore?}, Rest}
   IsEscaped = case Esc of
@@ -116,8 +114,8 @@ create_ignoreblock_fun_inner([{_,Start,End,Esc,Cont,Ign}|T]) ->
     end,
   bin_matcher([Start],
     {IsEscaped, bin_matcher([End]), Cont, Ign},
-    create_ignoreblock_fun_inner(T));
-create_ignoreblock_fun_inner([]) -> fun(_)->false end.
+    create_ignoreblock_fun(T));
+create_ignoreblock_fun([]) -> fun(_)->false end.
 
 bin_matcher(M) ->
   B = iolist_to_binary(M),
@@ -152,31 +150,55 @@ active(?NXT(?N3,R),A,S)   -> active(R,?ADD(A,?N3),?S{ci=0});
 active(Dat,A,S) ->
   IsBlock = ?S.igb_fun,
   case IsBlock(Dat) of
-    {{EscMF, EndMF, Cont, Ign}, Tok, R}  ->
-      A2 = ?ADD(A,Tok),
-      case Ign of
-        false ->
-          {A2, CI, DS} = do_dent(A
-      inblock(R,A,EscMF,EndMF,Cont,Ign,S)
-  {cont,?S{a=A}}.
-  % if block-start
-  %   if block.total_ignore
-  %     start block run
-  %   else
-  %     do indent/dedent
-  %     start block run
-  % else
-  %   do indent/dedent
-  %   start inline run
-  % 
-  % block runs drop into inline runs unless last token was a newline
+    {{_,_,_,Ign}=BlockDef, StartTok, R}  ->
+      % Inside a block- do indent/dedent unless ignored by this kind of block,
+      % and then start running in block-mode.
+      A2 = ?ADD(A, StartTok),
+      {A3, S2} = case Ign of
+        false -> do_dent(A2, ?S.ci, ?S.ds, ?S.stdi, ?S.xt, S);
+        true -> {A2, ?S{ci=0}}
+      end,
+      launchblock(R,A3,BlockDef,S2);
+    false ->
+      {A2, S2} = do_dent(A, ?S.ci, ?S.ds, ?S.stdi, ?S.xt, S),
+      inline(Dat, A2, S2)
+  end.
+
+% Same level as last- nothing to do
+do_dent(A, CI, [CI|_], _, _, S) ->
+  {A, ?S{ci=0}};
+% First indent of the day
+do_dent(A, CI, [0], auto, _, S) ->
+  {?ADD(A, ?S.it), ?S{ci=0, ds=[CI,0], stdi=(CI*2)}};
+% Ignored indent - Don't insert a token or modify dent-stack
+do_dent(A, CI, [L|_], StdI, true, S) when (CI - L) >= StdI ->
+  {A, ?S{ci=0}};
+% Indent that's good to go!
+do_dent(A, CI, [L|_], _, _, S) when CI > L ->
+  {?ADD(A, ?S.it), ?S{ci=0,ds=[CI|?S.ds]}};
+% Dedent that's good to go
+do_dent(A, CI, [L|_], _, _, S) when CI < L ->
+  dedents(A, ?S.ds, CI, S).
+
+dedents(A,[],CI,_S) -> throw({indent_error, A, none, CI});
+dedents(A,[L|_]=DS,L,S) -> {A, ?S{ds=DS,ci=0}};
+dedents(A,[L|_],CI,_S) when CI > L -> throw({indent_error, A, L, CI});
+dedents(A,[_|R],CI,S) -> dedents(?ADD(A, ?S.dt), R, CI, S).
+
+% BlockDef = {EscMF, EndMF, Contains, Ignored}
+launchblock(Dat, Acc, _BlockDef, S) ->
+  io:format("Starting a block: ~p | ~p~n", [Dat, Acc]),
+  % TODO: put new block on stack and start running through...
+  {cont, ?S{a=Acc}}.
+
+inline(Dat, Acc, S) ->
+  io:format("Starting inline: ~p | ~p~n", [Dat, Acc]),
+  % TODO: march on through, watching for blocks, empty, newlines, and eof
+  {cont, ?S{a=Acc}}.
+
+% 
+% block runs drop into inline runs unless last token was a newline
+
 eof(S) ->
   % TODO: rest of dedents
   {ok, ?S.a}.
-% Same as last indent-level- moving along...
-%active(?NXT(C,R), A, #s{ci=CI,ds=[CI|_]}=S) -> inline(R,?ADD(A,C),S);
-% Indent - first one ever
-%active(?NXT(C,R), A, #s{ci=CI, ds=[0], stdi=auto}=S) ->
-%  inline(R,?ADD(A,C),?S{ci=0,ds=[CI,0],stdi=CI});
-% Indent - extra-gets-ignored turned off
-%active(?NXT(C,R), A, #s{ci=CI, ds=[L|_], xt=false}=S) when CI > L ->

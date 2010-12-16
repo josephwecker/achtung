@@ -9,7 +9,7 @@ Sequence syntax
 Struct
 
 Dashes in atom names (and therefore function-names)?
-Questionmarks in atoms and therefore function-names
+Questionmarks in atoms and therefore function-names - also variables?
 
 Whitespace deliniated lists
 Dangling commas in lists
@@ -17,7 +17,7 @@ Dangling commas in lists
 "Built-in" regular expressions (compiles re at compile-time)
 String interpolation  ("blah ~s" ~ MyStr) or ("blah ~b ~s" ~ [123, MyStr])
 
-Ternary expressions
+Ternary expressions (or maybe just a builtin function)
 Shortcuts for type conversion functions (make polymorphic)
 Shortcut guard expressions
   - allow '?' at end of function defs
