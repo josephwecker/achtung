@@ -39,11 +39,6 @@
 -export([file_scan/1, file_scan/2,
          full_scan/1, full_scan/2,
          scan/1,      scan/2]).
--define(MATCHER(M,Succ,Fail), fun(<<M,_/binary>>)->Succ; (_)->Fail end).
--define(MATCH(M), ?MATCHER(M,true,false)).
--define(IGN_BLOCKS_FN,
-  %fun([$\"|_]) -> {fun([$\"|_])->
-  fun(<<$\",_/binary>>) ->
 -define(DEFAULT_IGN_BLOCKS, [
     % Type     Start   End     Esc?    Contain? Total-ignore?
     {string,   "\"",   "\"",   true,   false,   false},
@@ -51,17 +46,17 @@
     {args,     "(",    ")",    false,  true,    false},
     {selector, "[",    "]",    false,  true,    false}]).
 -record(s, {
-    a = <<>>, % Accumulator
-    ds = [0], % Dent Stack
-    ci = 0,   % Current Indent Level
-    igs = [], % Ignore Stack
-    it = <<"<<indent>>">>,     % Indent Token
-    dt = <<"<<dedent>>">>,     % Dedent Token
-    xt = true,% Extra indentation doesn't count as indentation
-    stdi = auto, % Standard indentation length
-    igb = ?DEFAULT_IGN_BLOCKS, % Ignore blocks definition list
-    pigb = [], % Processed Ignore Block definitions
-    st = active % Inner processing state
+    a =    <<>>,  % Accumulator
+    ds =   [0],   % Dent Stack
+    ci =   0,     % Current Indent Level
+    igs =  [],    % Ignore Stack
+    it =   <<"<<indent>>">>,    % Indent Token
+    dt =   <<"<<dedent>>">>,    % Dedent Token
+    xt =   true,  % Extra indentation doesn't count as indentation
+    stdi = auto,  % Standard indentation length
+    igb =  ?DEFAULT_IGN_BLOCKS, % Ignore blocks definition list
+    igb_fun       % Processed Ignore Block definitions
+    st =   active % Inner processing state
   }).
 % States:
 %  - active_calc   : scanning whitespace @ beginning of line for indent-level
@@ -102,16 +97,38 @@ do_file_scan(File, L, S) ->
   end.
 
 new_state(Opts) -> new_state(Opts, #s{}).
-new_state([], S) -> create_matchers(S);
+new_state([], S) -> create_ignoreblock_fun(S);
 new_state([{indent_token,        V}|T], S) -> new_state(T, ?S{it=V});
 new_state([{dedent_token,        V}|T], S) -> new_state(T, ?S{dt=V});
 new_state([{extra_indent_ignored,V}|T], S) -> new_state(T, ?S{xt=V});
 new_state([{ignoreblock_defs,    V}|T], S) -> new_state(T, ?S{igb=V});
 new_state([O|T], S) ->
-  error_logger:warning("Unsupported indents option \"~P\". Ignoring.", [O]),
+  error_logger:warning("Unsupported indents option \"~p\". Ignoring.", [O]),
   new_state(T, S).
 
-create_matchers(#s{igb  <---- YOU ARE HERE
+create_ignoreblock_fun(#s{igb=IGB}=S) -> ?S{igb_fun=create_ignoreblock_fun(IGB,S)}.
+create_ignoreblock_fun([{_,Start,End,Esc,Cont,Ign}|T], S) ->
+  % One function returns false or
+  %  {{Escaped matcher, End matcher, Contains?, Ignore?}, Rest}
+  IsEscaped = case Esc of
+      true -> bin_matcher(["\\",[End]]);
+      false -> fun(B)->{false,B} end
+    end,
+  bin_matcher([Start],
+    {IsEscaped, bin_matcher([End]), Cont, Ign},
+    create_ignoreblock_fun(T, S)).
+create_ignoreblock_fun([], S) -> fun(_)->false;
+
+bin_matcher(M) ->
+  B = iolist_to_binary(M),
+  L = byte_size(B),
+  fun(<<A:L/binary,R/binary>>) when A=:=B->{true,R};(C)->{false,C} end.
+
+bin_matcher(M, Succ, FailFun) ->
+  B = iolist_to_binary(M),
+  L = byte_size(B),
+  fun(<<A:L/binary,R/binary>>) when A=:=B->{Succ, R};(C)->FailFun(C) end.
+
 
 %-----------------------------------------------------------------------------
 
@@ -146,9 +163,9 @@ active(Dat,A,S) ->
   % block runs drop into inline runs unless last token was a newline
 
 % Same as last indent-level- moving along...
-active(?A(C,R), A, #s{ci=CI,ds=[CI|_]}=S) -> inline(R,?Z(A,C),S);
+%active(?A(C,R), A, #s{ci=CI,ds=[CI|_]}=S) -> inline(R,?Z(A,C),S);
 % Indent - first one ever
-active(?A(C,R), A, #s{ci=CI, ds=[0], stdi=auto}=S) ->
-  inline(R,?Z(A,C),?S{ci=0,ds=[CI,0],stdi=CI});
+%active(?A(C,R), A, #s{ci=CI, ds=[0], stdi=auto}=S) ->
+%  inline(R,?Z(A,C),?S{ci=0,ds=[CI,0],stdi=CI});
 % Indent - extra-gets-ignored turned off
-active(?A(C,R), A, #s{ci=CI, ds=[L|_], xt=false}=S) when CI > L ->
+%active(?A(C,R), A, #s{ci=CI, ds=[L|_], xt=false}=S) when CI > L ->
