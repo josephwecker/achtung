@@ -55,13 +55,9 @@
     xt =   true,  % Extra indentation doesn't count as indentation
     stdi = auto,  % Standard indentation length
     igb =  ?DEFAULT_IGN_BLOCKS, % Ignore blocks definition list
-    igb_fun       % Processed Ignore Block definitions
+    igb_fun,      % Processed Ignore Block definitions
     st =   active % Inner processing state
   }).
-% States:
-%  - active_calc   : scanning whitespace @ beginning of line for indent-level
-%  - active_inline : not in an ignore block, but working toward next newline
-%  - ignoring      : some level deep in ignore-blocks
 -define(EOF, 4).
 -define(N1,  $\n).
 -define(N2,  "\r\n").
@@ -79,7 +75,7 @@ file_scan(FName, Opts) ->
   {ok, File} = file:open(FName, [raw, binary, {read_ahead, 512}]),
   do_file_scan(File, 1, new_state(Opts)).
 
-full_scan(Data) -> full_scan(Data, Opts).
+full_scan(Data) -> full_scan(Data, []).
 full_scan(Data, Opts)-> scan([Data,<<?EOF>>], Opts).
 
 scan(Data) -> scan(Data, []).
@@ -106,8 +102,9 @@ new_state([O|T], S) ->
   error_logger:warning("Unsupported indents option \"~p\". Ignoring.", [O]),
   new_state(T, S).
 
-create_ignoreblock_fun(#s{igb=IGB}=S) -> ?S{igb_fun=create_ignoreblock_fun(IGB,S)}.
-create_ignoreblock_fun([{_,Start,End,Esc,Cont,Ign}|T], S) ->
+create_ignoreblock_fun(#s{igb=IGB}=S) ->
+  ?S{igb_fun=create_ignoreblock_fun_inner(IGB)}.
+create_ignoreblock_fun_inner([{_,Start,End,Esc,Cont,Ign}|T]) ->
   % One function returns false or
   %  {{Escaped matcher, End matcher, Contains?, Ignore?}, Rest}
   IsEscaped = case Esc of
@@ -116,8 +113,8 @@ create_ignoreblock_fun([{_,Start,End,Esc,Cont,Ign}|T], S) ->
     end,
   bin_matcher([Start],
     {IsEscaped, bin_matcher([End]), Cont, Ign},
-    create_ignoreblock_fun(T, S)).
-create_ignoreblock_fun([], S) -> fun(_)->false;
+    create_ignoreblock_fun_inner(T));
+create_ignoreblock_fun_inner([]) -> fun(_)->false end.
 
 bin_matcher(M) ->
   B = iolist_to_binary(M),
@@ -140,16 +137,16 @@ dents(Data, #s{st=active}=S) -> active(Data, ?S.a, S).
 % active - calculating current indent level
 % Finish
 active(<<>>,A,S)        -> {cont,?S{a=A, st=active}};
-active(?A(?EOF,_)),A,S) -> eof(?S{a=A});
+active(?A(?EOF,_),A,S)  -> eof(?S{a=A});
 % Increment indent level
-active(?A(32,R),A,S)    -> active(R,?Z(A,32), ?S{ci=?S.ci+1};
-active(?A( 9,R),A,S)    -> active(R,?Z(A, 9), ?S{ci=?S.ci+2};
+active(?A(32,R),A,S)    -> active(R,?Z(A,32), ?S{ci=?S.ci+1});
+active(?A( 9,R),A,S)    -> active(R,?Z(A, 9), ?S{ci=?S.ci+2});
 % Blank line- start over
 active(?A(?N1,R),A,S)   -> active(R,?Z(A,?N1),?S{ci=0});
 active(?A(?N2,R),A,S)   -> active(R,?Z(A,?N2),?S{ci=0});
 active(?A(?N3,R),A,S)   -> active(R,?Z(A,?N3),?S{ci=0});
 active(Dat,A,S) ->
-  case start_block
+  {cont,?S{a=A}}.
   % if block-start
   %   if block.total_ignore
   %     start block run
@@ -161,7 +158,9 @@ active(Dat,A,S) ->
   %   start inline run
   % 
   % block runs drop into inline runs unless last token was a newline
-
+eof(S) ->
+  % TODO: rest of dedents
+  {ok, ?S.a}.
 % Same as last indent-level- moving along...
 %active(?A(C,R), A, #s{ci=CI,ds=[CI|_]}=S) -> inline(R,?Z(A,C),S);
 % Indent - first one ever
