@@ -1,0 +1,16 @@
+
+
+comment       <- "#" (!newline .)* &newline                              `?X`;
+ml_inner      <- ml_comment / (!"#|" !"|#" .)+                           `?X`;
+ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
+
+blank_line    <- space* comment? nl                                      `?X`;
+
+newline       <- nl blank_line*                                          `?X`;
+nl            <- "\n" / "\r\n" / "\r" / !.                               `?X`;
+
+space         <-  "\\" nl / [ \t] / ml_comment                           `?X`;
+
+`
+-define(X,       []).              % Consume but ignore
+`

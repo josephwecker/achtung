@@ -27,89 +27,128 @@
 %%   {Aumulator, IndentStack, CurrentIndentLevel, CurrentState} where
 %%     CurrentState is one of 'start' or 'inline'
 %%
+%% DOUBLE+ INDENT (determined by first valid indent) gets exempted
 %%
-%% TODO: If double the normal indent- no longer in indent mode until back to
-%%       single or lower.
-%% TODO: Any number of "Exclusion" tokens (like "#|" and "'''") that break it
-%%       out of indent mode until that thing is finished.
+%% Put indent/dedent tokens right before newline before they occur (if
+%% possible)- it'll ensure that line/col stuff in error messages will be
+%% accurate and might simplify parsing...
 %%
+
 
 -module(indents).
--export([file_scan_test/0, file_scan/1, full_scan/1, scan/1, scan/2]).
--define(INIT, {<<>>,[0],0,start}).
+-export([file_scan/1, file_scan/2,
+         full_scan/1, full_scan/2,
+         scan/1,      scan/2]).
+-define(MATCHER(M,Succ,Fail), fun(<<M,_/binary>>)->Succ; (_)->Fail end).
+-define(MATCH(M), ?MATCHER(M,true,false)).
+-define(IGN_BLOCKS_FN,
+  %fun([$\"|_]) -> {fun([$\"|_])->
+  fun(<<$\",_/binary>>) ->
+-define(DEFAULT_IGN_BLOCKS, [
+    % Type     Start   End     Esc?    Contain? Total-ignore?
+    {string,   "\"",   "\"",   true,   false,   false},
+    {comment,  "#",    "\n",   false,  false,   true},
+    {args,     "(",    ")",    false,  true,    false},
+    {selector, "[",    "]",    false,  true,    false}]).
+-record(s, {
+    a = <<>>, % Accumulator
+    ds = [0], % Dent Stack
+    ci = 0,   % Current Indent Level
+    igs = [], % Ignore Stack
+    it = <<"<<indent>>">>,     % Indent Token
+    dt = <<"<<dedent>>">>,     % Dedent Token
+    xt = true,% Extra indentation doesn't count as indentation
+    stdi = auto, % Standard indentation length
+    igb = ?DEFAULT_IGN_BLOCKS, % Ignore blocks definition list
+    pigb = [], % Processed Ignore Block definitions
+    st = active % Inner processing state
+  }).
+% States:
+%  - active_calc   : scanning whitespace @ beginning of line for indent-level
+%  - active_inline : not in an ignore block, but working toward next newline
+%  - ignoring      : some level deep in ignore-blocks
+-define(EOF, 4).
+-define(N1,  $\n).
+-define(N2,  "\r\n").
+-define(N3,  $\r).
 
-file_scan_test() ->
-  fprof:trace(start),
-  file_scan("test/indents-test-text.txt"),
-  file_scan("test/indents-test-text.txt"),
-  file_scan("test/indents-test-text.txt"),
-  file_scan("test/indents-test-text.txt"),
-  file_scan("test/indents-test-text.txt"),
-  file_scan("test/indents-test-text.txt"),
-  fprof:trace(stop),
-  fprof:profile(),
-  fprof:analyse([{dest, "indents.analysis.erl"}, {cols, 50}, no_callers, {totals, true}]).
+-define(A(Byte, Rest), <<Byte, Rest/binary>>).
+-define(Z(Acc, Byte), <<Acc/binary, Byte>>).
+-define(S, S#s).
 
-file_scan(FName)->
+%-----------------------------------------------------------------------------
+
+file_scan(FName)-> file_scan(FName, []).
+file_scan(FName, Opts) ->
   % We're going to be nice and not pull it all into memory to begin with.
   {ok, File} = file:open(FName, [raw, binary, {read_ahead, 512}]),
-  do_file_scan(File).
+  do_file_scan(File, 1, new_state(Opts)).
 
-full_scan(Data)->dents(erlang:iolist_to_binary([Data,4]),?INIT).
+full_scan(Data) -> full_scan(Data, Opts).
+full_scan(Data, Opts)-> scan([Data,<<?EOF>>], Opts).
 
-scan(Data) -> dents(Data, ?INIT).
-scan(Data, {_,_,_, inline} = State) -> next(Data, State);
-scan(Data, State) when is_list(Data) -> dents(erlang:iolist_to_binary(Data), State);
-scan(Data, State) -> dents(Data, State).
+scan(Data) -> scan(Data, []).
+scan(Data, Opts) when is_list(Data)  -> scan(erlang:iolist_to_binary(Data), Opts);
+scan(Data, Opts) when is_binary(Data)-> dents(Data, new_state(Opts));
+scan(Data, Cont) when is_tuple(Cont) -> dents(Data, Cont).
 
-do_file_scan(File) ->
-  do_file_scan(File, 1, ?INIT).
-do_file_scan(File, LineNum, State) ->
+%-----------------------------------------------------------------------------
+
+do_file_scan(File, L, S) ->
   case file:read_line(File) of
-    eof -> case dents(<<4>>, State) of
-        {ok, {Fin, _, _, _}} -> {ok, Fin};
-        Other -> {LineNum, Other}
-      end;
-    {ok, Data} -> case dents(Data, State) of
-        {ok, State2} -> do_file_scan(File, LineNum+1, State2);
-        Other -> {LineNum, Other}
-      end;
-    Other -> {LineNum, Other}
+    eof     ->case dents(<<?EOF>>,S) of {ok,S2}->{ok,S2}; O->{L,O} end;
+    {ok,Dat}->case dents(Dat,S) of {ok,S2}->do_file_scan(File,L+1,S2);O->{L,O} end;
+    Other   ->{L,Other}
   end.
 
-% Indents
-dents(<<32, R/binary>>, {A, IS, CI, _}) -> dents(R, {<<A/binary,32>>, IS, CI+1, start});
-dents(<<9, R/binary>>, {A, IS, CI, _}) -> dents(R, {<<A/binary,9>>, IS, CI+2, start});
+new_state(Opts) -> new_state(Opts, #s{}).
+new_state([], S) -> create_matchers(S);
+new_state([{indent_token,        V}|T], S) -> new_state(T, ?S{it=V});
+new_state([{dedent_token,        V}|T], S) -> new_state(T, ?S{dt=V});
+new_state([{extra_indent_ignored,V}|T], S) -> new_state(T, ?S{xt=V});
+new_state([{ignoreblock_defs,    V}|T], S) -> new_state(T, ?S{igb=V});
+new_state([O|T], S) ->
+  error_logger:warning("Unsupported indents option \"~P\". Ignoring.", [O]),
+  new_state(T, S).
 
-% Essentially blank lines- throw away current indent level & continue
-dents(<<"\r\n",R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\r,$\n>>,IS,0,start});
-dents(<<$\n,R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\n>>,IS,0,start});
-dents(<<$\r,R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\r>>,IS,0,start});
-%dents(<<$#,R/binary>>,{A,IS,_,_})->next(R,{<<A/binary,$#>>,IS,0,inline});
-dents(<<4>>,{A,IS,CI,CS})->
-  case dedents(A,IS,0) of {A2,_}->{ok,{A2,IS,CI,CS}};E->E end;
+create_matchers(#s{igb  <---- YOU ARE HERE
 
-% Same indent level as last.  Moving along...
-dents(<<C,R/binary>>,{A,[L|_]=IS,L,_})->next(R,{<<A/binary,C>>,IS,0,inline});
-% Indent
-dents(<<C,R/binary>>,{A,[L|_]=IS,CI,_}) when CI>L->next(R,{<<A/binary,6,C>>,[CI|IS],0,inline});
-% Dedent and/or propagate error
-dents(<<C,R/binary>>,{A,IS,CI,_})->
-  case dedents(A, IS, CI) of {A2,IS2}->next(R,{<<A2/binary,C>>,IS2,0,inline});E->E end;
-% Done (... for now, muahaha)
-dents(<<>>,{A,IS,CI,_})->{ok,{A,IS,CI,start}}.
+%-----------------------------------------------------------------------------
 
-% Keep dedenting & popping until we're lined up again
-dedents(A,[],CI)->{indent_error,A,empty,CI};
-dedents(A,[L|R],L)->{A,[L|R]};
-dedents(A,[L|_R],CI)when CI>L->{indent_error,A,L,CI};
-dedents(A,[_L|R],CI)->dedents(<<A/binary,21>>,R,CI).
+dents(<<>>,S) -> {cont,S};
+dents(<<?EOF,_R/binary>>,S) -> eof(S);
+dents(Data, #s{st=active}=S) -> active(Data, ?S.a, S).
+% TODO - other continue states
 
-%% Skip ahead to right after the next newline
-next(<<>>,{A,IS,_,_})->{ok,{A,IS,0,inline}};
-next(<<"\r\n",R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\r,$\n>>,IS,0,start});
-next(<<$\n,R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\n>>,IS,0,start});
-next(<<$\r,R/binary>>,{A,IS,_,_})->dents(R,{<<A/binary,$\r>>,IS,0,start});
-next(<<4>>,{A,IS,_,_})->
-  case dedents(A,IS,0) of {A2,_}->{ok,{A2,IS,0,start}};E->E end;
-next(<<C,R/binary>>,{A,IS,_,_})->next(R,{<<A/binary,C>>,IS,0,inline}).
+% active - calculating current indent level
+% Finish
+active(<<>>,A,S)        -> {cont,?S{a=A, st=active}};
+active(?A(?EOF,_)),A,S) -> eof(?S{a=A});
+% Increment indent level
+active(?A(32,R),A,S)    -> active(R,?Z(A,32), ?S{ci=?S.ci+1};
+active(?A( 9,R),A,S)    -> active(R,?Z(A, 9), ?S{ci=?S.ci+2};
+% Blank line- start over
+active(?A(?N1,R),A,S)   -> active(R,?Z(A,?N1),?S{ci=0});
+active(?A(?N2,R),A,S)   -> active(R,?Z(A,?N2),?S{ci=0});
+active(?A(?N3,R),A,S)   -> active(R,?Z(A,?N3),?S{ci=0});
+active(Dat,A,S) ->
+  case start_block
+  % if block-start
+  %   if block.total_ignore
+  %     start block run
+  %   else
+  %     do indent
+  %     start block run
+  % else
+  %   do indent
+  %   start inline run
+  % 
+  % block runs drop into inline runs unless last token was a newline
+
+% Same as last indent-level- moving along...
+active(?A(C,R), A, #s{ci=CI,ds=[CI|_]}=S) -> inline(R,?Z(A,C),S);
+% Indent - first one ever
+active(?A(C,R), A, #s{ci=CI, ds=[0], stdi=auto}=S) ->
+  inline(R,?Z(A,C),?S{ci=0,ds=[CI,0],stdi=CI});
+% Indent - extra-gets-ignored turned off
+active(?A(C,R), A, #s{ci=CI, ds=[L|_], xt=false}=S) when CI > L ->

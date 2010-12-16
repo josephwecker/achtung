@@ -1,0 +1,21 @@
+#|  This shouldn't be a problem
+ | (fake indent)
+ |
+ |
+ |#  hey_there  # (real indent)
+(fake dedent)
+some_function(blah,
+        no_problem |
+      a?(no_problem))
+  first_actual_indent
+  ''' Some stuff
+do nothing here at all...'''
+  "do nothing here
+as well"
+  # Tailing comment has broken us before...
+
+# Heya
+      # Heya
+  # Heya
+
+first_dedent ok

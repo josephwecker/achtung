@@ -1,6 +1,19 @@
 -module(cerlish).
 -export([main/1]).
 
+-define(DENT_IGN_BLOCKS, [
+    % Type      | Start | End   | Esc?  | Container? | Total Ignore?
+    {atom,        "'",    "'",    true,   false,       false},
+    {n_string,    "\"",   "\"",   true,   false,       false},
+    {regex1,      "/",    "/",    true,   false,       false},
+    {regex2,      "r{",   "}",    true,   false,       false},
+    {ml_comment,  "#|",   "|#",   true,   false,       true},
+    {comment,     "#",    "\n",   false,  false,       true},
+    {tuple,       "(",    ")",    false,  true,        false},
+    {list,        "[",    "]",    false,  true,        false},
+    {binary,      "<[",   "]>",   false,  true,        false},
+    {line_cont,   "\\n",  "\n",   true,   true,        true}]).
+
 main(Opts) ->
   {Flags, Files} = parse_opts([], Opts),
   lists:foreach(fun(F)->cerlish(Flags,F) end, Files).
