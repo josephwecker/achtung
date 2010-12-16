@@ -2,6 +2,9 @@
 %% when appropriate.  Tabs are treated as 2 spaces.  An EOF (<<4>>) causes it
 %% to put on any remaining dedents it needs to.
 %%
+%% If the source-code seems pretty dense, don't forget to compile with the 'P'
+%% flag and look at the expanded, prettified output.
+%%
 %% file_scan(Filename) gives the result of scanning the file as a binary.  If
 %%    there are any errors it gives {LineNumber, Error} instead.
 %% full_scan(Data) automatically appends an EOF so it can be used for strings
@@ -119,12 +122,12 @@ create_ignoreblock_fun_inner([]) -> fun(_)->false end.
 bin_matcher(M) ->
   B = iolist_to_binary(M),
   L = byte_size(B),
-  fun(<<A:L/binary,R/binary>>) when A=:=B->{true,R};(C)->{false,C} end.
+  fun(<<A:L/binary,R/binary>>) when A=:=B->{true,B,R};(C)->{false,C} end.
 
 bin_matcher(M, Succ, FailFun) ->
   B = iolist_to_binary(M),
   L = byte_size(B),
-  fun(<<A:L/binary,R/binary>>) when A=:=B->{Succ, R};(C)->FailFun(C) end.
+  fun(<<A:L/binary,R/binary>>) when A=:=B->{Succ,B,R};(C)->FailFun(C) end.
 
 
 %-----------------------------------------------------------------------------
@@ -137,24 +140,33 @@ dents(Data, #s{st=active}=S) -> active(Data, ?S.a, S).
 % active - calculating current indent level
 % Finish
 active(<<>>,A,S)        -> {cont,?S{a=A, st=active}};
-active(?A(?EOF,_),A,S)  -> eof(?S{a=A});
+active(?NXT(?EOF,_),A,S)  -> eof(?S{a=A});
 % Increment indent level
-active(?A(32,R),A,S)    -> active(R,?Z(A,32), ?S{ci=?S.ci+1});
-active(?A( 9,R),A,S)    -> active(R,?Z(A, 9), ?S{ci=?S.ci+2});
+active(?NXT(32,R),A,S)    -> active(R,?ADD(A,32), ?S{ci=?S.ci+1});
+active(?NXT( 9,R),A,S)    -> active(R,?ADD(A, 9), ?S{ci=?S.ci+2});
 % Blank line- start over
-active(?A(?N1,R),A,S)   -> active(R,?Z(A,?N1),?S{ci=0});
-active(?A(?N2,R),A,S)   -> active(R,?Z(A,?N2),?S{ci=0});
-active(?A(?N3,R),A,S)   -> active(R,?Z(A,?N3),?S{ci=0});
+active(?NXT(?N1,R),A,S)   -> active(R,?ADD(A,?N1),?S{ci=0});
+active(?NXT(?N2,R),A,S)   -> active(R,?ADD(A,?N2),?S{ci=0});
+active(?NXT(?N3,R),A,S)   -> active(R,?ADD(A,?N3),?S{ci=0});
+% Started some text- possibly do indent/dedent
 active(Dat,A,S) ->
+  IsBlock = ?S.igb_fun,
+  case IsBlock(Dat) of
+    {{EscMF, EndMF, Cont, Ign}, Tok, R}  ->
+      A2 = ?ADD(A,Tok),
+      case Ign of
+        false ->
+          {A2, CI, DS} = do_dent(A
+      inblock(R,A,EscMF,EndMF,Cont,Ign,S)
   {cont,?S{a=A}}.
   % if block-start
   %   if block.total_ignore
   %     start block run
   %   else
-  %     do indent
+  %     do indent/dedent
   %     start block run
   % else
-  %   do indent
+  %   do indent/dedent
   %   start inline run
   % 
   % block runs drop into inline runs unless last token was a newline
@@ -162,9 +174,9 @@ eof(S) ->
   % TODO: rest of dedents
   {ok, ?S.a}.
 % Same as last indent-level- moving along...
-%active(?A(C,R), A, #s{ci=CI,ds=[CI|_]}=S) -> inline(R,?Z(A,C),S);
+%active(?NXT(C,R), A, #s{ci=CI,ds=[CI|_]}=S) -> inline(R,?ADD(A,C),S);
 % Indent - first one ever
-%active(?A(C,R), A, #s{ci=CI, ds=[0], stdi=auto}=S) ->
-%  inline(R,?Z(A,C),?S{ci=0,ds=[CI,0],stdi=CI});
+%active(?NXT(C,R), A, #s{ci=CI, ds=[0], stdi=auto}=S) ->
+%  inline(R,?ADD(A,C),?S{ci=0,ds=[CI,0],stdi=CI});
 % Indent - extra-gets-ignored turned off
-%active(?A(C,R), A, #s{ci=CI, ds=[L|_], xt=false}=S) when CI > L ->
+%active(?NXT(C,R), A, #s{ci=CI, ds=[L|_], xt=false}=S) when CI > L ->
