@@ -12,11 +12,9 @@ function      <- atom expression              `{function, ?P1, listify(?P2)}`;
 %------------ Terms / Atomic Literals ----------------------------------------
 term          <- atom / number                                              ~;
 atom          <- simple_atom / complex_atom                          `?S2LIT`;
-simple_atom   <- [a-z] [a-z0-9_@]*                                          ~;
+simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
 complex_atom  <- "'" not_apos* "'"                                          ~;
 not_apos      <- !"'" ("\\" . / !"\\" .)                                `?P2`;
-%number        <- [+-]? (float / integer / character)
-% TODO: Set negative / positive
 number        <- [+-]? (float / integer)                            `?FIXNUM`;
 integer       <- base_int / normal_int / character                          ~;
 normal_int    <- [0-9] [0-9_]*                                              ~;
