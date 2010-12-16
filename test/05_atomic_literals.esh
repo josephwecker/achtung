@@ -1,11 +1,14 @@
 
 atomic_literals
+  # Atoms
   some_atom
   another@atom
   'and_another'
   'some % very complex atom!!*@#@!&*('
   'here\'s another'
   'and super \n \^A complex'
+
+  # Integers
   1234
   8939198
   0xffFF22
@@ -19,10 +22,14 @@ atomic_literals
   123_452_899
   0xff_ff_77
   0o2_3
+
+  # Floats
   123.789
   39200.2e-2
   3902.2E89
   1390.0e12
+
+  # Using -/+ for numbers
   -1234
   -8939198
   -0xffFF22
@@ -43,12 +50,30 @@ atomic_literals
   +342
   +3920.3
   +3990.00_93e+4
+
+  # Characters
   $a
   $\n
   $&
   $ 
   $\^A
-  $\41
-  $\x7f
-  $\x{ff3}
+  $\41      # 1,2, or 3 octal digits
+  $\x7f     # 2 hex digits
+  $\x{ff3}  # Any number of hex digits
+
+  # Strings
+  "Simple string"
+  nop # So strings don't combine
+  "String with \"Stuff\" in it"
+  nop
+  "More 'stuff' within the \"string\"\n"
+  nop
+  "And some more craziness \x{ff3} here"
+  nop
+  "String that just keeps going"  " and going"
+  " and going."
+  nop
+  '''And now for that most 'special' string of all-
+The string that is "everywhere" and nowhere at once...
+      The string that can do anything \n\n(almost)'''
 
