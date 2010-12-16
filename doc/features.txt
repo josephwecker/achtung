@@ -1,23 +1,55 @@
 
+Implement a lot of the features with macro language (astify etc.)
+
+Sequence syntax
+Struct
+
 Dashes in atom names (and therefore function-names)?
+Questionmarks in atoms and therefore function-names
+
 Whitespace deliniated lists
 Dangling commas in lists
-"Built-in" regular expressions
-String interpolation
+
+"Built-in" regular expressions (compiles re at compile-time)
+String interpolation  ("blah ~s" ~ MyStr) or ("blah ~b ~s" ~ [123, MyStr])
+
 Ternary expressions
+Shortcuts for type conversion functions (make polymorphic)
 Shortcut guard expressions
   - allow '?' at end of function defs
   - is_list()  -> l?() etc.
   - some_fun|Blah:atom, etc
+
+Clean and easily nested record syntax
+
+== Basic libraries ==
+Way better string & binary string library
+Wrap around things like ~p and other pretty-print / basic string IO for the
+    shell.
+
+== Higher level libraries ==
+Redis? http-bridge?
+
+== Tools ==
+Drop-in erlc replacement
+Drop-in erl replacement ?
+Super better shell
+
+
+== Don't know yet... ==
 Take any spec/type or combo and turn it into a (possibly deeply nested) guard
-sequence?
-
-
-Shortcuts for type conversion functions
-
-
+  sequence?
+Override operators (?)
 Syntax for function parameter defaults?
 More common use of packages?
+Special reassign variable syntax (like Var! or something) that is essentially
+  going to turn into a parsing hack, but allows redefinition when it really
+  makes sense...?
+
+
+
+
+
 
 
 Expression ->
