@@ -5,6 +5,7 @@
     % Type      | Start | End   | Esc?  | Container? | Total Ignore?
     {atom,        "'",    "'",    true,   false,       false},
     {n_string,    "\"",   "\"",   true,   false,       false},
+    {l_string,    "'''",  "'''",  true,   false,       false},
     {regex1,      "/",    "/",    true,   false,       false},
     {regex2,      "r{",   "}",    true,   false,       false},
     {ml_comment,  "#|",   "|#",   true,   false,       true},

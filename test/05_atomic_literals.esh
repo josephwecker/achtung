@@ -61,13 +61,13 @@ atomic_literals
   $\x7f     # 2 hex digits
   $\x{ff3}  # Any number of hex digits
 
-  #|  # Strings
   "Simple string"
   nop # So strings don't combine
   "String with \"Stuff\" in it"
   nop
   "More 'stuff' within the \"string\"\n"
   nop
+  #|  # Strings
   "And some more craziness \x{ff3} here"
   nop
   "String that just keeps going"  " and going"

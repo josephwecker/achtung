@@ -10,11 +10,13 @@ module        <- "@module" sp atom                                      `?P3`;
 function      <- atom expression              `{function, ?P1, listify(?P2)}`;
 
 %------------ Terms / Atomic Literals ----------------------------------------
-term          <- atom / number                                              ~;
+term          <- atom / number / string                                     ~;
+
 atom          <- simple_atom / complex_atom                          `?S2LIT`;
 simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
 complex_atom  <- "'" not_apos* "'"                                          ~;
 not_apos      <- !"'" ("\\" . / !"\\" .)                                `?P2`;
+
 number        <- [+-]? (float / integer)                            `?FIXNUM`;
 integer       <- base_int / normal_int / character                          ~;
 normal_int    <- [0-9] [0-9_]*                                              ~;
@@ -27,6 +29,12 @@ o             <- [0-7]                                                      ~;
 h             <- [0-9a-fA-F]                                                ~;
 float         <- normal_int "." normal_int+ ([eE] [-+]? normal_int)?        ~;
 
+string        <- simple_string / long_string                         `?S2LIT`;
+simple_string <- '"' not_quot* '"'                                          ~;
+not_quot      <- !'"' ("\\" . / !"\\" .)                                `?P2`;
+long_string   <- "'''" not_triple_ap* "'''"                             `?P2`;
+%long_string   <- "'''" not_triple_ap* "'''"                    `fixlstr(?P2)`;
+not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?P2`;
 %------------ Expressions ----------------------------------------------------
 expression    <- _s (block / expr_with_end)                             `?P2`;
 block         <- block_beg expression* expr? block_end     `append_(?P2,?P3)`;
@@ -62,17 +70,15 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 -define(FLAT,    flat(Node)).
 -define(RM(C),   rm_char(C, flat(Node),[])).
 
-% Used for numbers
+% Used for literals
 -define(BASE,    base(Node)).
 -define(FIXNUM,  fix_num(Node, ?L)).
-
-% Basically let Erlang turn it into a literal
--define(S2L(X),  literal(flat(X), ?L)).
+-define(S2L(X),  literal(flat(X), ?L)). % Basically let Erlang turn it into a literal
 -define(S2LIT,   ?S2L(Node)).
 
 % For node unpacking
 flat(L)       -> lists:flatten(L).
-all(Key, L)   -> proplists:get_all_values(Key, flat(L)).
+%all(Key, L)   -> proplists:get_all_values(Key, flat(L)).
 p1([R|_])     -> R.
 p2([_,R|_])   -> R.
 p3([_,_,R|_]) -> R.
@@ -90,6 +96,8 @@ rm_char(C, L)            -> rm_char(C, L, []).
 rm_char(_, [], Acc)      -> lists:reverse(Acc);
 rm_char(C, [C | T], Acc) -> rm_char(C, T, Acc);
 rm_char(C, [H | T], Acc) -> rm_char(C, T, [H | Acc]).
+
+%fixlstr(LStr) ->
 
 % Utilities used for numbers
 base(["0",$X])->"16#";
