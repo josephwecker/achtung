@@ -52,14 +52,14 @@
     a =    <<>>,  % Accumulator
     ds =   [0],   % Dent Stack
     ci =   0,     % Current Indent Level
-    igs =  [],    % Ignore Stack
+    bigs = [],    % Block Ignore Stack
     it =   "<<indent>>",    % Indent Token
     dt =   "<<dedent>>",    % Dedent Token
     xt =   true,  % Extra indentation doesn't count as indentation
     stdi = auto,  % Standard indentation length
     igb =  ?DEFAULT_IGN_BLOCKS, % Ignore blocks definition list
     igb_fun,      % Processed Ignore Block definitions
-    st =   active % Inner processing state
+    st =   inbol % Inner processing state
   }).
 -define(EOF, 4).
 -define(N1,  $\n).
@@ -72,6 +72,8 @@
 
 %-----------------------------------------------------------------------------
 
+% TODO: test continuations by reading specific # of bytes from file instead of
+% entire lines.
 file_scan(FName)-> file_scan(FName, []).
 file_scan(FName, Opts) ->
   % We're going to be nice and not pull it all into memory to begin with.
@@ -115,7 +117,7 @@ create_ignoreblock_fun([{_,Start,End,Esc,Cont,Ign}|T]) ->
   %  {{Escaped matcher, End matcher, Contains?, Ignore?}, Rest}
   IsEscaped = case Esc of
       true -> bin_matcher(["\\",[End]]);
-      false -> fun(B)->{false,B} end
+      false -> fun(_)->false end
     end,
   bin_matcher([Start],
     {IsEscaped, bin_matcher([End]), Cont, Ign},
@@ -125,7 +127,7 @@ create_ignoreblock_fun([]) -> fun(_)->false end.
 bin_matcher(M) ->
   B = iolist_to_binary(M),
   L = byte_size(B),
-  fun(<<A:L/binary,R/binary>>) when A=:=B->{true,B,R};(C)->{false,C} end.
+  fun(<<A:L/binary,R/binary>>) when A=:=B->{true,B,R};(_)->false end.
 
 bin_matcher(M, Succ, FailFun) ->
   B = iolist_to_binary(M),
@@ -135,77 +137,83 @@ bin_matcher(M, Succ, FailFun) ->
 
 %-----------------------------------------------------------------------------
 
-dents(<<>>,S) -> {cont,S};
-dents(<<?EOF,_R/binary>>,S) -> eof(S);
-dents(Data, #s{st=active}=S) -> active(Data, ?S.a, S);
-dents(Data, #s{st=inline}=S) -> inline(Data, ?S.a, S).
-% TODO - other continue states
+dents(<<>>,S)                 -> {cont,S};
+dents(<<?EOF,_R/binary>>,S)   -> eof(S);
+dents(Data, #s{st=inbol}=S)   -> inbol(   Data, ?S.a, S);
+dents(Data, #s{st=inline}=S)  -> inline(  Data, ?S.a, S);
+dents(Data, #s{st=inblock}=S) -> inblock( Data, ?S.a, ?S.bigs, [], S).
 
-% active - calculating current indent level
-% Finish
-active(<<>>,A,S)        -> {cont,?S{a=A, st=active}};
-active(?NXT(?EOF,_),A,S)  -> eof(?S{a=A});
-% Increment indent level
-active(?NXT(32,R),A,S)    -> active(R,?ADD(A,32), ?S{ci=?S.ci+1});
-active(?NXT( 9,R),A,S)    -> active(R,?ADD(A, 9), ?S{ci=?S.ci+2});
-% Blank line- start over
-active(?NXT(?N1,R),A,S)   -> active(R,?ADD(A,?N1),?S{ci=0});
-active(?NXT(?N2,R),A,S)   -> active(R,?ADD(A,?N2),?S{ci=0});
-active(?NXT(?N3,R),A,S)   -> active(R,?ADD(A,?N3),?S{ci=0});
-% Started some text- possibly do indent/dedent
-active(Dat,A,S) ->
+% At beginning of line and calculating current indent level
+inbol(<<>>,A,S)        -> {cont,?S{a=A, st=inbol}}; % Continue
+inbol(?NXT(?EOF,_),A,S)-> eof(?S{a=A});              % Finished
+inbol(?NXT(32,R),A,S)  -> inbol(R,?ADD(A,32), ?S{ci=?S.ci+1}); % Inc indent
+inbol(?NXT( 9,R),A,S)  -> inbol(R,?ADD(A, 9), ?S{ci=?S.ci+2});
+inbol(?NXT(?N1,R),A,S) -> inbol(R,?ADD(A,?N1),?S{ci=0}); % Blank- start over
+inbol(?NXT(?N2,R),A,S) -> inbol(R,?ADD(A,?N2),?S{ci=0});
+inbol(?NXT(?N3,R),A,S) -> inbol(R,?ADD(A,?N3),?S{ci=0});
+inbol(Dat,A,S) -> % Started some text- possibly do indent/dedent
   IsBlock = ?S.igb_fun,
   case IsBlock(Dat) of
-    {{_,_,_,Ign}=BlockDef, StartTok, R}  ->
-      % Inside a block- do indent/dedent unless ignored by this kind of block,
-      % and then start running in block-mode.
-      {A2, S2} = case Ign of
+    {{_,_,_,Ign}=BlockDef, StartTok, R} -> % Block is starting
+      {A2, S2} = case Ign of % But before we go into block mode...
         false -> do_dent(A, ?S.ci, ?S.ds, ?S.stdi, ?S.xt, S);
-        true -> {A, S}
+        true -> {A,S} % Ignore indent
       end,
-      launchblock(R,?ADD(A2, StartTok),BlockDef,S2);
-    false ->
+      inblock(R, ?ADD(A2, StartTok), [BlockDef], [], S2);
+    false -> % Normal indent/dedent
       {A2, S2} = do_dent(A, ?S.ci, ?S.ds, ?S.stdi, ?S.xt, S),
       inline(Dat, A2, S2)
   end.
 
-% Same level as last- nothing to do
-do_dent(A, CI, [CI|_], _, _, S) ->
-  {A, S};
-% First indent of the day
-do_dent(A, CI, [0], auto, _, S) ->
-  {?ADD(A, ?S.it), ?S{ds=[CI,0], stdi=(CI*2)}};
-% Ignored indent - Don't insert a token or modify dent-stack
-do_dent(A, CI, [L|_], StdI, true, S) when (CI - L) >= StdI ->
-  {A, S};
-% Indent that's good to go!
-do_dent(A, CI, [L|_], _, _, S) when CI > L ->
-  {?ADD(A, ?S.it), ?S{ds=[CI|?S.ds]}};
-% Dedent that's good to go
-do_dent(A, CI, [L|_], _, _, S) when CI < L ->
-  dedents(A, ?S.ds, CI, S).
+% Ignore, indent, set first indent, or dedent as appropriate
+do_dent(A,CI,[CI|_],_,_,S)->{A, S};
+do_dent(A,CI,[0],auto,_,S)->{?ADD(A, ?S.it),?S{ds=[CI,0],stdi=(CI*2)}};
+do_dent(A,CI,[L|_],StdI,true,S) when (CI - L) >= StdI -> {A,S};
+do_dent(A,CI,[L|_],_,_,S) when CI > L -> {?ADD(A, ?S.it),?S{ds=[CI|?S.ds]}};
+do_dent(A,CI,[L|_],_,_,S) when CI < L -> dedents(A,?S.ds,CI,S).
 
+% Emit the correct number of dedents
 dedents(A,[],CI,_S) -> throw({indent_error, A, none, CI});
 dedents(A,[L|_]=DS,L,S) -> {A, ?S{ds=DS}};
 dedents(A,[L|_],CI,_S) when CI > L -> throw({indent_error, A, L, CI});
 dedents(A,[_|R],CI,S) -> dedents(?ADD(A, ?S.dt), R, CI, S).
 
-% BlockDef = {EscMF, EndMF, Contains, Ignored}
-launchblock(Dat, Acc, _BlockDef, S) ->
-  io:format("~n---~nStarting a block: ~p | ~p~n---~n~n", [Acc, Dat]),
-  % TODO: put new block on stack and start running through...
-  {cont, ?S{a=Acc}}.
+% Going through the rest of the line
+inline(<<>>,A,S)        -> {cont, ?S{a=A, st=inline}};
+inline(?NXT(?EOF,_),A,S)-> eof(?S{a=A});
+inline(?NXT(?N1,R),A,S) -> inbol(R,?ADD(A,?N1),?S{ci=0});
+inline(?NXT(?N2,R),A,S) -> inbol(R,?ADD(A,?N2),?S{ci=0});
+inline(?NXT(?N3,R),A,S) -> inbol(R,?ADD(A,?N3),?S{ci=0});
+inline(Dat,A,S) ->
+  IsBlock = ?S.igb_fun,
+  case IsBlock(Dat) of
+    {BD, Toks, D2} -> inblock(D2, ?ADD(A,Toks), [BD], [], S);
+    false -> ?NXT(C,R) = Dat, inline(R, ?ADD(A,C), S)
+  end.
 
-inline(<<>>,A,S) -> {cont, ?S{a=A, st=inline}};
-inline(?NXT(?EOF,_),A,S) -> eof(?S{a=A});
-inline(?NXT(?N1,R),A,S) -> active(R,?ADD(A,?N1),?S{ci=0});
-inline(?NXT(?N2,R),A,S) -> active(R,?ADD(A,?N2),?S{ci=0});
-inline(?NXT(?N3,R),A,S) -> active(R,?ADD(A,?N3),?S{ci=0});
-% TODO: Check for blocks here
-inline(?NXT(C,R),A,S) -> inline(R,?ADD(A,C),S).
-
-% 
-% block runs drop into inline runs unless last token was a newline
+%inblock(D,A,[{EscMF, EndMF, Contains, Ignored}|R]=BlockStack,LastChr,S) ->
+inblock(D,A,[],$\n,S)        -> inbol(D,A,?S{bigs=[], ci=0});
+inblock(D,A,[],$\r,S)        -> inbol(D,A,?S{bigs=[], ci=0});
+inblock(D,A,[],_,S)          -> inline(D,A,?S{bigs=[]});
+inblock(<<>>,A,BS,_,S)       -> {cont, ?S{a=A, st=inblock, bigs=BS}};
+inblock(?NXT(?EOF,_),A,_,_,S)-> eof(?S{a=A}); % Parser's problem- not ours
+inblock(Dat,A,[{EscMF, EndMF, Contains, _}|R]=BS, _, S) ->
+  case EscMF(Dat) of
+    {true,Toks,D2} -> inblock(D2,?ADD(A,Toks),BS,[],S); % Moving along
+    false ->
+      case {EndMF(Dat), Contains} of
+        {{true,Toks,D2},_} -> inblock(D2,?ADD(A,Toks),R,Toks,S); % Done with this block
+        {false, false} ->
+          ?NXT(C,D2) = Dat, inblock(D2,?ADD(A,C),BS,[],S); % Moving along
+        {false, true} ->
+          IsBlock = ?S.igb_fun,
+          case IsBlock(Dat) of
+            {NewBDef, Toks, D2} ->
+              inblock(D2,?ADD(A,Toks),[NewBDef|BS],[],S); % Block within a block
+            false -> ?NXT(C,D2) = Dat, inblock(D2,?ADD(A,C),BS,[],S) % Moving along
+          end
+      end
+  end.
 
 eof(S) ->
   {A2, _S2} = dedents(?ADD(?S.a,"\n"), ?S.ds, 0, S),

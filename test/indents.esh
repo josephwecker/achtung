@@ -2,11 +2,12 @@
  | (fake indent)
  |
  |
- |#  hey_there  # (real indent)
+   hey_there  #
 (fake dedent)
 some_function(blah,
         no_problem |
       a?(no_problem))
+myfun
   first_actual_indent
   ''' Some stuff
 do nothing here at all...'''
@@ -19,3 +20,7 @@ as well"
   # Heya
 
 first_dedent ok
+        |#
+
+test_this(blah,
+  blah, blah, blah) ok
