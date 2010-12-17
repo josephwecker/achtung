@@ -67,9 +67,9 @@ atomic_literals
   nop
   "More 'stuff' within the \"string\"\n"
   nop
-  #|  # Strings
-  "And some more craziness \x{ff3} here"
+  "And some more craziness \x{2504} here"
   nop
+  #|  # Strings
   "String that just keeps going"  " and going"
   " and going."
   nop
