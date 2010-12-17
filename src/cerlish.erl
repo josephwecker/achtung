@@ -24,10 +24,8 @@ parse_opts(Acc, Files) ->
   {lists:reverse(Acc), Files}.
 
 cerlish(_Flags, F) ->
-  %{ok, DentedBin} = indents:file_scan(F),
   {ok, DentedBin} = indents:file_scan(F,
     [{ignoreblock_defs, ?DENT_IGN_BLOCKS}, {indent_token, 6}, {dedent_token, 21}]),
-  io:format("~s", [DentedBin]),
   AST = erlish:parse(binary_to_list(DentedBin)),
   %AST = [{attribute,1,file,{F,1}} |
   %  erlish:parse(binary_to_list(DentedBin))],

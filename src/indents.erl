@@ -192,8 +192,8 @@ inline(Dat,A,S) ->
   end.
 
 %inblock(D,A,[{EscMF, EndMF, Contains, Ignored}|R]=BlockStack,LastChr,S) ->
-inblock(D,A,[],$\n,S)        -> inbol(D,A,?S{bigs=[], ci=0});
-inblock(D,A,[],$\r,S)        -> inbol(D,A,?S{bigs=[], ci=0});
+inblock(D,A,[],<<$\n>>,S)    -> inbol(D,A,?S{bigs=[], ci=0});
+inblock(D,A,[],<<$\r>>,S)    -> inbol(D,A,?S{bigs=[], ci=0});
 inblock(D,A,[],_,S)          -> inline(D,A,?S{bigs=[]});
 inblock(<<>>,A,BS,_,S)       -> {cont, ?S{a=A, st=inblock, bigs=BS}};
 inblock(?NXT(?EOF,_),A,_,_,S)-> eof(?S{a=A}); % Parser's problem- not ours
@@ -202,9 +202,9 @@ inblock(Dat,A,[{EscMF, EndMF, Contains, _}|R]=BS, _, S) ->
     {true,Toks,D2} -> inblock(D2,?ADD(A,Toks),BS,[],S); % Moving along
     false ->
       case {EndMF(Dat), Contains} of
-        {{true,Toks,D2},_} -> inblock(D2,?ADD(A,Toks),R,Toks,S); % Done with this block
+        {{true,Toks,D2},_}->inblock(D2,?ADD(A,Toks),R,Toks,S); % Done with this block
         {false, false} ->
-          ?NXT(C,D2) = Dat, inblock(D2,?ADD(A,C),BS,[],S); % Moving along
+          ?NXT(C,D2) = Dat,inblock(D2,?ADD(A,C),BS,[],S); % Moving along
         {false, true} ->
           IsBlock = ?S.igb_fun,
           case IsBlock(Dat) of
