@@ -29,7 +29,7 @@ o             <- [0-7]                                                      ~;
 h             <- [0-9a-fA-F]                                                ~;
 float         <- normal_int "." normal_int+ ([eE] [-+]? normal_int)?        ~;
 
-string        <- simple_string / long_string                          `?FLAT`;
+string        <- simple_string / long_string                         `?S2LIT`;
 simple_string <- '"' not_quot* '"'                                          ~;
 not_quot      <- !'"' ("\\" . / !"\\" .)                                `?P2`;
 long_string   <- "'''" not_triple_ap* "'''"                             `?P2`;
@@ -72,7 +72,7 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 
 % Used for literals
 -define(BASE,    base(Node)).
--define(FIXNUM,  fix_num(Node, ?L)).
+-define(FIXNUM,  fix_num(Node, Index)).
 -define(S2L(X),  literal(flat(X),Index)). % Basically let Erlang turn it into a literal
 -define(S2LIT,   ?S2L(Node)).
 
@@ -92,13 +92,14 @@ listify(V)    -> [V].
 
 literal(X, Index)  ->
   % TODO: pass along any errors here as appropriate
-  %StartLoc = {line(Index), column(Index)},
-  {ok, X, EndLoc} = erl_scan:string(X, StartLoc),
-  case X of
+  {ok, Lit, _EndLoc} = erl_scan:string(X, line(Index)),
+  case Lit of
     [Single] -> Single;
-    Multiple when is_list Multiple -> Multiple
+    M when is_list(M) -> M
+      % much more serious- an actual list- which I haven't implemented yet.
+      %[T || <-M, 
+      %Multiple
   end.
-  %{ok,[{T,_,V}],_}=erl_scan:string(X), {T,L,V}.
 
 rm_char(C, L)            -> rm_char(C, L, []).
 rm_char(_, [], Acc)      -> lists:reverse(Acc);
