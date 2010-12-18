@@ -1,0 +1,34 @@
+New PEG implementation:
+  - Memoize only [symb|pos|res] if not already
+  - Only memoize in places where it knows it could be used
+  - Make sure dashes allowed in symbols
+  - More macro-based? Inline? More solidly deliniated?
+  - Binary pos based
+  - Nice vim syntax file
+  - Compare memory usage on big grammars
+  - Under what conditions would this rule ever backtrack?  If none, don't
+    memoize.
+  - Erlang style functions seem like a natural fit for ordered tests
+
+
+  - Compiler Compiler Compiler (c3) - puts together a parser-generator
+    customized for a specific grammar which can then make updates and quickly
+    create compilers...
+    Or maybe as a preprocessing step.  Is memoization needed?  Is
+    left-recursion needed?  etc. etc.
+
+Memoization is used when:
+>> long -> d d d d d d / d d d d d / d d d d / d d d / d d / d
+>> d -> (expensive to calculate)
+
+Only when 
+
+Not used when:
+>> long -> d d d d   # Because position is different on each one
+or
+>> long -> d e f g / e f g / f g / g   # Different rule at pos
+
+but if some complex interaction happens such that some rule is checked on some
+position through a different rule-combo completely... impossible to know
+
+not useful for any position that is "definitely done"
