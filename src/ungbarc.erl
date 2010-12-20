@@ -27,9 +27,9 @@ parse_opts(Acc, Files) ->
 ungbarc(_Flags, F) ->
   {ok, DentedBin} = indents:file_scan(F,
     [{ignoreblock_defs, ?DENT_IGN_BLOCKS}, {indent_token, 6}, {dedent_token, 21}]),
-  AST = erlish:parse(binary_to_list(DentedBin)),
+  AST = ungbar:parse(binary_to_list(DentedBin)),
   %AST = [{attribute,1,file,{F,1}} |
-  %  erlish:parse(binary_to_list(DentedBin))],
+  %  ungbar:parse(binary_to_list(DentedBin))],
   %io:format("~n~p~n", [compile:forms(AST)]),
   io:format("~nPARSE RESULTS FOR ~s:~n~p~n", [F, AST]),
   io:format("~n(pausing)~n",[]),

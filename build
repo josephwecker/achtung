@@ -4,20 +4,22 @@ set -o errexit
 mkdir -p ebin
 mkdir -p bin
 erlc -o ebin src/indents.erl
-erlc -o ebin src/cerlish.erl
-erl -noinput -eval 'neotoma:file("grammar/erlish.peg").' -run init stop
-#sed -i.bk 's/p(Inp, StartIndex, Name, ParseFun, TransformFun) ->/& io:format("~s | ~p | ~p~n", [Name, StartIndex, case Inp of [I|_]->[I];_->"eof" end]),/' grammar/erlish.erl
-erlc -o ebin grammar/erlish.erl
-#rm grammar/erlish.erl
-rm -f erlish.erl.bk
-rm -f grammar/erlish.erl.bk
+erlc -o ebin src/ungbarc.erl
+erl -noinput -eval 'neotoma:file("grammar/ungbar.peg").' -run init stop
+## Uncomment next line for debug-info to screen
+#sed -i.bk 's/p(Inp, StartIndex, Name, ParseFun, TransformFun) ->/& io:format("~s | ~p | ~p~n", [Name, StartIndex, case Inp of [I|_]->[I];_->"eof" end]),/' grammar/ungbar.erl
+erlc -o ebin grammar/ungbar.erl
+## Comment next line to retain grammar/ungbar.erl for analysis
+#rm grammar/ungbar.erl
+rm -f ungbar.erl.bk
+rm -f grammar/ungbar.erl.bk
 erl -noinput -eval '
-	zip:create(".cerlish.ez",
-		["cerlish.beam", "indents.beam", "erlish.beam"],
+	zip:create(".ungbarc.ez",
+		["ungbarc.beam", "indents.beam", "ungbar.beam"],
 		[{cwd,"ebin"},{compress, all}, {uncompress, [".beam", ".app"]}]).
 	' -run init stop
-echo '#!/usr/bin/env escript' > bin/cerlish
-echo '%%! -smp enable +h 4096' >> bin/cerlish
-cat .cerlish.ez >> bin/cerlish
-chmod u+x bin/cerlish
-rm .cerlish.ez
+echo '#!/usr/bin/env escript' > bin/ungbarc
+echo '%%! -smp enable +h 4096' >> bin/ungbarc
+cat .ungbarc.ez >> bin/ungbarc
+chmod u+x bin/ungbarc
+rm .ungbarc.ez

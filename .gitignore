@@ -2,5 +2,5 @@
 .DS_Store
 *.beam
 .attic/haxe/test/.build/
-bin/cerlish
+bin/ungbarc
 grammar/*.erl
