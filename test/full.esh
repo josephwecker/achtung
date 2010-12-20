@@ -8,27 +8,147 @@
 @module another.one [Oh yeah [Wowsers, thats, cool]]
 # I mean, really really
 
-#<first_thing|msg, Str| is_list(Str) |
-#<first_thing|msg, Str| when is_list(Str):
+
+
+some_function ok
+
+some_function 
+  ok
+
+some_function|A| (ok, A)
+
+some_function|A|
+  (ok, A)
+
+some_function
+  |A|            (ok, A)
+  |{another, B}| (ok, B)
+
+some_function
+  ||              (arity, 0)
+  |Foo|           (arity, 1)
+  |Foo, Bar|      (arity, 2)
+  |Foo, Bar, Baz| (arity, 3)
+
+
+
+
+
+
+
+<first_thing|msg, Str| is_list(Str) |
+<first_thing|msg, Str| when is_list(Str):
 
 #<first_thing|msg, Str:list|
 
 :myfun
   ok
 
-#:myfun()
-#  ok
-#:myfun(ok,2,3)
-#  ok
-#:myfun ok
-#:myfun() ok
-#:myfun(ok,2,3) ok
+:myfun(A:atom,B:number,C:number)
+  ok
 
-#:myfun(A:atom,B:number,C:number)
-#  ok
+[export inline]
+myfun(A,B:number,C || B > C) ok
 
-#:myfun(A,B:number,C | B > C) ok
 
-#:myfun(A,B:number,C | C > B)
-#  ok
+
+
+
+<=myfun(A,B:number, <[4,5,"hello",N/bin]> || B > A) ok
+myfun | L:list   ->   myfun(binary(L))
+      | (C,blah) ->
+      | A, B:number, <[4,5,"hello",N/bin]> || B > A| ok
+      | Another| ok
+
+
+[Hey | There | Friend]
+[Hey, There, Friend]
+[Hey There Friend]
+[Hey There `3 + 2`]
+(Hey | There | Friend)
+(Hey, There, Friend)
+(Hey There Friend)
+(Hey There `3 + 2`)
+
+[  ]
+
+  [(function (atom 2  myfun1) [(atom 2  ok)])
+  (function (atom 4  myfun2) [(atom 4  ok)])
+  (function (atom 6  myfun3) [(atom 7  ok)])
+  (function (atom 9  myfun4) [(atom 10 ok)])
+  (function (atom 13 myfun5) [(atom 15 ok)])
+  (function (atom 18 myfun6) [(atom 19 ok)])
+  (function (atom 21 myfun7) [(atom 21 ok)])
+  (function (atom 24 myfun8)
+   [(atom 25 ok)
+   (atom 26 ok)
+   (atom 27 really_ok)
+   (atom 28 very_very_ok)
+   (atom 29 ok)
+   (atom 31 ok_part2)
+   (atom 32 ok_part3)
+   (atom 34 ok_part4)
+   [(atom 37 ok_part5) (atom 38 second) (atom 39 third)]])]
+
+('test.dummy' 
+ [(abstract_code 
+   (raw_abstract_v1 
+    [(attribute 1 file ("test/dummy.erl" 1)) 
+     (attribute 1 module ([test dummy] ['Name'])) 
+     (attribute 2 export [(my_function 2)]) 
+     (function 23 my_function 2 
+      [(clause 23 
+        [(var 23 '_') (var 23 '_')] 
+        [] 
+        [(integer 24 12390) 
+         (char 25 `99 + 32 + 7`) 
+         (atom 26 'asdf%f4289##') 
+         (cons 27 (char 27 72) 
+          (cons 27 (char 27 105) 
+           (cons 27 (char 27 32) 
+            (cons 27 (integer 27 9476)
+             (nil 27))))) 
+         (atom 28 ok)])]) 
+     (eof 29)]))])
+
+{'test.dummy',
+    [{abstract_code,
+         {raw_abstract_v1,
+             [{attribute,1,file,{"test/dummy.erl",1}},
+              {attribute,1,module,{[test,dummy],['Name']}},
+              {attribute,2,export,[{my_function,2}]},
+              {function,23,my_function,2,
+                  [{clause,23,
+                       [{var,23,'_'},{var,23,'_'}],
+                       [],
+                       [{integer,24,12390},
+                        {char,25,99},
+                        {atom,26,'asdf%f4289##'},
+                        {cons,27,
+                            {char,27,72},
+                            {cons,27,
+                                {char,27,105},
+                                {cons,27,
+                                    {char,27,32},
+                                    {cons,27,{integer,27,9476},{nil,27}}}}},
+                        {atom,28,ok}]}]},
+              {eof,29}]}}]}
+
+[{function,{atom,2,myfun1},[{atom,2,ok}]},
+ {function,{atom,4,myfun2},[{atom,4,ok}]},
+ {function,{atom,6,myfun3},[{atom,7,ok}]},
+ {function,{atom,9,myfun4},[{atom,10,ok}]},
+ {function,{atom,13,myfun5},[{atom,15,ok}]},
+ {function,{atom,18,myfun6},[{atom,19,ok}]},
+ {function,{atom,21,myfun7},[{atom,21,ok}]},
+ {function,{atom,24,myfun8},
+           [{atom,25,ok},
+            {atom,26,ok},
+            {atom,27,really_ok},
+            {atom,28,very_very_ok},
+            {atom,29,ok},
+            {atom,31,ok_part2},
+            {atom,32,ok_part3},
+            {atom,34,ok_part4},
+            [{atom,37,ok_part5},{atom,38,second},{atom,39,third}]]}]
 

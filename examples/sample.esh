@@ -1,0 +1,30 @@
+@module neotoma
+@author Sean Cribbs <seancribbs@gmail.com>
+
+## @doc Generates a parser from the specified file.
+## @equiv file(Filename, [])
+## @spec file(Filename::string()) -> ok
+file|InputGrammar|
+  file(InputGrammar [])
+
+## @doc Generates a parser from the specified file.
+## <pre>    Options = [Option] <br />
+##   Option = {module, OutputModuleName::atom()} | <br/>
+##            {output, OutputDirectory::string()} | <br />
+##            {transform_module, TransformModuleName::atom()} </pre>
+## @spec file(Filename::string(), Options) -> ok
+file|InputGrammar|Options:struct| ->
+  Basename = file.basename(InputGrammar|".peg")
+  InputDir = file.dirname(InputGrammar)
+  ModuleName = Options.module -or- atom(file.basename(InputGrammar|".peg"))
+  OutputDir = Options.output -or- file.dirname(InputGrammar)
+  OutputFilename = file.join(OutputDir | str(ModuleName) + ".erl")
+  TransformModule = Options.transform_module
+  validate_params(file.absname(InputGrammar)
+                  | ModuleName
+                  | TransformModule
+                  | file.absname(OutputFilename))
+  Parsed = parse_grammar(InputGrammar)
+  ModuleAttrs = generate_module_attrs(ModuleName),
+  EntryFuns = generate_entry_functions(Parsed.root)
+

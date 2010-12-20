@@ -1,4 +1,5 @@
 
+
 Function calls:
   Possibly still module:function but then allow .blah(x).blah(x) etc. that is
   the equivalent of efn/ifn small-arrow syntax(?)
@@ -7,6 +8,33 @@ Implement a lot of the features with macro language (astify etc.)
 
 Sequence syntax
 Struct
+Structs coexisting with Parameterized modules:
+   Mystruct.field   ->  value or false (so shortcircuits work)
+   Mypmod.function(blah) -> no problem - Mypmod holds module name
+   Mystruct.funfield(blah) -> hm.... Send off to an inline function to resolve?
+   Struct.anotherone.another.blah -> nested structs
+   Var.package.Dir.yeah(blah)  -> Variables hold atoms...
+
+   Really it comes down to this:  If a variable is holding a list, it's a
+   struct- if it's holding an atom, then it needs to be treated as such...
+   Does it need to be resolved at compile/parse time?  or can it be deferred to
+   runtime.  If runtime we have the following additional (obscure) option:
+   >> somefunction(StructOrModule)-> StructOrModule.runme(yeah)
+   which begins to lead to somehow, conceptually, the unification of the two...
+   which is kind of scary and weird...
+
+   Something.function_name(...)
+
+   function_name -> A function that either operates on that data type, a field
+   from a struct (same thing?), or a function exported from that module...
+
+   When "Something" is a:
+   module -> function_name is exported function
+   struct -> function_name is a member variable with a fun
+   list -> function_name is a function that takes a list as the first argument
+     and that is from a module specifically for that data-type (@for list) or
+     is defined locally or explicitly imported
+
 
 Dashes in atom names (and therefore function-names)?
 Questionmarks in atoms and therefore function-names - also variables?
