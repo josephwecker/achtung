@@ -7,6 +7,7 @@ atomic_literals
   'some % very complex atom!!*@#@!&*('
   'here\'s another'
   'and super \n \^A complex'
+  #|  # Strings
 
   # Integers
   1234
@@ -69,7 +70,6 @@ atomic_literals
   nop
   "And some more craziness \x{2504} here"
   nop
-  #|  # Strings
   "String that just keeps going"  " and going"
   " and going."
   nop

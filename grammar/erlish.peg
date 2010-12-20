@@ -1,13 +1,13 @@
 %------------ Grammar --------------------------------------------------------
-grammar       <- (_s form)* _s                              `[p2(F)||F<-?P1]`;
+grammar       <- (_s form)* _s                             `[?p2(F)||F<-?p1]`;
 form          <- attribute / function                                       ~;
 
 %------------ Attributes -----------------------------------------------------
 attribute     <- module                                        `{attr, Node}`;
-module        <- "@module" sp atom                                      `?P3`;
+module        <- "@module" sp atom                                      `?p3`;
 
 %------------ Functions ------------------------------------------------------
-function      <- atom expression              `{function, ?P1, listify(?P2)}`;
+function      <- atom expression              `{function, ?p1, listify(?p2)}`;
 
 %------------ Terms / Atomic Literals ----------------------------------------
 term          <- atom / number / string                                     ~;
@@ -15,7 +15,7 @@ term          <- atom / number / string                                     ~;
 atom          <- simple_atom / complex_atom                          `?S2LIT`;
 simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
 complex_atom  <- "'" not_apos* "'"                                          ~;
-not_apos      <- !"'" ("\\" . / !"\\" .)                                `?P2`;
+not_apos      <- !"'" ("\\" . / !"\\" .)                                `?p2`;
 
 number        <- [+-]? (float / integer)                            `?FIXNUM`;
 integer       <- base_int / normal_int / character                          ~;
@@ -31,14 +31,14 @@ float         <- normal_int "." normal_int+ ([eE] [-+]? normal_int)?        ~;
 
 string        <- simple_string / long_string                         `?S2LIT`;
 simple_string <- '"' not_quot* '"'                                          ~;
-not_quot      <- !'"' ("\\" . / !"\\" .)                                `?P2`;
-long_string   <- "'''" not_triple_ap* "'''"                             `?P2`;
-%long_string   <- "'''" not_triple_ap* "'''"                    `fixlstr(?P2)`;
-not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?P2`;
+not_quot      <- !'"' ("\\" . / !"\\" .)                                `?p2`;
+long_string   <- "'''" not_triple_ap* "'''"                             `?p2`;
+%long_string   <- "'''" not_triple_ap* "'''"                    `fixlstr(?p2)`;
+not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?p2`;
 %------------ Expressions ----------------------------------------------------
-expression    <- _s (block / expr_with_end)                             `?P2`;
-block         <- block_beg expression* expr? block_end     `append_(?P2,?P3)`;
-expr_with_end <- expr eos                                               `?P1`;
+expression    <- _s (block / expr_with_end)                             `?p2`;
+block         <- block_beg expression* expr? block_end     `append_(?p2,?p3)`;
+expr_with_end <- expr eos                                               `?p1`;
 expr          <- term                                                       ~;
 
 %------------ Whitespace, Comments, Delimiters -------------------------------
@@ -59,29 +59,18 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 
 %------------ Shortcut / helper functions ------------------------------------
 `
+-include("../include/erlish.hrl").
 -define(L,       line(Index)).     % Current line #
--define(X,       []).              % Consume but ignore
 
 % Node unpacking
--define(P1,      p1(Node)).
--define(P2,      p2(Node)).
--define(P3,      p3(Node)).
--define(GET(Key),all(Key, Node)).
--define(FLAT,    flat(Node)).
--define(RM(C),   rm_char(C, flat(Node),[])).
+%-define(GET(Key),all(Key, Node)).
+%-define(RM(C),   rm_char(C, ?flat(Node),[])).
 
 % Used for literals
 -define(BASE,    base(Node)).
 -define(FIXNUM,  fix_num(Node, Index)).
--define(S2L(X),  literal(flat(X),Index)). % Basically let Erlang turn it into a literal
+-define(S2L(X),  literal(?flat(X),Index)). % Basically let Erlang turn it into a literal
 -define(S2LIT,   ?S2L(Node)).
-
-% For node unpacking
-flat(L)       -> lists:flatten(L).
-%all(Key, L)   -> proplists:get_all_values(Key, flat(L)).
-p1([R|_])     -> R.
-p2([_,R|_])   -> R.
-p3([_,_,R|_]) -> R.
 
 % Append V onto L only if V has something
 append_(L,V)  -> case V of [] -> L; _ -> lists:append(L,[V]) end.
@@ -115,10 +104,10 @@ base(["0",$O])->"8#";
 base(["0",$o])->"8#";
 base(["0",$B])->"2#";
 base(["0",$b])->"2#";
-base([D1, DN, $R]) -> [flat([D1,DN,"#"])];
-base([D1, DN, $r]) -> [flat([D1,DN,"#"])].
+base([D1, DN, $R]) -> [?flat([D1,DN,"#"])];
+base([D1, DN, $r]) -> [?flat([D1,DN,"#"])].
 
-fix_num(Num, Line) -> fix_num2(rm_char($_,rm_char($+,flat(Num))), Line).
+fix_num(Num, Line) -> fix_num2(rm_char($_,rm_char($+,?flat(Num))), Line).
 fix_num2([$- | Num], Line) ->
   {T, L, V} = literal(Num, Line),
   {T, L, -V};
