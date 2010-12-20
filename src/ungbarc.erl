@@ -1,4 +1,4 @@
--module(cerlish).
+-module(ungbarc).
 -export([main/1]).
 
 -define(DENT_IGN_BLOCKS, [
@@ -17,14 +17,14 @@
 
 main(Opts) ->
   {Flags, Files} = parse_opts([], Opts),
-  lists:foreach(fun(F)->cerlish(Flags,F) end, Files).
+  lists:foreach(fun(F)->ungbarc(Flags,F) end, Files).
 
 parse_opts(Acc, ["-o", Outputdir | R]) ->
   parse_opts([{outputdir, Outputdir} | Acc], R);
 parse_opts(Acc, Files) ->
   {lists:reverse(Acc), Files}.
 
-cerlish(_Flags, F) ->
+ungbarc(_Flags, F) ->
   {ok, DentedBin} = indents:file_scan(F,
     [{ignoreblock_defs, ?DENT_IGN_BLOCKS}, {indent_token, 6}, {dedent_token, 21}]),
   AST = erlish:parse(binary_to_list(DentedBin)),

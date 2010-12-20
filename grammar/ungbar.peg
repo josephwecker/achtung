@@ -59,7 +59,7 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 
 %------------ Shortcut / helper functions ------------------------------------
 `
--include("../include/erlish.hrl").
+-include("../include/ungbar.hrl").
 -define(L,       line(Index)).     % Current line #
 
 % Node unpacking
