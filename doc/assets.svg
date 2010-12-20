@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.47 r22583"
+   sodipodi:docname="assets.svg">
+  <defs
+     id="defs4">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       id="perspective10" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1"
+     inkscape:cx="301.25018"
+     inkscape:cy="523.70661"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1280"
+     inkscape:window-height="752"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="opacity:0.93999999000000001;fill:#eaeaea;fill-opacity:1;stroke:none"
+       id="rect2828"
+       width="64.90358"
+       height="3.5673249"
+       x="226.1684"
+       y="406.67636" />
+    <text
+       xml:space="preserve"
+       style="font-size:63.50737762px;font-style:normal;font-weight:normal;fill:#535353;fill-opacity:1;stroke:none;font-family:Optima;-inkscape-font-specification:Optima;font-stretch:normal;font-variant:normal;text-anchor:start;text-align:start;writing-mode:lr;line-height:125%"
+       x="174.48032"
+       y="445.48581"
+       id="text2820"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3602">Ung</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3604"
+       y="445.48581"
+       x="295.69092"
+       style="font-size:63.50737762px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#6f6f6f;fill-opacity:1;stroke:none;font-family:Optima;-inkscape-font-specification:Optima"
+       xml:space="preserve"><tspan
+         sodipodi:role="line"
+         id="tspan3610"
+         x="295.69092"
+         y="445.48581">Bar</tspan></text>
+    <rect
+       y="406.67636"
+       x="336.38498"
+       height="3.5673249"
+       width="51.91555"
+       id="rect3612"
+       style="opacity:0.93999999;fill:#eaeaea;fill-opacity:1;stroke:none" />
+  </g>
+</svg>
