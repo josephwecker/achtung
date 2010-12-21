@@ -8,18 +8,18 @@
 # (Mod, Fun, [self()]) after accepting a connection on that port.
 # Defaults - start {user, server} on port 7788
 start
-  |          |-> start(7788)
-  |PortNo:int|-> start(PortNo, (user, server))
-  |PortNo, MF|-> spawn($module, init, [PortNo, MF])
+  |           -> start(7788)
+  |PortNo:int -> start(PortNo, (user, server))
+  |PortNo, MF -> spawn($module, init, [PortNo, MF])
 
 #----------------------------------------------------------------------------
-init|PortNo,MF|->
+init|PortNo,MF ->
   process_flag(trap_exit, true)
   (ok, LS) = gen_tcp.listen(PortNo, [reuseaddr:true, packet:0, active:false])
   g_loop(LS, MF)
 
 # Main loop
-g_loop|S,MF|->
+g_loop|S,MF ->
   (ok, NS) = gen_tcp.accept(S)
   Pid = spawn($module, l, [NS, MF])
   gen_tcp.controlling_process(NS, Pid)
@@ -27,18 +27,18 @@ g_loop|S,MF|->
   g_loop(S, MF)
 
 #----------------------------------------------------------------------------
-l|S, (UMod, UFun)|->
+l|S, (UMod, UFun) ->
   process_flag(trap_exit, true)
-  receive | go_ahead |-> inet.setopts(S,[(active,true)])
+  receive |go_ahead  -> inet.setopts(S,[(active,true)])
   gen_tcp.send(S, "\nWelcome to Erlang!\n\n")
   U = spawn_link(UMod, UFun, [self()])
   ll(S, U)
 
-ll|S, U|->
+ll|S, U ->
   receive
-    |(tcp,S,Bytes)    |-> U ! (self(), (data,Bytes)); ll(S,U)
-    |(tcp_closed,S)   |-> info("(~p,~p) socket closed~n",[S,U]); exit(closed)
-    |(tcp_error,S,R)  |-> info("(~p,~p) socket error ~p~n",[S,U,R]); exit(R)
-    |(U,(command,Dat))|-> gen_tcp.send(S,Dat); ll(S,U)
-    |('EXIT',U,Why)   |-> info("(~p,~p) exit ~p~n",[S,U,Why]); gen_tcp.close(S); exit(Why)
-    |Other            |-> info("(~p,~p) got msg ~p~n",[S,U,Other]); ll(S,U)
+    |(tcp,S,Bytes)     -> U ! (self(), (data,Bytes)); ll(S,U)
+    |(tcp_closed,S)    -> info("(~p,~p) socket closed~n",[S,U]); exit(closed)
+    |(tcp_error,S,R)   -> info("(~p,~p) socket error ~p~n",[S,U,R]); exit(R)
+    |(U,(command,Dat)) -> gen_tcp.send(S,Dat); ll(S,U)
+    |('EXIT',U,Why)    -> info("(~p,~p) exit ~p~n",[S,U,Why]); gen_tcp.close(S); exit(Why)
+    |Other             -> info("(~p,~p) got msg ~p~n",[S,U,Other]); ll(S,U)
