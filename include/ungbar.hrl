@@ -40,21 +40,26 @@
 -define(E,erl_syntax).
 
 % Simple atomic terms
--define(a(Name), ?E:atom(Name)).
--define(v(Name), ?E:variable(Name)).
--define(l(List), ?E:list(List)).
--define(i(Int),  ?E:integer(Int)).
--define(module(Name),
-  ?E:attribute(?a(module),[?a(Name)])).
--define(module(Name,Params),
-  ?E:attribute(?a(module), [?a(Name), ?l([?v(P) ||P<-Params])])).
+-define(e_a(Name), ?E:atom(Name)).
+-define(e_v(Name), ?E:variable(Name)).
+-define(e_l(List), ?E:list(List)).
+-define(e_i(Int),  ?E:integer(Int)).
+-define(e_module(Name),
+  ?E:attribute(?e_a(module),[?e_a(Name)])).
+-define(e_module(Name,Params),
+  ?E:attribute(?e_a(module), [?e_a(Name), ?e_l([?e_v(P) ||P<-Params])])).
 %-define(export_def(Module, Name, Arity), ...).
--define(export_def(Name, Arity),
-  ?E:arity_qualifier(?a(Name), ?i(Arity))).
--define(export_list(ExpTups),
-  ?E:attribute(?a(export),
-    [?l([?export_def(N,A)||{N,A}<-ExpTups])])).
--define(forms(FormList), [?E:revert(F)||F<-FormList]).
+-define(e_export_def(Name, Arity),
+  ?E:arity_qualifier(?e_a(Name), ?e_i(Arity))).
+-define(e_export_list(ExpTups),
+  ?E:attribute(?e_a(export),
+    [?e_l([?e_export_def(N,A)||{N,A}<-ExpTups])])).
+-define(e_forms(FormList), [?E:revert(F)||F<-FormList]).
+
+-define(e_function(Name, Clauses),
+  ?E:function(?e_a(Name), [?e_clause(Patterns,Guard,Body)||[Patterns,Guard,Body]<-Clauses])).
+-define(e_clause(Patterns, Guard, Body),
+  ?E:clause([?e_pattern(P)||P<-Patterns], ?e_guard(Guard), Body)).
 
 % Append V onto L only if V has something
 append_(L,V)  -> case V of [] -> L; _ -> lists:append(L,[V]) end.
