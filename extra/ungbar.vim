@@ -18,7 +18,7 @@ syn region  ungbarString          start=+"+  skip=+\n\\\\\|\\"+  end=+"+ contain
 syn region  ungbarBinaryString    start=+"+  skip=+\n\\\\\|\\"+  end=+"+ contained contains=@Spell,ungbarStringModifier
 
 syn keyword ungbarTodo            TODO FIXME XXX NOTE NOTES contained
-syn match   ungbarDoc             /\(##\s*\)\@<=@\w\+/ contained
+syn match   ungbarDoc             /\(##\s*\)\@<=@[A-Za-z_]\+/ contained
 syn match   ungbarComment         /#.*$/ contains=ungbarTodo,ungbarDoc,@Spell
 
 syn keyword ungbarBoolean         true false
@@ -36,13 +36,13 @@ syn keyword ungbarGuard           is_float is_function is_constant
 syn keyword ungbarGuard           is_pid is_port is_reference
 syn keyword ungbarGuard           is_record hd length size tl trunc tuple_size abs bit_size byte_size element float node round self
 
-syn match   ungbarParamMod        /@[A-Z_]\w*/ contains=ungbarVariable
-syn match   ungbarAtom            /\%(\%(^-\)\|#\)\@<!\<[a-z]\w*\>(\@!/
+syn match   ungbarParamMod        /@[A-Z_][A-Za-z_]*/ contains=ungbarVariable
+syn match   ungbarAtom            /\%(\%(^-\)\|#\)\@<!\<[a-z][A-Za-z_]*\>(\@!/
 syn match   ungbarAtom            /\\\@<!'[^']*\\\@<!'/
-syn match   ungbarVariable        /\<[A-Z_]\w*\>/
-syn match   ungbarIgnoredVar      /\<_\w*\>/
+syn match   ungbarVariable        /\<[A-Z_][A-Za-z_]*\>/
+syn match   ungbarIgnoredVar      /\<_[A-Za-z_]*\>/
 
-syn match   ungbarModule          /\<[a-z]\w*\.\@=/ contained
+syn match   ungbarModule          /\<[a-z][A-Za-z_]*\.\@=/ contained
 syn match   ungbarFunction        /\<[a-z][A-Za-z_\.]*\s*(\@=/ contains=ungbarModule
 
 syn match   ungbarNumber          "\<0[oO]\=\o\+[Ll]\=\>"
@@ -67,10 +67,10 @@ syn match   ungbarSep             ":"
 syn match   ungbarSep             "::"
 syn match   ungbarSep             "->"
 syn match   ungbarMacro           "\$[a-z_]\+"
-syn match   ungbarProcessor	  "^@@\=\a\+"
+syn match   ungbarProcessor	      "^@@\=[a-z_]\+"
 
 syn match   ungbarVisibility      /\([<:]\|=>\)/ contained
-syn match   ungbarTopFunction     /^\(<\|:\)*[a-z]\w*\s*/ contains=ungbarVisibility
+syn match   ungbarTopFunction     /^\(<\|:\)*[a-z][A-Za-z_]*\s*/ contains=ungbarVisibility
 
 syn keyword ungbarSpecial         adler32 adler32_combine apply atom_to_binary atom_to_list binary_to_atom binary_to_existing_atom binary_to_list bitstring_to_list binary_to_term check_process_code concat_binary crc32 crc32_combine date decode_packet delete_module disconnect_node erase exit float_to_list garbage_collect get get_keys group_leader halt integer_to_list iolist_to_binary iolist_size is_alive is_process_alive link list_to_atom list_to_binary list_to_bitstring list_to_existing_atom list_to_float list_to_integer list_to_pid list_to_tuple load_module make_ref monitor_node nodes now open_port pid_to_list port_close port_command port_connect port_control pre_loaded process_flag process_info processes purge_module put register registered setelement spawn spawn_link spawn_monitor spawn_opt split_binary statistics term_to_binary throw time tuple_to_list unlink unregister whereis
 
