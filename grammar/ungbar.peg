@@ -1,5 +1,5 @@
 %------------ Grammar --------------------------------------------------------
-grammar       <- (_s form)* _s                             `[?p2(F)||F<-?p1]`;
+grammar       <- (_s form)* _s                                    `?ip2(?p1)`;
 form          <- attribute / function                                       ~;
 
 %------------ Attributes -----------------------------------------------------
@@ -7,7 +7,26 @@ attribute     <- module                                        `{attr, Node}`;
 module        <- "@module" sp atom                                      `?p3`;
 
 %------------ Functions ------------------------------------------------------
-function      <- atom expression              `{function, ?p1, listify(?p2)}`;
+%function      <- atom expression              `{function, ?p1, listify(?p2)}`;
+function      <- atom clauses                          `{function, ?p1, ?p2}`;
+
+%------------ Clauses --------------------------------------------------------
+%clauses       <- (clause clauseblock) / clause / clauseblock                ~; % Don't know if I want to support it yet...
+clauses       <- clauseblock / clause                                       ~;
+%clause        <- _s "|"? patterns? _s "->" expression          ~;
+clause        <- _s "|"? patterns? guardclause? _s "->" expression  `?clause`;
+clauseblock   <- block_beg clause+ block_end                            `?p2`;
+
+patterns      <- (_s pattern)+                                         `?ip2`; % TMP
+pattern       <- (_s term)+                                            `?ip2`; % TMP
+guardclause   <- _s "||" (_s guard_expr)*                         `?ip2(?p3)`; % TMP
+guard_expr    <- (_s term)+                                            `?ip2`; % TMP
+
+%------------ Expressions ----------------------------------------------------
+expression    <- _s (block / expr_with_end)                             `?p2`;
+block         <- block_beg expression* expr? block_end     `append_(?p2,?p3)`;
+expr_with_end <- expr eos                                               `?p1`;
+expr          <- term                                                       ~;
 
 %------------ Terms / Atomic Literals ----------------------------------------
 term          <- atom / number / string                                     ~;
@@ -35,11 +54,6 @@ not_quot      <- !'"' ("\\" . / !"\\" .)                                `?p2`;
 long_string   <- "'''" not_triple_ap* "'''"                             `?p2`;
 %long_string   <- "'''" not_triple_ap* "'''"                    `fixlstr(?p2)`;
 not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?p2`;
-%------------ Expressions ----------------------------------------------------
-expression    <- _s (block / expr_with_end)                             `?p2`;
-block         <- block_beg expression* expr? block_end     `append_(?p2,?p3)`;
-expr_with_end <- expr eos                                               `?p1`;
-expr          <- term                                                       ~;
 
 %------------ Whitespace, Comments, Delimiters -------------------------------
 block_beg     <- _s ("{" _s indent / indent _s "{" / "{" / indent)       `?X`;
@@ -57,47 +71,19 @@ comment       <- "#" (!newline .)* &newline                              `?X`;
 ml_inner      <- ml_comment / (!"#|" !"|#" .)+                           `?X`;
 ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 
-%------------ Shortcut / helper functions ------------------------------------
+%------------ Shortcuts & transformations ------------------------------------
 `
 -include("../include/ungbar.hrl").
--define(L,       line(Index)).     % Current line #
 
-% Node unpacking
-%-define(GET(Key),all(Key, Node)).
-%-define(RM(C),   rm_char(C, ?flat(Node),[])).
+% Functions
+-define(clause, ?clause(?N)).
+-define(clause(N),
+  begin
+      [_, _, Patterns, GuardClauses, _, _, Body] = N,
+      {clause, Patterns, GuardClauses, ?listify(Body)}
+  end).
 
-% Used for literals
--define(BASE,    base(Node)).
--define(FIXNUM,  fix_num(Node, Index)).
--define(S2L(X),  literal(?flat(X),Index)). % Basically let Erlang turn it into a literal
--define(S2LIT,   ?S2L(Node)).
-
-% Append V onto L only if V has something
-append_(L,V)  -> case V of [] -> L; _ -> lists:append(L,[V]) end.
-
-% Make sure it's a list
-listify(V) when is_list(V) -> V;
-listify(V)    -> [V].
-
-literal(X, Index)  ->
-  % TODO: pass along any errors here as appropriate
-  {ok, Lit, _EndLoc} = erl_scan:string(X, line(Index)),
-  case Lit of
-    [Single] -> Single;
-    M when is_list(M) -> M
-      % much more serious- an actual list- which I haven't implemented yet.
-      %[T || <-M, 
-      %Multiple
-  end.
-
-rm_char(C, L)            -> rm_char(C, L, []).
-rm_char(_, [], Acc)      -> lists:reverse(Acc);
-rm_char(C, [C | T], Acc) -> rm_char(C, T, Acc);
-rm_char(C, [H | T], Acc) -> rm_char(C, T, [H | Acc]).
-
-%fixlstr(LStr) ->
-
-% Utilities used for numbers
+% Numbers
 base(["0",$X])->"16#";
 base(["0",$x])->"16#";
 base(["0",$O])->"8#";
