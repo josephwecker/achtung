@@ -27,7 +27,7 @@ files
       |ok FileInfo || FileInfo.file_info.type==directory ->
         case files(F2 Re Action)
           |(error Reason)-> (error Reason)
-          |List          -> files(Top Tail re Action List++Ack)
+          |List          -> files(Top Tail re Action `List ++ Ack`)
       |(error Reason) -> (error (F2 Reason))
       |(ok FileInfo) || FileInfo.file_info.type == regular ->
         case catch(regexp:match(F Re))

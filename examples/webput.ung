@@ -6,13 +6,13 @@ publish
   |Host User Password LocalDir RemoteDir ->
     case ftp.open(Host)
       |(error R) -> exit((cannot connect to Host reason Reason))
-      |ok Pid -> case ftp.user(Pid User Password)
+      | ok Pid   -> case ftp.user(Pid User Password)
         |(error R) -> exit((cannot login as User reason Reason))
-        |ok -> case ftp.cd(Pid RemoteDir)
+        | ok       -> case ftp.cd(Pid RemoteDir)
           |(error R) -> exit((cannot cd to RemoteDir reason Reason))
-          |ok -> case file.list_dir(LocalDir)
+          | ok       -> case file.list_dir(LocalDir)
             |(error _) -> exit((bad local directory LocalDir))
-            |ok Files -> [publish(I LocalDir Pid) || I <- Files]
+            | ok Files -> [publish(I LocalDir Pid) || I <- Files]
   |File Dir Pid ->
     LocalFile = Dir++"/"++File
     case ftp.send(Pid LocalFile File)

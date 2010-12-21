@@ -54,6 +54,9 @@ Shortcut guard expressions
 
 Clean and easily nested record syntax
 
+Perhaps an ungbar specific include-file syntax for parse-tranforms, stdlib
+  transforms, etc. etc.
+
 == Basic libraries ==
 Way better string & binary string library
 Wrap around things like ~p and other pretty-print / basic string IO for the
