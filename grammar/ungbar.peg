@@ -1,5 +1,5 @@
 %------------ Grammar --------------------------------------------------------
-grammar       <- (_s form)* _s                                    `?ip2(?p1)`;
+grammar       <- (_s form)* _s                        `{ok, ?ip2(?p1), ?pos}`;
 form          <- attribute / function                                       ~;
 
 %------------ Attributes -----------------------------------------------------
@@ -7,19 +7,16 @@ attribute     <- module                                        `{attr, Node}`;
 module        <- "@module" sp atom                                      `?p3`;
 
 %------------ Functions ------------------------------------------------------
-%function      <- atom expression              `{function, ?p1, listify(?p2)}`;
-function      <- atom clauses                          `{function, ?p1, ?p2}`;
+function      <- atom clauses                           `?c_function(?p1,?p2)`;
 
 %------------ Clauses --------------------------------------------------------
 %clauses       <- (clause clauseblock) / clause / clauseblock                ~; % Don't know if I want to support it yet...
-clauses       <- clauseblock / clause                                       ~;
-%clause        <- _s "|"? patterns? _s "->" expression          ~;
-clause        <- _s "|"? patterns? guardclause? _s "->" expression  `?clause`;
+clauses       <- clauseblock / clause                              `?listify`;
+clause        <- _s "|"? pattern? guardseq? _s "->" expression      `?clause`;
 clauseblock   <- block_beg clause+ block_end                            `?p2`;
 
-patterns      <- (_s pattern)+                                         `?ip2`; % TMP
 pattern       <- (_s term)+                                            `?ip2`; % TMP
-guardclause   <- _s "||" (_s guard_expr)*                         `?ip2(?p3)`; % TMP
+guardseq      <- _s "||" (_s guard_expr)*                         `?ip2(?p3)`; % TMP
 guard_expr    <- (_s term)+                                            `?ip2`; % TMP
 
 %------------ Expressions ----------------------------------------------------
@@ -79,8 +76,9 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 -define(clause, ?clause(?N)).
 -define(clause(N),
   begin
-      [_, _, Patterns, GuardClauses, _, _, Body] = N,
-      {clause, Patterns, GuardClauses, ?listify(Body)}
+      [_, _, Pattern, Guard, _, _, Body] = N,
+      % TODO: turn type declarations into parts of the guard
+      ?c_clause(Pattern,Guard,?listify(Body))
   end).
 
 % Numbers

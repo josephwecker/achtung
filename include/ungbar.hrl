@@ -18,14 +18,39 @@
 -define(ip2(L), [?p2(IL)||IL<-L]).
 -define(flat(L), lists:flatten(L)).
 -define(all(Key,L), proplists:get_all_values(Key,?flat(L))).
--define(listify(V), case V of [_|_]->V;_->[V] end). % Ensure it's a list
+-define(listify, ?listify(?N)). % Ensure it's a list
+-define(listify(V), case V of [_|_]->V;_->[V] end).
 
 
+%------------ Parse Tree Construction ---------------------------------------
+-define(pos, line(Index)).
+-define(quickparse(V), % For simple terms that the erlang scanner can handle
+  case erl_scan:string(V,?pos) of
+    {ok, [One], _} -> One;
+    {ok, Tokens, _} ->
+      {ok, Parsed} = erl_parse:parse_term(Tokens ++ [{dot,?pos}]),
+      erl_parse:abstract(Parsed);
+    Err -> throw(Err)
+  end).
 
+-define(c_function(N,Clauses),
+  begin
+      [C1|_] = Clauses,
+      {function,?pos,?v_atom(N),length(element(3,C1)),Clauses}
+  end
+).
+-define(c_clause(Pattern, Guard, Body), {clause,?pos,Pattern,Guard,Body}).
+
+-define(c_atom(N),{atom,?pos,case N of [_|_]->?quickparse(N);_->N end}).
+-define(v_atom(A), element(3,A)).
+
+
+%------------ Scratch -------------------------------------------------------
 % Node unpacking
 %-define(GET(Key),all(Key, Node)).
 %-define(RM(C),   rm_char(C, ?flat(Node),[])).
--define(L,       line(Index)).     % Current line #
+%-define(L,       line(Index)).     % Current line #
+
 % Used for literals  -- TODO: Move to ungbar.hrl
 -define(BASE,    base(Node)).
 -define(FIXNUM,  fix_num(Node, Index)).
@@ -37,29 +62,30 @@
 %      {ok, Tmp, 
 
 % Erlang AST building helpers
--define(E,erl_syntax).
+%-define(E,erl_syntax).
 
 % Simple atomic terms
--define(e_a(Name), ?E:atom(Name)).
--define(e_v(Name), ?E:variable(Name)).
--define(e_l(List), ?E:list(List)).
--define(e_i(Int),  ?E:integer(Int)).
--define(e_module(Name),
-  ?E:attribute(?e_a(module),[?e_a(Name)])).
--define(e_module(Name,Params),
-  ?E:attribute(?e_a(module), [?e_a(Name), ?e_l([?e_v(P) ||P<-Params])])).
-%-define(export_def(Module, Name, Arity), ...).
--define(e_export_def(Name, Arity),
-  ?E:arity_qualifier(?e_a(Name), ?e_i(Arity))).
--define(e_export_list(ExpTups),
-  ?E:attribute(?e_a(export),
-    [?e_l([?e_export_def(N,A)||{N,A}<-ExpTups])])).
--define(e_forms(FormList), [?E:revert(F)||F<-FormList]).
+%-define(e_a(Name), ?E:atom(Name)).
+%-define(e_v(Name), ?E:variable(Name)).
+%-define(e_l(List), ?E:list(List)).
+%-define(e_i(Int),  ?E:integer(Int)).
 
--define(e_function(Name, Clauses),
-  ?E:function(?e_a(Name), [?e_clause(Patterns,Guard,Body)||[Patterns,Guard,Body]<-Clauses])).
--define(e_clause(Patterns, Guard, Body),
-  ?E:clause([?e_pattern(P)||P<-Patterns], ?e_guard(Guard), Body)).
+%----- TODO: Rework this chunk
+%-define(e_module(Name),
+%  ?E:attribute(?e_a(module),[?e_a(Name)])).
+%-define(e_module(Name,Params),
+%  ?E:attribute(?e_a(module), [?e_a(Name), ?e_l([?e_v(P) ||P<-Params])])).
+%%-define(export_def(Module, Name, Arity), ...).
+%-define(e_export_def(Name, Arity),
+%  ?E:arity_qualifier(?e_a(Name), ?e_i(Arity))).
+%-define(e_export_list(ExpTups),
+%  ?E:attribute(?e_a(export),
+%    [?e_l([?e_export_def(N,A)||{N,A}<-ExpTups])])).
+%-define(e_forms(FormList), [?E:revert(F)||F<-FormList]).
+%-define(e_function(Name, Clauses),
+%  ?E:function(?e_a(Name), Clauses)).
+%-define(e_clause(Patterns, Guard, Body),
+%  ?E:clause([?e_pattern(P)||P<-Patterns], ?e_guard(Guard), Body)).
 
 % Append V onto L only if V has something
 append_(L,V)  -> case V of [] -> L; _ -> lists:append(L,[V]) end.

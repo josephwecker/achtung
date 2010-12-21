@@ -1,5 +1,10 @@
--module(test.dummy, [Name]).
--export([my_function/2]).
+-module(dummy).
+myfun(hi) -> hi;
+myfun(another) -> bleh.
+  %[72,101,65533].
+
+%-module(test.dummy, [Name]).
+%-export([my_function/2]).
 %-export([my_function/0, my_function/1]).
 %-import(other_module, [other_fun/1]).
 %-compile({inline, [{my_function,0}, my_function/1]}).
@@ -20,9 +25,9 @@
 %another(A,B,C,{D,E}) when is_binary(B) -> [D,E,B,C,A].
 
 %my_function([_, this_pattern, V] = H, [_, other_pattern, W]) when V > W -> ok.
-my_function(_,_) ->
-  12390,
-  $c,
-  'asdf%f4289##',
-  "Hi \x{2504}",
-  ok.
+%my_function(_,_) ->
+%  12390,
+%  $c,
+%  'asdf%f4289##',
+%  "Hi \x{2504}",
+%  ok.
