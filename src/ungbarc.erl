@@ -80,7 +80,7 @@ ungbarc(Flags, F) ->
   case Res of
     {ok, _, Code} -> file:write_file(OutFile, Code);
     {ok, _, Code, _} -> file:write_file(OutFile, Code);
-    _ -> nothing
+    _ -> halt(10)
   end.
 
 
@@ -101,10 +101,10 @@ info(Filename, ParsedForms, AllForms, Compiled) ->
             "~P~n~n----------------------------------~n",
             [Compiled, 20]),
 
-  io:format("(pausing)~n",[]),
+  io:format("(pausing for io)~n",[]),
   receive
     nothing -> ok
-  after 1000 -> ok
+  after 400 -> ok
   end.
 
 find_module([]) -> false;

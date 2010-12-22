@@ -1,0 +1,5 @@
+#!/bin/bash -e
+mkdir -p test/ebin
+for file in test/test_*.ung; do
+  ./bin/ungbarc -o -i test/ebin $file
+done
