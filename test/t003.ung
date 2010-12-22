@@ -1,27 +1,27 @@
 
-myfun1 ok
+myfun1 -> ok
 
-myfun2 {ok}
+myfun2 -> {ok}
 
-myfun3
+myfun3 ->
   ok
 
-myfun4 {
+myfun4 -> {
   ok
 }
 
-myfun5
+myfun5 ->
 {
   ok
 }
 
-myfun6 {
+myfun6 ->{
   ok}
 
-myfun7{ok
+myfun7->{ok
 }
 
-myfun8
+myfun8| ->
   ok
   ok
   really_ok
@@ -37,3 +37,10 @@ myfun8
     ok_part5
     second
     third
+
+myfun9 -> first
+  second
+  third
+  blah
+
+myfun10 -> one;two;three;

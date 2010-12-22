@@ -10,18 +10,24 @@ module        <- "@module" sp atom                                      `?p3`;
 function      <- atom clauses                           `?c_function(?p1,?p2)`;
 
 %------------ Clauses --------------------------------------------------------
-%clauses       <- (clause clauseblock) / clause / clauseblock                ~; % Don't know if I want to support it yet...
 clauses       <- clauseblock / clause                              `?listify`;
-clause        <- _s "|"? pattern? guardseq? _s "->" expression      `?clause`;
-clauseblock   <- block_beg clause+ block_end                            `?p2`;
+clause        <- _s "|"? pattern? guardseq? _s "->" expressions     `?clause`;
+clauseblock   <- sblock clause+ eblock                                  `?p2`;
 
 pattern       <- (_s term)+                                            `?ip2`; % TMP
 guardseq      <- _s "||" (_s guard_expr)*                         `?ip2(?p3)`; % TMP
 guard_expr    <- (_s term)+                                            `?ip2`; % TMP
 
 %------------ Expressions ----------------------------------------------------
+% This may look confusing because of the explicit blocks (exp_block) vs.
+% normal blocks (block).  Normal blocks don't have "begin ... end"- but if a
+% block suddenly starts in the middle of a bunch of expressions, it does get
+% a begin...end (that's the exp_block).
+expressions   <- expression+                                          `?flat`;
 expression    <- _s (block / expr_with_end)                             `?p2`;
-block         <- block_beg expression* expr? block_end     `append_(?p2,?p3)`;
+inner_exp     <- _s (exp_block / expr_with_end)                         `?p2`;
+exp_block     <- sblock inner_exp* expr? eblock     `?c_block(?app(?p2,?p3))`;
+block         <- sblock inner_exp* expr? eblock               `?app(?p2,?p3)`;
 expr_with_end <- expr eos                                               `?p1`;
 expr          <- term                                                       ~;
 
@@ -53,8 +59,8 @@ long_string   <- "'''" not_triple_ap* "'''"                             `?p2`;
 not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?p2`;
 
 %------------ Whitespace, Comments, Delimiters -------------------------------
-block_beg     <- _s ("{" _s indent / indent _s "{" / "{" / indent)       `?X`;
-block_end     <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent)       `?X`;
+sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent)       `?X`;
+eblock        <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent)       `?X`;
 indent        <- "\x06"                                                  `?X`;
 dedent        <- "\x15"                                                  `?X`;
 eos           <- _sp (";" / newline / !.)                                `?X`;

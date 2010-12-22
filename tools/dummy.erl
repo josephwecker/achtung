@@ -1,6 +1,13 @@
 -module(dummy).
 myfun(hi) -> hi;
-myfun(another) -> bleh.
+myfun(another) ->
+  blah,
+  begin
+      foo,
+      bar,
+      baz
+  end,
+  bleh.
   %[72,101,65533].
 
 %-module(test.dummy, [Name]).

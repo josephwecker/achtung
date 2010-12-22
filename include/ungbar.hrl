@@ -20,6 +20,7 @@
 -define(all(Key,L), proplists:get_all_values(Key,?flat(L))).
 -define(listify, ?listify(?N)). % Ensure it's a list
 -define(listify(V), case V of [_|_]->V;_->[V] end).
+-define(app(L,V),case V of []->L;_->lists:append(L,[V]) end).% Append V onto L sometimes
 
 
 %------------ Parse Tree Construction ---------------------------------------
@@ -40,6 +41,7 @@
   end
 ).
 -define(c_clause(Pattern, Guard, Body), {clause,?pos,Pattern,Guard,Body}).
+-define(c_block(Exprs), {block, ?pos, Exprs}).
 
 -define(c_atom(N),{atom,?pos,case N of [_|_]->?quickparse(N);_->N end}).
 -define(v_atom(A), element(3,A)).
@@ -87,8 +89,6 @@
 %-define(e_clause(Patterns, Guard, Body),
 %  ?E:clause([?e_pattern(P)||P<-Patterns], ?e_guard(Guard), Body)).
 
-% Append V onto L only if V has something
-append_(L,V)  -> case V of [] -> L; _ -> lists:append(L,[V]) end.
 literal(X, Index)  ->
   % TODO: pass along any errors here as appropriate
   {ok, Lit, _EndLoc} = erl_scan:string(X, line(Index)),
