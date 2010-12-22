@@ -1,3 +1,16 @@
+------------------- High level (all need to be awesome)
+- Standalone compiler with no/few dependencies
+- Shell
+- Module with equivalent of:
+  - parse_file -> Erlang parse tree
+  - parse_string -> Erlang parse tree
+  - parse_forms -> Erlang parse tree
+  - compile -> Result (depends on flags)
+  - preprocess -> ?
+  - file:consult -> List of terms
+- Manpages / html / pdf documentation
+
+------------------- Language
 
 ?"do" subblocks (to replace begin/end) (could also be called "block" or "begin")
 

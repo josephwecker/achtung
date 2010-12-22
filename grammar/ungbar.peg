@@ -32,7 +32,7 @@ expr_with_end <- expr eos                                               `?p1`;
 expr          <- term                                                       ~;
 
 %------------ Terms / Atomic Literals ----------------------------------------
-term          <- string / atom / number                                     ~;
+term          <- string / atom / number / tuple                             ~;
 
 atom          <- simple_atom / complex_atom                           `?scan`;
 simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
@@ -57,6 +57,14 @@ simple_string <- '"' not_quot* '"'                                          ~;
 not_quot      <- !'"' ("\\" . / !"\\" .)                                `?p2`;
 long_string   <- "'''" not_triple_ap* "'''"                   `?fixlstr(?p2)`;
 not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?p2`;
+
+%------------ Tuples & Lists -------------------------------------------------
+tuple         <- _s "(" _s term_sequence _s ")"               `?inspect(?p4)`;
+term_sequence <- empty_ts / comma_ts                   ~;
+%term_sequence <- empty_ts / comma_ts / pipe_ts / space_ts                   ~;
+empty_ts      <- ws                                                      `[]`;
+comma_ts      <- term (_s "," _s term)*                    `[?p1]++?ip4(?p2)`;
+
 
 %------------ Whitespace, Comments, Delimiters -------------------------------
 sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent)       `?X`;

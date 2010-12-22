@@ -17,8 +17,12 @@
 -define(p4(L), lists:nth(4,L)).
 -define(ip1, ?ip1(?N)).
 -define(ip2, ?ip2(?N)).
+-define(ip3, ?ip3(?N)).
+-define(ip4, ?ip4(?N)).
 -define(ip1(L), [?p1(IL)||IL<-L]).
 -define(ip2(L), [?p2(IL)||IL<-L]).
+-define(ip3(L), [?p3(IL)||IL<-L]).
+-define(ip4(L), [?p4(IL)||IL<-L]).
 -define(flat(L), lists:flatten(L)).
 -define(all(Key,L), proplists:get_all_values(Key,?flat(L))).
 -define(listify, ?listify(?N)). % Ensure it's a list

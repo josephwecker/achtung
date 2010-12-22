@@ -1,24 +1,18 @@
--module(dummy).
-myfun(hi) -> hi;
-myfun(another) ->
-  blah,
-  begin
-      foo,
-      bar,
-      baz
-  end,
-  bleh.
-  %[72,101,65533].
+-module(tmp.dummy, [Name]).
+-export([myfun/1]).
+-import(other_module, [other_fun/1]).
+-compile({inline, [myfun/1]}).
+-vsn("0.3.1").
+-author("Awesome").
+%-include("include/ungbar.hrl").
+%-include_lib("xmerl/include/xmerl.hrl").
+
+myfun(hi) -> hi.
 
 %-module(test.dummy, [Name]).
 %-export([my_function/2]).
 %-export([my_function/0, my_function/1]).
-%-import(other_module, [other_fun/1]).
-%-compile({inline, [{my_function,0}, my_function/1]}).
 %-record(some_record, {f1, f2, f3}).
-%-vsn("0.3.1").
-%-author("Awesome").
-%-include("Something.hrl").
 %-define(THIS, this).
 %-define(THAT(Thing), [that, Thing]).
 

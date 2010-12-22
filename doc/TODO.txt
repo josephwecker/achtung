@@ -1,10 +1,10 @@
-[ ] - Comment test files - possibly rename to verbose again
-[ ] - Fail exit status for ungbarc
-[ ] - Quick script to run the test files
-[ ] - Explicit exports
-[ ] - Implicit exports
+[x] - Comment test files - possibly rename to verbose again
+[x] - Fail exit status for ungbarc
+[x] - Quick script to run the test files
 [ ] - Tuples
 [ ] - Lists
+[ ] - Explicit exports
+[ ] - Implicit exports
 [ ] - Patterns
 [ ] - Function clause patterns
 [ ] - Correct function divying and recombining (arity processing)

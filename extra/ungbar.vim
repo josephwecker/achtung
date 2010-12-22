@@ -70,7 +70,8 @@ syn match   ungbarSep             ":"
 syn match   ungbarSep             "::"
 syn match   ungbarSep             "->"
 syn match   ungbarMacro           "\$[a-z_]\+"
-syn match   ungbarProcessor	      "^@@\=[a-z_]\+"
+syn match   ungbarAt              "@"
+syn match   ungbarProcessor	      "^@@\=\s*[a-z_]\+" contains=ungbarAt
 
 syn match   ungbarVisibility      /\([<:]\|=>\)/ contained
 syn match   ungbarTopFunction     /^\(<\|:\)*[a-z][A-Za-z_]*\s*/ contains=ungbarVisibility
@@ -78,6 +79,7 @@ syn match   ungbarClause          /^\s*|/
 
 syn keyword ungbarSpecial         adler32 adler32_combine apply atom_to_binary atom_to_list binary_to_atom binary_to_existing_atom binary_to_list bitstring_to_list binary_to_term check_process_code concat_binary crc32 crc32_combine date decode_packet delete_module disconnect_node erase exit float_to_list garbage_collect get get_keys group_leader halt integer_to_list iolist_to_binary iolist_size is_alive is_process_alive link list_to_atom list_to_binary list_to_bitstring list_to_existing_atom list_to_float list_to_integer list_to_pid list_to_tuple load_module make_ref monitor_node nodes now open_port pid_to_list port_close port_command port_connect port_control pre_loaded process_flag process_info processes purge_module put register registered setelement spawn spawn_link spawn_monitor spawn_opt split_binary statistics term_to_binary throw time tuple_to_list unlink unregister whereis
 
+hi link ungbarAt                  Ignore
 hi link ungbarString              String
 hi link ungbarLongString          String
 hi link ungbarStringModifier      SpecialChar

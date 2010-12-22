@@ -1,0 +1,30 @@
+  # Empty
+  ok
+  ( )
+#|  ()
+  (                
+)
+  # One element
+  (one)
+  ( one)
+  (one )
+  ( one )
+  # Two elements
+  (one two)
+  (one,two)
+  (one two )
+  # Three elements
+  ( one two three )
+  (one two three)
+  (one, two,
+    three            )
+  (one | two|three)
+  # Nested
+  (() (hey|there) dude (another, dude ))
+
+lists ->
+
+
+combos ->
+|#
+
