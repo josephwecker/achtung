@@ -9,11 +9,11 @@
  |  That isn't #|very #|good (nested!)|#|#
 |##The end
 
-myfun # This function is lame
+myfun -># This function is lame
   ok
   # see?
 
-myfun2#| Am I a whitespace? # oh yeah|#ok
+myfun2->#| Am I a whitespace? # oh yeah|#ok
 
 
 #|# Same old story- just at the end of the file now
