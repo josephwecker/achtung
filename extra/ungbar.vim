@@ -20,6 +20,7 @@ syn region  ungbarBinaryString    start=+"+  skip=+\n\\\\\|\\"+  end=+"+ contain
 syn keyword ungbarTodo            TODO FIXME XXX NOTE NOTES contained
 syn match   ungbarDoc             /\(##\s*\)\@<=@[A-Za-z_]\+/ contained
 syn match   ungbarComment         /#.*$/ contains=ungbarTodo,ungbarDoc,@Spell
+syn region  ungbarBlockComment    start="#|" skip="\(\\#|\|\\|#\)" end="|#" contains=ungbarBlockComment,ungbarTodo,ungbrDoc,@Spell
 
 syn keyword ungbarBoolean         true false
 syn keyword ungbarConditional     if else switch when
@@ -78,6 +79,7 @@ syn keyword ungbarSpecial         adler32 adler32_combine apply atom_to_binary a
 hi link ungbarString              String
 hi link ungbarStringModifier      SpecialChar
 hi link ungbarComment             Comment
+hi link ungbarBlockComment        Comment
 hi link ungbarTodo                Todo
 hi link ungbarDoc                 SpecialComment
 hi link ungbarConditional         Conditional
