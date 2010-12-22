@@ -20,11 +20,12 @@ main(Opts) ->
   lists:foreach(fun(F)->ungbarc(Flags,F) end, Files).
 
 % Not matching these up to erlc at the moment- likely will in the near future
-parse_opts(A,["-o",Dir|R]) -> parse_opts([{outputdir,Dir}  |A],R);
-parse_opts(A,["-i"|R])     -> parse_opts([{info,true}      |A],R);
-parse_opts(A,["-v"|R])     -> parse_opts([{verbose,true}   |A],R);
-parse_opts(A,["-d"|R])     -> parse_opts([{debug_info,true}|A],R);
-parse_opts(A,Files)        -> {lists:reverse(A), Files}.
+parse_opts(A,["-o",Dir|R])   -> parse_opts([{outputdir,Dir}    |A],R);
+parse_opts(A,["-i"|R])       -> parse_opts([{info,true}        |A],R);
+parse_opts(A,["-v"|R])       -> parse_opts([{verbose,true}     |A],R);
+parse_opts(A,["-d"|R])       -> parse_opts([{debug_info,true}  |A],R);
+parse_opts(A,["--indents"|R])-> parse_opts([{show_indents,true}|A],R);
+parse_opts(A,Files)          -> {lists:reverse(A), Files}.
 
 % Defaults when default isn't nothing and it's not in parse_opts yet
 opt([],outputdir)   -> ".";
@@ -39,6 +40,14 @@ ungbarc(Flags, F) ->
   {ok, DentedBin} = indents:file_scan(F,[{ignoreblock_defs, ?DENT_IGN_BLOCKS},
                                          {indent_token,6},
                                          {dedent_token,21}]),
+  case opt(Flags, show_indents) of
+    true ->
+      io:format("+---------------------------------~n"
+                "|  INDENTS & DEDENTS :~n"
+                "+---------------------------------~n~s~n",
+                [swapchr(21,"<<<",swapchr(6,">>>",binary_to_list(DentedBin)))]);
+    _ -> nothing
+  end,
   % TODO: error formatting and output instead of mismatch
   {ok, ParsedForms, LastPos} = ungbar:parse(binary_to_list(DentedBin)),
   {ModuleName, ModuleAttrForm} = case find_module(ParsedForms) of
@@ -101,3 +110,9 @@ info(Filename, ParsedForms, AllForms, Compiled) ->
 find_module([]) -> false;
 find_module([{attribute, _, module, Nm}|_]) -> {true, Nm};
 find_module([_|T]) -> find_module(T).
+
+swapchr(C,R,L)    ->swapchr(C,R,L,[]).
+swapchr(_,_,[],A)   ->lists:flatten(lists:reverse(A));
+swapchr(C,R,[C|T],A)->swapchr(C,R,T,[R|A]);
+swapchr(C,R,[H|T],A)->swapchr(C,R,T,[H|A]).
+
