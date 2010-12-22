@@ -33,8 +33,14 @@ ungbarc(Flags, F) ->
                                          {dedent_token,21}]),
   % TODO: error formatting instead of mismatch
   {ok, ParsedForms, LastPos} = ungbar:parse(binary_to_list(DentedBin)),
-  % TODO: insert module if not already present
+  {_ModuleName, ModuleAttrForm} = case find_module(ParsedForms) of
+    {true, Nm} -> {Nm, []};
+    false ->
+      Nm = list_to_atom(filename:rootname(filename:basename(F))),
+      {Nm,[{attribute,1,module,Nm}]}
+  end,
   AllForms = lists:append([[{attribute, 1, file, {F, 1}}],
+                           ModuleAttrForm,
                            ParsedForms,
                            [{eof,LastPos}]]),
   Res = compile:forms(AllForms, [binary,bin_opt_info,compressed,return]),
@@ -42,6 +48,8 @@ ungbarc(Flags, F) ->
     true -> info(F, ParsedForms, AllForms, Res);
     false ->
       % TODO: save the binary to the beam file
+      % TODO: if the module name is a tuple, mkdir -p the correct output
+      %       directories when saving.
       Res
   end.
 
@@ -66,3 +74,7 @@ info(Filename, ParsedForms, AllForms, Compiled) ->
     nothing -> ok
   after 1000 -> ok
   end.
+
+find_module([]) -> false;
+find_module([{attribute, _, module, Nm}|_]) -> {true, Nm};
+find_module([_|T]) -> find_module(T).
