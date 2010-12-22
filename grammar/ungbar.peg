@@ -32,7 +32,7 @@ expr_with_end <- expr eos                                               `?p1`;
 expr          <- term                                                       ~;
 
 %------------ Terms / Atomic Literals ----------------------------------------
-term          <- atom / number / string                                     ~;
+term          <- string / atom / number                                     ~;
 
 atom          <- simple_atom / complex_atom                           `?scan`;
 simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
@@ -51,11 +51,11 @@ o             <- [0-7]                                                      ~;
 h             <- [0-9a-fA-F]                                                ~;
 float         <- normal_int "." normal_int+ ([eE] [-+]? normal_int)?        ~;
 
-string        <- simple_string / long_string                          `?scan`;
+string        <- (_s string_part)+                              `?cats(?ip2)`;
+string_part   <- simple_string / long_string                          `?scan`;
 simple_string <- '"' not_quot* '"'                                          ~;
 not_quot      <- !'"' ("\\" . / !"\\" .)                                `?p2`;
-long_string   <- "'''" not_triple_ap* "'''"                             `?p2`;
-%long_string   <- "'''" not_triple_ap* "'''"                    `fixlstr(?p2)`;
+long_string   <- "'''" not_triple_ap* "'''"                   `?fixlstr(?p2)`;
 not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?p2`;
 
 %------------ Whitespace, Comments, Delimiters -------------------------------
@@ -109,10 +109,22 @@ fix_num(Node,Index)      ->fix_num2(rm_char($_,rm_char($+,?flat)), Index).
 fix_num2([$-|Node],Index)->{T,L,V}=?scan, {T,L,-V};
 fix_num2(Node,Index)     ->?scan.
 
-rm_char(C,L)      ->rm_char(C,L,[]).
-rm_char(_,[],A)   ->lists:reverse(A);
-rm_char(C,[C|T],A)->rm_char(C,T,A);
-rm_char(C,[H|T],A)->rm_char(C,T,[H|A]).
+
+% Strings
+% Not really necessary usually (epp does this as well) - but I think it's safer
+% here anyway: concatenate strings that are in a sequence.
+-define(cats, ?cats(?N)).
+-define(cats(Ss), erl_parse:abstract(?flat(lists:append([erl_parse:normalise(S)||S<-Ss])))).
+
+-define(fixlstr, ?fixlstr(?N)).
+-define(fixlstr(N), ["\"", rm_char($","\\\"",?flat(N)), "\""]).
+
+
+rm_char(C,L)      ->rm_char(C,[],L,[]).
+rm_char(C,R,L)    ->rm_char(C,R,L,[]).
+rm_char(_,_,[],A)   ->?flat(lists:reverse(A));
+rm_char(C,R,[C|T],A)->rm_char(C,R,T,[R|A]);
+rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
 
 % vim: set noai filetype=erlang textwidth=100:
 `

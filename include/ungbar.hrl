@@ -1,7 +1,10 @@
 %------------ Neotoma unpacking ----------------------------------------------
--define(X, []).              % Consume but ignore
+-define(X, []). % Consume but ignore
 -define(N, Node).
 -define(I, Index).
+-define(inspect, ?inspect(?N)).
+-define(inspect(N), begin io:format("~n====== inspect =======~n~p~n"
+        "======================~n", [N]), N end).
 
 -define(p1, ?p1(?N)).
 -define(p2, ?p2(?N)).
@@ -25,9 +28,9 @@
 
 %------------ Parse Tree Construction ---------------------------------------
 -define(pos, line(Index)).
--define(scan,?scan(?flat)).
+-define(scan,?scan(?N)).
 -define(scan(V), % For simple terms that the erlang scanner can handle
-  case erl_scan:string(V,?pos) of
+  case erl_scan:string(?flat(V),?pos) of
     {ok, [One], _} -> One;
     {ok, Tokens, _} ->
       {ok, Parsed} = erl_parse:parse_term(Tokens ++ [{dot,?pos}]),

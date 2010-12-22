@@ -61,6 +61,7 @@ atomic_literals ->
   $\x7f     # 2 hex digits
   $\x{ff3}  # Any number of hex digits
 
+  # Strings
   "Simple string"
   nop # So strings don't combine
   "String with \"Stuff\" in it"
@@ -69,11 +70,19 @@ atomic_literals ->
   nop
   "And some more craziness \x{2504} here"
   nop
-  #|  # Strings
-  "String that just keeps going"  " and going"
+  "Weird \x{2504} "
+  "string that just keeps going"  " and going"
   " and going."
+  nop
+  '''First long string'''
+  nop
+  '''Second long string - going to the
+      next
+level'''
   nop
   '''And now for that most 'special' string of all-
 The string that is "everywhere" and nowhere at once...
-      The string that can do anything \n\n(almost)'''
-  |#
+      The string that can do anything \n\n(almost)''' " including combining
+      forces"
+  nop
+  '''Keeping \x{ff3} \'''things\''' "Special "''' " (really special) "
