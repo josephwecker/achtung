@@ -19,21 +19,29 @@ main(Opts) ->
   {Flags, Files} = parse_opts([], Opts),
   lists:foreach(fun(F)->ungbarc(Flags,F) end, Files).
 
-parse_opts(Acc, ["-o", Outputdir | R]) ->
-  parse_opts([{outputdir, Outputdir} | Acc], R);
-parse_opts(Acc, ["-i" | R]) ->
-  parse_opts([{debug_info, true} | Acc], R);
-parse_opts(Acc, Files) ->
-  {lists:reverse(Acc), Files}.
+% Not matching these up to erlc at the moment- likely will in the near future
+parse_opts(A,["-o",Dir|R]) -> parse_opts([{outputdir,Dir}  |A],R);
+parse_opts(A,["-i"|R])     -> parse_opts([{info,true}      |A],R);
+parse_opts(A,["-v"|R])     -> parse_opts([{verbose,true}   |A],R);
+parse_opts(A,["-d"|R])     -> parse_opts([{debug_info,true}|A],R);
+parse_opts(A,Files)        -> {lists:reverse(A), Files}.
+
+% Defaults when default isn't nothing and it's not in parse_opts yet
+opt([],outputdir)   -> ".";
+opt([],bin_opt_info)-> true;
+
+opt([],_)           -> [];
+opt([{Key,V}|_],Key)-> V;
+opt([_|T],Key)      -> opt(T,Key).
 
 
 ungbarc(Flags, F) ->
   {ok, DentedBin} = indents:file_scan(F,[{ignoreblock_defs, ?DENT_IGN_BLOCKS},
                                          {indent_token,6},
                                          {dedent_token,21}]),
-  % TODO: error formatting instead of mismatch
+  % TODO: error formatting and output instead of mismatch
   {ok, ParsedForms, LastPos} = ungbar:parse(binary_to_list(DentedBin)),
-  {_ModuleName, ModuleAttrForm} = case find_module(ParsedForms) of
+  {ModuleName, ModuleAttrForm} = case find_module(ParsedForms) of
     {true, Nm} -> {Nm, []};
     false ->
       Nm = list_to_atom(filename:rootname(filename:basename(F))),
@@ -43,15 +51,30 @@ ungbarc(Flags, F) ->
                            ModuleAttrForm,
                            ParsedForms,
                            [{eof,LastPos}]]),
-  Res = compile:forms(AllForms, [binary,bin_opt_info,compressed,return]),
-  case proplists:get_value(debug_info, Flags, false) of
+  Info = opt(Flags, info),
+  COpts = lists:flatten(proplists:compact([
+        case Info of true->return;_->report end,
+        opt(Flags,bin_opt_info),
+        opt(Flags,compressed),
+        opt(Flags,debug_info),
+        opt(Flags,verbose)
+      ])),
+  Res = compile:forms(AllForms, COpts),
+  case Info of
     true -> info(F, ParsedForms, AllForms, Res);
-    false ->
-      % TODO: save the binary to the beam file
-      % TODO: if the module name is a tuple, mkdir -p the correct output
-      %       directories when saving.
-      Res
+    [] -> nothing
+  end,
+
+  % TODO: if the module name is a tuple, mkdir -p the correct output
+  %       directories and correct the output path when saving.
+  OutFile = filename:join(opt(Flags,outputdir),[ModuleName,".beam"]),
+  case Res of
+    {ok, _, Code} -> file:write_file(OutFile, Code);
+    {ok, _, Code, _} -> file:write_file(OutFile, Code);
+    _ -> nothing
   end.
+
+
 
 info(Filename, ParsedForms, AllForms, Compiled) ->
   io:format("~n~n+---------------------------------~n"
