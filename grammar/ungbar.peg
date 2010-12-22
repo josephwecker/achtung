@@ -34,16 +34,16 @@ expr          <- term                                                       ~;
 %------------ Terms / Atomic Literals ----------------------------------------
 term          <- atom / number / string                                     ~;
 
-atom          <- simple_atom / complex_atom                          `?S2LIT`;
+atom          <- simple_atom / complex_atom                           `?scan`;
 simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
 complex_atom  <- "'" not_apos* "'"                                          ~;
 not_apos      <- !"'" ("\\" . / !"\\" .)                                `?p2`;
 
-number        <- [+-]? (float / integer)                            `?FIXNUM`;
+number        <- [+-]? (float / integer)                            `?fixnum`;
 integer       <- base_int / normal_int / character                          ~;
 normal_int    <- [0-9] [0-9_]*                                              ~;
 base_int      <- base_prefix [A-Za-z0-9_]+                                  ~;
-base_prefix   <- "0" [xX] / "0" [oO] / "0" [bB] / ([1-9] [0-9]* [rR]) `?BASE`;
+base_prefix   <- "0" [xX] / "0" [oO] / "0" [bB] / ([1-9] [0-9]* [rR]) `?base`;
 character     <- "$" (char_escapes / .)                                     ~;
 char_escapes  <- "\\^" [a-zA-Z] / "\\" o (o o?)? / "\\x{" h+ "}" /
                  "\\x" h h / "\\" .                                         ~;
@@ -51,7 +51,7 @@ o             <- [0-7]                                                      ~;
 h             <- [0-9a-fA-F]                                                ~;
 float         <- normal_int "." normal_int+ ([eE] [-+]? normal_int)?        ~;
 
-string        <- simple_string / long_string                         `?S2LIT`;
+string        <- simple_string / long_string                          `?scan`;
 simple_string <- '"' not_quot* '"'                                          ~;
 not_quot      <- !'"' ("\\" . / !"\\" .)                                `?p2`;
 long_string   <- "'''" not_triple_ap* "'''"                             `?p2`;
@@ -76,7 +76,10 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 
 %------------ Shortcuts & transformations ------------------------------------
 `
+% Common macros
 -include("../include/ungbar.hrl").
+
+% Macros that are specific to this grammar
 
 % Functions
 -define(clause, ?clause(?N)).
@@ -88,6 +91,9 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
   end).
 
 % Numbers
+-define(base,   base(?N)).
+-define(fixnum, fix_num(?N, ?I)).
+
 base(["0",$X])->"16#";
 base(["0",$x])->"16#";
 base(["0",$O])->"8#";
@@ -97,11 +103,16 @@ base(["0",$b])->"2#";
 base([D1, DN, $R]) -> [?flat([D1,DN,"#"])];
 base([D1, DN, $r]) -> [?flat([D1,DN,"#"])].
 
-fix_num(Num, Line) -> fix_num2(rm_char($_,rm_char($+,?flat(Num))), Line).
-fix_num2([$- | Num], Line) ->
-  {T, L, V} = literal(Num, Line),
-  {T, L, -V};
-fix_num2(Num, Line) -> literal(Num, Line).
+% Flatten, remove underscores and positive signs, scan, and then apply
+% negative sign if necessary.
+fix_num(Node,Index)      ->fix_num2(rm_char($_,rm_char($+,?flat)), Index).
+fix_num2([$-|Node],Index)->{T,L,V}=?scan, {T,L,-V};
+fix_num2(Node,Index)     ->?scan.
+
+rm_char(C,L)      ->rm_char(C,L,[]).
+rm_char(_,[],A)   ->lists:reverse(A);
+rm_char(C,[C|T],A)->rm_char(C,T,A);
+rm_char(C,[H|T],A)->rm_char(C,T,[H|A]).
 
 % vim: set noai filetype=erlang textwidth=100:
 `
