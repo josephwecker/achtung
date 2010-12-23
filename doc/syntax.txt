@@ -6,3 +6,14 @@
 
 
 [] - Stdlib changes
+
+
+
+----------------
+
+=== Lists / Tuples ===
+[  a b c  ] -> [a, b, c]
+["1" "2"]   -> ["12"]
+["1"\ "2"]  -> ["1","2"]     # Force whitespace delimiter
+
+# No mixing delimiters (unless nested)

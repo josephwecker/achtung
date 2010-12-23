@@ -13,14 +13,14 @@ tuples->
   ( one
  )
 
-  # Two elements
+  # Multiple elements
   (one,two)
   (one, two)
   (one   ,    two   
 )
   (one two)
   ( one two )
-  (one two )
+  (one two 3 )
   ( one two)
   (             one
 two)
@@ -105,3 +105,10 @@ possible])
                 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8
                 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8
         90 1 2 3 4 5 6 7 8 9 | bigun]
+  ("here's" " one")
+  ("and"\ " another")
+  (1\ 2 3)
+  ["here's" " one"]
+  ["and"\ " another"]
+  [1\ 2 3]
+
