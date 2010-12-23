@@ -32,7 +32,7 @@ expr_with_end <- expr eos                                               `?p1`;
 expr          <- term                                                       ~;
 
 %------------ Terms / Atomic Literals ----------------------------------------
-term          <- string / atom / number / tuple                             ~;
+term          <- string / atom / number / tuple / list                      ~;
 
 atom          <- simple_atom / complex_atom                           `?scan`;
 simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
@@ -59,12 +59,19 @@ long_string   <- "'''" not_triple_ap* "'''"                   `?fixlstr(?p2)`;
 not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?p2`;
 
 %------------ Tuples & Lists -------------------------------------------------
-tuple         <- _s "(" _s term_sequence _s ")"               `?inspect(?p4)`;
-term_sequence <- empty_ts / comma_ts                   ~;
-%term_sequence <- empty_ts / comma_ts / pipe_ts / space_ts                   ~;
-empty_ts      <- ws                                                      `[]`;
-comma_ts      <- term (_s "," _s term)*                    `[?p1]++?ip4(?p2)`;
+% You'd think you could factor out a lot of the redundency here, but it
+% currently confuses neotoma, which fails to try subsequent patterns
+% sometimes.  This works, for now, even if it is an eye sore.
+tuple         <- _s (empty_t / comma_t / space_t)             `?c_tuple(?p2)`;
+empty_t       <- "(" _s ")"                                              `[]`;
+comma_t       <- "(" _s term (_s "," _s term)* _s ")"         `[?p3|?i(4,4)]`;
+space_t       <- "(" _s term (ws term)* _s ")"                `[?p3|?i(2,4)]`;
 
+list          <- _s (empty_l / comma_l / space_l)              `?c_list(?p2)`;
+empty_l       <- "[" _s t? "]"                                           `[]`;
+comma_l       <- "[" _s term (_s "," _s term)* _s t? "]"`{[?p3|?i(4,4)],?p6}`;
+space_l       <- "[" _s term (ws term)* _s t? "]"       `{[?p3|?i(2,4)],?p6}`;
+t             <- "|" _s term _s                                         `?p3`;
 
 %------------ Whitespace, Comments, Delimiters -------------------------------
 sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent)       `?X`;

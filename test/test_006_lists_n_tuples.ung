@@ -1,1 +1,107 @@
-f->( )
+tuples->
+  # Empty
+  ( )
+  ()
+  (         
+ )
+
+  # One element
+  (one)
+  ( one )
+  (one )
+  ( one)
+  ( one
+ )
+
+  # Two elements
+  (one,two)
+  (one, two)
+  (one   ,    two   
+)
+  (one two)
+  ( one two )
+  (one two )
+  ( one two)
+  (             one
+two)
+  (  a   b  c d e f (g,h,i))
+  (a (   b , c)   cde (f g (h,i)))
+
+lists ->
+  # Empty
+  [ ]
+  []
+  [         
+ ]
+
+  # One element
+  [one]
+  [ one ]
+  [one ]
+  [ one]
+  [ one
+ ]
+
+  # Two elements
+  [one,two]
+  [one, two]
+  [one   ,    two   
+]
+  [one two]
+  [ one two ]
+  [one two ]
+  [ one two]
+  [             one
+two]
+  [  a   b  c d e f [g,h,i]]
+  [a [   b , c]   cde [f g [h,i]]]
+
+  [improper|rocks]
+  [this improper| [is proper]]
+  [so is this one | []]
+  [ this test|wow ]
+  [but this one | (is improper)]
+  [$a | [$b | [$c | [$d | [$e]]]]]
+  [$a | "wow"]
+  ["big old" " dirt"]
+  ["big old" " dirt", "bag"]
+  [1 "big old" "dirt"]
+  [1 | "hey"]
+  ["hey" | "hey"]
+  ["hey" " hey" | "hey"]
+  ["hey""hey"|"Hey"]
+  
+  ["and more"]
+  ["and more " "and", "more"| "(more)"]
+  [["some list"] | ["that's nested"]]
+  ["and more " 6 "more"| "(more)"]
+  [ "  and  more  "  "  and  more  ",  "  and more  " | "  and more  "
+        ]
+  [ "  and  more  "  '"  and  more  "'  "  and more  " | "  and more  "
+        
+              ]
+
+misc ->
+  (one [list is worth [] [[]|[]]] 1000 "tuples" (is, [that, true | false])
+    [is that even
+possible])
+  [[[[[[[[[[[[[[[[[[[[[[[[[( hi )]]]]]]]]]]]]]]]]]]]]]]]]]
+  [0 1 2 3 4 5 6 7#|hmm|#8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7
+  8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
+  7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+  6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4
+  5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3
+  4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
+  3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+  2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2
+    3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3
+      4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4
+        5 6 7 8 90 1 2 3 4 5 6 7 8 '''90 1 2 3 4 5 6 7 8''' 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5
+          6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6
+            7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7
+              8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8
+                90 1 2 3 4 5 6 7 8 (90,1,2,3) 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8
+                90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8
+                90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8
+                90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8 90 1 2 3 4 5 6 7 8
+        90 1 2 3 4 5 6 7 8 9 | bigun]

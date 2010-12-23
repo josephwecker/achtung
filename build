@@ -10,7 +10,7 @@ erlc -o ebin src/ungbarc.erl
 echo Turning peg into erl via neotoma
 erl -noinput -eval 'neotoma:file("grammar/ungbar.peg").' -run init stop
 ## Uncomment next line for debug-info to screen
-sed -i.bk 's/p(Inp, StartIndex, Name, ParseFun, TransformFun) ->/& io:format("~s | ~p | ~p~n", [Name, StartIndex, case Inp of [I|_]->[I];_->"eof" end]),/' grammar/ungbar.erl
+#sed -i.bk 's/p(Inp, StartIndex, Name, ParseFun, TransformFun) ->/& io:format("~s | ~p | ~p~n", [Name, StartIndex, case Inp of [I|_]->[I];_->"eof" end]),/' grammar/ungbar.erl
 echo Compiling ungbar
 erlc -o ebin grammar/ungbar.erl
 ## Comment next line to retain grammar/ungbar.erl for analysis

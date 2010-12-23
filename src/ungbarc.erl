@@ -89,7 +89,7 @@ info(Filename, ParsedForms, AllForms, Compiled) ->
   io:format("~n~n+---------------------------------~n"
             "|  PARSE RESULTS FOR ~s:~n"
             "+---------------------------------~n"
-            "~p~n~n", [Filename, ParsedForms]),
+            "~P~n~n", [Filename, ParsedForms, 60]),
   io:format("+---------------------------------~n"
             "|  ERLANG EQUIVALENT:~n"
             "+---------------------------------~n"

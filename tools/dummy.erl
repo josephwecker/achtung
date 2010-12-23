@@ -1,13 +1,20 @@
--module(tmp.dummy, [Name]).
--export([myfun/1]).
--import(other_module, [other_fun/1]).
--compile({inline, [myfun/1]}).
--vsn("0.3.1").
--author("Awesome").
+-module(dummy).
+%-module(tmp.dummy, [Name]).
+%-export([myfun/1]).
+%-import(other_module, [other_fun/1]).
+%-compile({inline, [myfun/1]}).
+%-vsn("0.3.1").
+%-author("Awesome").
 %-include("include/ungbar.hrl").
 %-include_lib("xmerl/include/xmerl.hrl").
 
-myfun(hi) -> hi.
+f() ->
+  A = a,
+  B = b,
+  [],
+  [a,b],
+  [a|b],
+  [A|B].
 
 %-module(test.dummy, [Name]).
 %-export([my_function/2]).
