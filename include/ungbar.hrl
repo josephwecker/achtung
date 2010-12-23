@@ -60,11 +60,13 @@
 
 % == Function / fun references ==
 % toplevelfun() -> ...   -->  {function,P,toplevelfun,0,[{clause...},...]}
+% fun myfun/0            -->  {'fun',P,{function,myfun,0}}
 % fun lists:reverse/1    -->  {'fun',P,{function,lists,    reverse, 1}}
 % fun pkg.mdl:some_fun/0 -->  {'fun',P,{function,'pkg.mdl',some_fun,0}}
 % fun()->a end           -->  {'fun',P,{clauses,[...]}}  % (Note no arity mentioned)
 % some_fun/2 (in exp/imp)-->  {some_fun, 2}
 %
+% {function,'
 
 
 % List to Conses - basically recursively (not tail recursively at the moment)
