@@ -15,11 +15,11 @@ tuples->
 
   # Multiple elements
   (one,two)
-  (one, two)
+  ("one", two)
   (one   ,    two   
 )
   (one two)
-  ( one two )
+  ( one "two" )
   (one two 3 )
   ( one two)
   (             one

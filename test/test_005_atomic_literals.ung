@@ -7,6 +7,8 @@ atomic_literals ->
   'some % very complex atom!!*@#@!&*('
   'here\'s another'
   'and super \n \^A complex'
+  #kjf?
+  # TODO: dashes and questionmarks
 
   # Integers
   1234
@@ -49,7 +51,7 @@ atomic_literals ->
   -1390.0e12
   +342
   +3920.3
-  +3990.00_93e+4
+  +3_990.00_93e+4
 
   # Characters
   $a
@@ -64,6 +66,10 @@ atomic_literals ->
   # Strings
   "Simple string"
   nop # So strings don't combine
+  "A string
+that spans multiple
+              lines"
+  nop
   "String with \"Stuff\" in it"
   nop
   "More 'stuff' within the \"string\"\n"
@@ -73,6 +79,10 @@ atomic_literals ->
   "Weird \x{2504} "
   "string that just keeps going"  " and going"
   " and going."
+  nop
+  "Weird \x{2504} "
+      "string that just keeps going"  " and going"
+    " and going."
   nop
   '''First long string'''
   nop

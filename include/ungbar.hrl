@@ -57,7 +57,11 @@
 -define(c_list(IT),case IT of []->?c_nil;{I,T}->l2c(I,T,?pos) end).
 -define(c_atom(N),{atom,?pos,case N of [_|_]->?scan(N);_->N end}).
 -define(v_atom(A), element(3,A)).
-
+-define(c_fdef(NameParts,Arity),
+  case lists:reverse(NameParts) of
+    [One]     -> {'fun',?pos,{function,One,list_to_integer(Arity)}};
+    [Fun,Mod] -> {'fun',?pos,{function,Mod,Fun,list_to_integer(Arity)}};
+    [Fun|ModP]-> {'fun',?pos,{function,
 % == Function / fun references ==
 % toplevelfun() -> ...   -->  {function,P,toplevelfun,0,[{clause...},...]}
 % fun myfun/0            -->  {'fun',P,{function,myfun,0}}
@@ -68,6 +72,8 @@
 %
 % {function,'
 
+
+combine_atoms(Atoms) -> list_to_atom(string:join([atom_to_list(A)||A<-Atoms],".")).
 
 % List to Conses - basically recursively (not tail recursively at the moment)
 % takes a proper list with a tail (usually [] when the result is going to be

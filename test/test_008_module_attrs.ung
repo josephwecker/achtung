@@ -2,11 +2,10 @@
 @ parameters Name Position
 @ package    utilities
 @ export     main another/1
-@ inline     main/1 another
+# -export([main/0,main/1,another/1]).
 
-main ->
-  another/0
-  another/1
+@ inline     main/1 another
+main ->     first
 main|foo -> second
 
 @ compile    compressed

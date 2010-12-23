@@ -18,6 +18,10 @@ myfun5 ->
 myfun6 ->{
   ok}
 
+# TODO: FIXME!!!
+#myfun6b ->{
+#ok}
+
 myfun7->{ok
 }
 
@@ -43,4 +47,6 @@ myfun9 -> first
   third
   blah
 
-myfun10 -> one;two;three;
+myfun10 -> one;two;three;four;five;six;seven;eight;nine;ten
+
+

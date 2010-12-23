@@ -8,7 +8,10 @@ module        <- "@module" sp atom                                      `?p3`;
 
 %------------ Functions ------------------------------------------------------
 % This is the top-level function definition
-function      <- atom clauses                           `?c_function(?p1,?p2)`;
+function      <- atom clauses                          `?c_function(?p1,?p2)`;
+
+% TODO: ability for all of these to be variables (if supported by erlang)
+%fundef        <- atom ("." atom)* "/" [0-9]+     `?c_fdef([?p1|?i(2,2)],?p4)`;
 
 %------------ Clauses --------------------------------------------------------
 clauses       <- clauseblock / clause                              `?listify`;
