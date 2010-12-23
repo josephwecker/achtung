@@ -40,7 +40,7 @@
 %------------ Parse Tree Construction ---------------------------------------
 -define(pos, line(Index)).
 -define(scan,?scan(?N)).
--define(scan(V), % For simple terms that the erlang scanner can handle
+-define(scan(V), % For simple terms that the erlang scanner can handle (most atomic literals)
   case erl_scan:string(?flat(V),?pos) of
     {ok, [One], _} -> One;
     {ok, Tokens, _} ->
@@ -54,18 +54,22 @@
 -define(c_clause(Pattern, Guard, Body), {clause,?pos,Pattern,Guard,Body}).
 -define(c_block(Exprs), {block, ?pos, Exprs}).
 -define(c_tuple(Items), {tuple, ?pos, Items}).
--define(c_list(ItemsAndTail),
-    case ItemsAndTail of
-      [] -> ?c_nil;
-      {Items,Tail} -> l2c(Items, Tail, ?pos)
-    end).
+-define(c_list(IT),case IT of []->?c_nil;{I,T}->l2c(I,T,?pos) end).
 -define(c_atom(N),{atom,?pos,case N of [_|_]->?scan(N);_->N end}).
 -define(v_atom(A), element(3,A)).
 
 
-l2c([H|T], Tl, Pos) ->
+% List to Conses - basically recursively (not tail recursively at the moment)
+% takes a proper list with a tail (usually [] when the result is going to be
+% proper) and turns it into nested cons tuples.
+% Usage: l2c(ProperList, TailForEnd, Position)
+l2c([H|R],T,Pos) ->
   {cons, Pos, H,
-    case T of
-      [] -> case Tl of [] -> {nil,Pos}; V -> V end;
-      [_|_] -> l2c(T, Tl, Pos)
+    case R of
+      []->  % Done with main proper-list, time for tail
+        case T of
+          [] -> {nil,Pos};    % Final result is proper
+          V  -> V             % Final result is improper
+        end;
+      [_|_] -> l2c(R, T, Pos) % Keep going deeper. I hope your stack loves you.
     end}.
