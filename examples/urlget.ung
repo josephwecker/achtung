@@ -72,4 +72,101 @@ receive_header|Fun URL Bin Socket Timeout ->
     |Other                     -> (error (socket Other))
   after|Timeout -> (error timeout)
 
+receive_body|Fun Size Bin Socket Timeout ->
+  receive
+    |(tcp Socket B) ->
+      B1 = concat_binary([Bin B])
+      Fun(Size size(B1))
+      receive_body(Fun Size concat_binary([Bin B]) Socket Timeout)
+    |(tcp_closed Socket) -> (ok Bin)
+    |(tcp_error Socket What) -> (error (socket What))
+    |Other -> (error (socket Other))
+  after
+    |Timeout -> (error timeout)
 
+get_header|B->
+  case split_header(list(B),[])
+    |(ReplyHeader Rest) ->
+      (Reply Header) = parse_reply(ReplyHeader)
+      (ok Reply parse_header(Header) binary(Rest))
+    |fail -> more
+
+split_header
+  |["\r\n\r\n"|T] L ->>
+  |["\n\n"|T]     L -> (reverse(L) T)
+  |[H|T]          L -> split_header(T [H|L])
+  |[]             L -> fail
+
+get_field
+  |[(K V)|T] K -> (true V)
+  |[_|T] K     -> get_field(T K)
+  |[] _        -> (false false)
+
+parse_reply|R0 ->
+  (HTTP R1) = get_until(R0 $   [])
+  (CODE R2) = get_until(R1 $   [])
+  (COMM R3) = get_until(R2 $\n [])
+  ((trim(HTTP), int(trim(CODE)), trim(COMM)) R3)
+
+get_until
+  |[R|Rs] R L -> (reverse(L) Rs)
+  |[R|Rs] P L -> get_until(Rs P [R|L])
+
+parse_header
+  |T               -> (_ P) = parse_header(T []); P
+  |["\r\n"|T] Info -> header_end(T Info)
+  |["\n"|T] Info   -> header_end(T Info)
+  |Cs Info         -> header_line(Cs [] Info)
+
+header_line
+  |["\r\n"|T] Acc Info ->>
+  |["\n"|T]   Acc Info -> parse_header(T [split_info(reverse(Acc))|Info])
+  |[C|Cs] Acc Info     -> header_line(Cs [C|Acc] Info)
+  |[] Acc Info         -> header_end([] [split_info(reverse(Acc))|Info])
+
+header_end
+  |["\r\n"|T] Info ->>
+  |["\n"|T] Info   -> header_end(T Info)
+  |T Info          -> (T Info)
+
+split_info|String ->
+  case  string:chr(String, $:) of
+    |0  -> ("Parse-Error" trim(String))
+    |Ix -> (trim(string.substr(String,1,Ix-1))
+            trim(string.substr(String,Ix+1,length(String))))
+
+strip
+  |[$  |Cs] ->>
+  |[$\t|Cs] ->>
+  |[$\r|Cs] ->>
+  |[$\n|Cs] -> strip(Cs)
+  |Cs       -> Cs
+
+content_length|Header->
+  case get_field(Header "Content-Length")
+    |(true Str)-> (length, int(Str))
+    |(false _) -> not_known
+
+parse
+  |["http://"|T] -> parse_http(T)
+  |["ftp://"|T]  -> (error no_ftp)
+  |["file://"|F] -> (file F)
+  |X             -> (error unknown_url_type)
+
+parse_http|X->
+  case string.chr(X $/)
+    |0 -> parse_http(X++"/") # Not terminated by "/"- try again
+    |N ->
+      # The Host is up to the first "/"
+      # The file is everything else
+      Host = string.substr(X,1,N-1)
+      File = string.substr(X N length(X))
+      # Now check to see if the host name contains a colon
+      # i.e. there is an explicit port address in the hostname
+      case string.chr(Host $:)
+        |0 -> (http Host 80 File) # No colon
+        |M ->
+          Site = string.substr(Host,1,M-1)
+          case catch(int(string.substr(Host,M+1,length(Host))))
+            |('EXIT' _) -> (http Site 80 File)
+            |Port       -> (http Site Port File)

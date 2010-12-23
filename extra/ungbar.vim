@@ -113,6 +113,6 @@ hi link ungbarParamMod            Typedef
 hi link ungbarBitString           StorageClass
 hi link ungbarBinaryString        Character
 hi link ungbarSpecial             Special
-hi link ungbarClause              Conditional
+hi link ungbarClause              Delimiter
 
 let b:current_syntax = "ungbar"

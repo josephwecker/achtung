@@ -259,8 +259,3 @@ parse_http(X) ->
 		    end
 	    end
     end.
-
-
-
-
-

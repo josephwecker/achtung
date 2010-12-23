@@ -12,6 +12,15 @@
 
 ------------------- Language
 
+Guard combiner:
+  in(Var LiteralListOrString)
+  (e.g.,)
+  in(C "12345") ==>  C==$1 or C==$2 or C==$3 ...
+  maybe `C in "12345"` instead...
+
+Some kind of lesser export for OTP callback functions like gen_server callbacks
+- better yet, make the OTP ones automatic...
+
 ?"do" subblocks (to replace begin/end) (could also be called "block" or "begin")
 
 If statement that puts its own "true ->" part on the end of the clauses

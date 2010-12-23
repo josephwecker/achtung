@@ -42,7 +42,7 @@
      inkscape:window-height="752"
      inkscape:window-x="0"
      inkscape:window-y="0"
-     inkscape:window-maximized="0" />
+     inkscape:window-maximized="1" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -51,7 +51,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -60,38 +60,51 @@
      inkscape:groupmode="layer"
      id="layer1">
     <rect
-       style="opacity:0.93999999000000001;fill:#eaeaea;fill-opacity:1;stroke:none"
+       style="opacity:0.93999999;fill:#eaeaea;fill-opacity:1;stroke:none"
        id="rect2828"
        width="64.90358"
        height="3.5673249"
-       x="226.1684"
-       y="406.67636" />
+       x="105.1684"
+       y="309.67636" />
     <text
        xml:space="preserve"
-       style="font-size:63.50737762px;font-style:normal;font-weight:normal;fill:#535353;fill-opacity:1;stroke:none;font-family:Optima;-inkscape-font-specification:Optima;font-stretch:normal;font-variant:normal;text-anchor:start;text-align:start;writing-mode:lr;line-height:125%"
-       x="174.48032"
-       y="445.48581"
+       style="font-size:63.50737762px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#535353;fill-opacity:1;stroke:none;font-family:Optima;-inkscape-font-specification:Optima"
+       x="53.480316"
+       y="348.48581"
        id="text2820"
        sodipodi:linespacing="125%"><tspan
+         y="348.48581"
+         x="53.480316"
          sodipodi:role="line"
          id="tspan3602">Ung</tspan></text>
     <text
        sodipodi:linespacing="125%"
        id="text3604"
-       y="445.48581"
-       x="295.69092"
+       y="348.48581"
+       x="174.69092"
        style="font-size:63.50737762px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#6f6f6f;fill-opacity:1;stroke:none;font-family:Optima;-inkscape-font-specification:Optima"
        xml:space="preserve"><tspan
          sodipodi:role="line"
          id="tspan3610"
-         x="295.69092"
-         y="445.48581">Bar</tspan></text>
+         x="174.69092"
+         y="348.48581">Bar</tspan></text>
     <rect
-       y="406.67636"
-       x="336.38498"
+       y="309.67636"
+       x="215.38498"
        height="3.5673249"
        width="51.91555"
        id="rect3612"
        style="opacity:0.93999999;fill:#eaeaea;fill-opacity:1;stroke:none" />
+    <text
+       xml:space="preserve"
+       style="font-size:17.45098114px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Optima;-inkscape-font-specification:Optima"
+       x="179.02942"
+       y="367.4053"
+       id="text4158"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4160"
+         x="179.02942"
+         y="367.4053">Erlang(...ish)</tspan></text>
   </g>
 </svg>
