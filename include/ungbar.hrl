@@ -58,6 +58,14 @@
 -define(c_atom(N),{atom,?pos,case N of [_|_]->?scan(N);_->N end}).
 -define(v_atom(A), element(3,A)).
 
+% == Function / fun references ==
+% toplevelfun() -> ...   -->  {function,P,toplevelfun,0,[{clause...},...]}
+% fun lists:reverse/1    -->  {'fun',P,{function,lists,    reverse, 1}}
+% fun pkg.mdl:some_fun/0 -->  {'fun',P,{function,'pkg.mdl',some_fun,0}}
+% fun()->a end           -->  {'fun',P,{clauses,[...]}}  % (Note no arity mentioned)
+% some_fun/2 (in exp/imp)-->  {some_fun, 2}
+%
+
 
 % List to Conses - basically recursively (not tail recursively at the moment)
 % takes a proper list with a tail (usually [] when the result is going to be

@@ -1,4 +1,4 @@
--module(dummy).
+-module(dude.dummy).
 %-module(tmp.dummy, [Name]).
 %-export([myfun/1]).
 %-import(other_module, [other_fun/1]).
@@ -7,14 +7,12 @@
 %-author("Awesome").
 %-include("include/ungbar.hrl").
 %-include_lib("xmerl/include/xmerl.hrl").
-
+-export([f/0]).
 f() ->
-  A = a,
-  B = b,
-  [],
-  [a,b],
-  [a|b],
-  [A|B].
+  fun lists:reverse/1,
+  fun dude.dummy:f/0,
+  fun() -> a end.
+  %lists:reverse/1.
 
 %-module(test.dummy, [Name]).
 %-export([my_function/2]).

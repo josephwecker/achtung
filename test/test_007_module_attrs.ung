@@ -1,18 +1,19 @@
 # Not included here are the preprocessor attributes or type/spec (yet)
-@ parameters [Name Position]
+@ parameters Name Position
 @ package    utilities
-@ export     [main another/1]
-@ inline     [another main/1]
+@ export     main (another 1)
+@ inline     (main 1) another
 
 main -> first
 main|foo -> second
 
 @ compile    compressed
-@ compile    [no_strict_record_test bin_opt_info]
+@ compile    no_strict_record_test bin_opt_info
 another|foo -> another_second
 another-> another_first
 
 @ behavior   irrational
 @ vsn        '0.0.1'
 @ random     (yes it is)
+@ another    [no that are]
 @ author     "Joseph Wecker <joseph.wecker@gmail.com>"
