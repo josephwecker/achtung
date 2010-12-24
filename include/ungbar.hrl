@@ -35,7 +35,8 @@
 -define(listify, ?listify(?N)). % Ensure it's a list
 -define(listify(V), case V of [_|_]->V;_->[V] end).
 -define(app(L,V),case V of []->L;_->lists:append(L,[V]) end).% Append V onto L sometimes
-
+-define(unlist1, ?unlist1(?N)).
+-define(unlist1(N), case N of [O]->O;_->N end).
 
 %------------ Parse Tree Construction ---------------------------------------
 -define(pos, line(Index)).
@@ -59,9 +60,9 @@
 -define(v_atom(A), element(3,A)).
 -define(c_fsig(NameParts,Arity), % See function / fun references below
   case lists:reverse(NameParts) of
-    [One]     -> {'fun',?pos,{function,?v_atom(One),list_to_integer(Arity)}};
-    [Fun,Mod] -> {'fun',?pos,{function,?v_atom(Mod),?v_atom(Fun),list_to_integer(Arity)}};
-    [Fun|ModP]-> {'fun',?pos,{function,combine_atoms(ModP),?v_atom(Fun),list_to_integer(Arity)}}
+    [One]     -> {'fun',?pos,{function,One,list_to_integer(Arity)}};
+    [Fun,Mod] -> {'fun',?pos,{function,Mod,Fun,list_to_integer(Arity)}};
+    [Fun|ModP]-> {'fun',?pos,{function,combine_atoms(ModP),Fun,list_to_integer(Arity)}}
   end).
 -define(c_mod(Name, Params),  % Name is either atom or list of atoms (packages) - Params should be a list of Variables
   case Params of
@@ -79,7 +80,7 @@
 % fun()->a end           -->  {'fun',P,{clauses,[...]}}  % (Note no arity mentioned)
 % some_fun/2 (in exp/imp)-->  {some_fun, 2}
 
-combine_atoms(Atoms) -> list_to_atom(string:join([atom_to_list(?v_atom(A))||A<-Atoms],".")).
+combine_atoms(Atoms) -> list_to_atom(string:join([atom_to_list(A)||A<-Atoms],".")).
 
 % List to Conses - basically recursively (not tail recursively at the moment)
 % takes a proper list with a tail (usually [] when the result is going to be

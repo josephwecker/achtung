@@ -5,13 +5,13 @@ form          <- attribute / function                                       ~;
 %------------ Attributes -----------------------------------------------------
 attribute     <- module                                                     ~;
 module        <- "@" _s "module" sp module_name openlist?   `?c_mod(?p5,?p6)`;
-module_name   <- chained_atom                                 `?fix_mod_name`;
+module_name   <- chained_atom                                      `?unlist1`;
 
 %------------ Functions ------------------------------------------------------
 % This is the top-level function definition
 function      <- atom clauses                          `?c_function(?p1,?p2)`;
 % TODO: ability for all of these to be variables (if supported by erlang)
-funsig        <- atom ("." atom)* "/" [0-9]+     `?c_fsig([?p1|?i(2,2)],?p4)`;
+funsig        <- chained_atom "/" [0-9]+                   `?c_fsig(?p1,?p3)`;
 
 %------------ Clauses --------------------------------------------------------
 clauses       <- clauseblock / clause                              `?listify`;
@@ -160,15 +160,7 @@ fix_num2(Node,Index)     ->?scan.
 -define(fixlstr(N), ["\"", rm_char($","\\\"",?flat(N)), "\""]).
 
 % Misc
--define(fix_ch_a(Atoms), [atom_to_list(?v_atom(A))||A<-Atoms]).
--define(fix_mod_name, ?fix_mod_name(?N)).
--define(fix_mod_name(Node),  % Erlang likes it as either an atom or tuple of atoms
-  case Node of
-    [O] -> list_to_atom(O);
-    L when is_list(L) -> [list_to_atom(I)||I<-L];
-    A -> A
-  end).
-
+-define(fix_ch_a(Atoms), [?v_atom(A)||A<-Atoms]).
 
 
 rm_char(C,L)      ->rm_char(C,[],L,[]).
