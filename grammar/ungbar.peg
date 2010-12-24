@@ -101,18 +101,22 @@ variable      <- [A-Z_] [A-Za-z0-9?_]*                               `?c_var`;
 %
 sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent)       `?X`;
 eblock        <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent)       `?X`;
-indent        <- "\x06"                                                  `?X`;
-dedent        <- "\x15"                                                  `?X`;
-eos           <- _sp (";" / newline / !.)                                `?X`;
-_s            <- ws?                                                     `?X`;
-ws            <- (space / newline)+                                      `?X`;
-newline       <- comment? "\n" / "\r\n" / "\r"                           `?X`;
-_sp           <- sp?                                                     `?X`;
-sp            <- space+                                                  `?X`;
+_s            <- ws?                                                     `?X`; % Optional whitespace
+ws            <- (space / nl)+                                           `?X`; % At least one whitespace/newline
+nl            <- comment? newline                                        `?X`; % End of a line
+eos           <- _sp (";" / nl / !.)                                     `?X`; % End of a statement
+_sp           <- sp?                                                     `?X`; % Optional spacing (no newline)
+sp            <- space+                                                  `?X`; % At least one space (not newline)
+
+% These build up the whitespace rules above and should (I think) never be used
+% except in those rules just above.
+newline       <- "\n" / "\r\n" / "\r"                                    `?X`;
 space         <- [ \t] / ml_comment                                      `?X`;
 comment       <- "#" (!newline .)* &newline                              `?X`;
 ml_inner      <- ml_comment / (!"#|" !"|#" .)+                           `?X`;
 ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
+indent        <- "\x06"                                                  `?X`;
+dedent        <- "\x15"                                                  `?X`;
 
 %------------ Shortcuts & transformations ------------------------------------
 `

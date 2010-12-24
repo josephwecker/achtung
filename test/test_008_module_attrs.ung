@@ -1,5 +1,13 @@
 # Not included here are the preprocessor attributes or type/spec (yet)
-@ module     some.package.test_008_module_attrs Name Version
+
+# Uncomment other ones to try as erlang doesn't allow multiple module defs in
+# one module.
+#@ module test_008_module_attrs
+#@ module some.package.test_008_module_attrs
+#@ module test_008_module_attrs Name
+#@ module test_008_module_attrs Name Opts
+@ module some.package.test_008_module_attrs Name Opts
+
 #|@ parameters Name Position
 @ package    utilities
 @ export     main another/1
