@@ -75,11 +75,8 @@
 -define(c_var(Name), {var,?pos,list_to_atom(?flat(Name))}).
 -define(c_attr, ?c_attr(?N)).
 -define(c_attr(N), begin [Nm, Val] = N, ?c_attr(Nm, Val) end).
--define(c_attr(Nm,V),
-  case Nm of
-    [_|_] -> {attribute, ?pos, list_to_atom(Nm), ?unlist1(V)};
-    _ -> {attribute, ?pos, Nm, ?unlist1(V)}
-  end).
+-define(c_attr(Nm,V), {attribute,?pos,real(Nm),?unlist1([real(Vp)||Vp<-V])}).
+
 
 % == Function / fun references ==
 % toplevelfun() -> ...   -->  {function,P,toplevelfun,0,[{clause...},...]}
@@ -105,3 +102,7 @@ l2c([H|R],T,Pos) ->
         end;
       [_|_] -> l2c(R, T, Pos) % Keep going deeper. I hope your stack loves you.
     end}.
+
+real({var,_,Name})       -> Name;
+real(T) when is_tuple(T) -> erl_parse:normalise(T);
+real(Other)              -> Other.

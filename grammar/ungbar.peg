@@ -4,28 +4,22 @@ form          <- attribute / function                                       ~;
 
 %------------ Attributes -----------------------------------------------------
 attribute     <- "@" _s (attrs / wild_attr)                             `?p3`;
-attrs         <- module / package / params                                  ~;
-%attrs         <- module / package / params / export / inline / compile
-%                 behavior / extends                                         ~;
+attrs         <- module / package / params / compile                        ~;
 module        <- "module" sp module_name openlist?         `?c_mod2(?p3,?p4)`;
 module_name   <- chained_atom                                      `?unlist1`;
-%export        <- "export" openlist?                          `?c_export(?p2)`;
-%inline        <- "inline" openlist?                          `?c_inline(?p2)`;
+%export        <- "export" openlist                           `?c_export(?p2)`;
+%inline        <- "inline" openlist                           `?c_inline(?p2)`;
 %behavior      <- ("behaviour" / "behavior") _sp atom          `?c_behav(?p3)`;
-%extends       <- "extends" chained_atom           `?c_extends(?unlist1(?p2))`; % ?? Probably take care of w/ preprocessor
-%compile       <- "compile" openlist?         `?c_attr(compile,?unlist1(?p2))`;
-package       <- "package" _sp chained_atom                 `?c_attr(?p1,?p3)`;
-params        <- "parameters" openlist?                              `?c_attr`;
-wild_attr     <- atom openlist?                    `?c_attr(?v_atom(?p1),?p2)`;
+compile       <- "compile" openlist                                 `?c_attr`;
+package       <- "package" _sp chained_atom                `?c_attr(?p1,?p3)`;
+params        <- "parameters" openlist                              `?c_attr`;
+wild_attr     <- atom openlist?                                     `?c_attr`;
 
 % TODO: YOU ARE HERE:
-%  - parameters needs to ensure var-atoms
-%  - make sure wild attributes work
 %  - go get basic module parsing working
 %  - get export working
 %  - get inline working
 %  - move onto something else.
-
 
 %------------ Functions ------------------------------------------------------
 % This is the top-level function definition

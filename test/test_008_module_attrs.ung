@@ -2,26 +2,29 @@
 
 # Uncomment other ones to try as erlang doesn't allow multiple module defs in
 # one module.
+########################################################
 #@ module test_008_module_attrs
 #@ module some.package.test_008_module_attrs
 #@ module test_008_module_attrs Name
 #@ module test_008_module_attrs Name Opts
+
+# TODO: Put module below others to make sure it gets put on top of final forms
 @ module some.package.test_008_module_attrs Name Opts
+
 
 @ parameters Name Position
 @ package    utilities
-#@ export     main another/1
-## Equivalent to -export([main/0,main/1,another/1]).
+#@ export     main another/1 # Equivalent to -export([main/0,main/1,another/1]).
 
 #@ inline     main/1 another
 main ->     first
 
-#@ compile    compressed
-#@ compile    no_strict_record_test bin_opt_info
+@ compile    compressed
+@ compile    no_strict_record_test bin_opt_info
 another-> another_first
 
 #@ behavior   irrational
-#@ vsn        '0.0.1'
-#@ random     (yes it is)
-#@ another    [no that are]
-#@ author     "Joseph Wecker <joseph.wecker@gmail.com>"
+@ vsn        '0.0.1'
+@ random     (yes it is)
+@ another    [no that are]
+@ author     "Joseph Wecker <joseph.wecker@gmail.com>"
