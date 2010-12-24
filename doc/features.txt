@@ -9,8 +9,12 @@
   - preprocess -> ?
   - file:consult -> List of terms
 - Manpages / html / pdf documentation
+- Commandline completion
 
 ------------------- Language
+
+Make hot code swapping & other OTP stuff really obvious...  (like
+ungbar-update-code or something)
 
 Guard combiner:
   in(Var LiteralListOrString)

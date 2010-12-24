@@ -36,6 +36,7 @@ opt([{Key,V}|_],Key)-> V;
 opt([_|T],Key)      -> opt(T,Key).
 
 
+% TODO: Refactor this function!  Way too big!
 ungbarc(Flags, F) ->
   {ok, DentedBin} = indents:file_scan(F,[{ignoreblock_defs, ?DENT_IGN_BLOCKS},
                                          {indent_token,6},
@@ -49,6 +50,11 @@ ungbarc(Flags, F) ->
     _ -> nothing
   end,
   % TODO: error formatting and output instead of mismatch
+
+  % TODO: Preprocessor!
+  %  Includes
+  %  Syntax transormations
+  %  ...
   {ok, ParsedForms, LastPos} = ungbar:parse(binary_to_list(DentedBin)),
   {ModuleName, ModuleAttrForm} = case find_module(ParsedForms) of
     {true, Nm} -> {Nm, []};
@@ -73,6 +79,12 @@ ungbarc(Flags, F) ->
     true -> info(F, ParsedForms, AllForms, Res);
     [] -> nothing
   end,
+
+  % TODO: Pre-erlang-lint-and-processor
+  %   - Consolidate parameters / package / module - issue warnings if necessary
+  %   - Make sure file and then module are the first two attributes
+  %   - Map ungbar stdlib and insert function defs if necessary, etc.
+  %
 
   RealMName = case ModuleName of
     {MName, _Parameters} -> MName;

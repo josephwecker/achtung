@@ -9,3 +9,14 @@
 [ ] - Function clause patterns
 [ ] - Correct function divying and recombining (arity processing)
 
+
+
+Errors / Warnings
+ - ungbarc level - can't open files, create directories, etc.
+ - Neotoma parser can't find a way through
+ - Semantic issues- like multiple module definitions: Erlang-based
+ - Semantic issues that are only Ungbar related
+ - Erlang warnings (like terms that are created but not used
+ - Erlang-ish but enhanced: e.g., No exported functions
+ - Possibly lower-level errors during parsing that would need to get handled
+   better (don't have examples at the moment)
