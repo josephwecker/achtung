@@ -1,0 +1,26 @@
+# Finally we get to nice function declarations beyond the simple ones we've
+# been using.
+
+f1->one
+f2   -> one
+f3
+  -> one
+
+f4|->two
+f5 | -> two
+f6
+  |-> two
+f7
+  | -> two
+
+f8|atom->three
+f9 | atom -> three
+f10
+  |atom->three
+f11
+  | atom -> three
+
+f12
+  |atom1 -> four_a
+  |atom2 -> four_b
+  |atom3 -> four_c
