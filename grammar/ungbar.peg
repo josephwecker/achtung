@@ -9,9 +9,8 @@ module        <- "@module" sp atom                                      `?p3`;
 %------------ Functions ------------------------------------------------------
 % This is the top-level function definition
 function      <- atom clauses                          `?c_function(?p1,?p2)`;
-
 % TODO: ability for all of these to be variables (if supported by erlang)
-%fundef        <- atom ("." atom)* "/" [0-9]+     `?c_fdef([?p1|?i(2,2)],?p4)`;
+funsig        <- atom ("." atom)* "/" [0-9]+     `?c_fsig([?p1|?i(2,2)],?p4)`;
 
 %------------ Clauses --------------------------------------------------------
 clauses       <- clauseblock / clause                              `?listify`;
@@ -36,7 +35,7 @@ expr_with_end <- expr eos                                               `?p1`;
 expr          <- term                                                       ~;
 
 %------------ Terms / Atomic Literals ----------------------------------------
-term          <- string / atom / number / tuple / list                      ~;
+term          <- string / funsig / atom / number / tuple / list             ~;
 
 atom          <- simple_atom / complex_atom                           `?scan`;
 simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
