@@ -71,12 +71,12 @@ not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?p2`;
 tuple         <- _s (empty_t / comma_t / space_t)             `?c_tuple(?p2)`;
 empty_t       <- "(" _s ")"                                              `[]`;
 comma_t       <- "(" _s term (_s "," _s term)* _s ")"         `[?p3|?i(4,4)]`;
-space_t       <- "(" _s term ("\\"? ws term)* _s ")"          `[?p3|?i(3,4)]`;
+space_t       <- "(" _s term ("\\"? s term)* _s ")"           `[?p3|?i(3,4)]`;
 
 list          <- _s (empty_l / comma_l / space_l)              `?c_list(?p2)`;
 empty_l       <- "[" _s t? "]"                                           `[]`;
 comma_l       <- "[" _s term (_s "," _s term)* _s t? "]"`{[?p3|?i(4,4)],?p6}`;
-space_l       <- "[" _s term ("\\"? ws term)* _s t? "]" `{[?p3|?i(3,4)],?p6}`;
+space_l       <- "[" _s term ("\\"? s term)* _s t? "]"  `{[?p3|?i(3,4)],?p6}`;
 t             <- "|" _s term _s                                         `?p3`;
 
 % openlist acts kind of like a tuple, but doesn't have begin/end delimiters
@@ -101,10 +101,10 @@ variable      <- [A-Z_] [A-Za-z0-9?_]*                               `?c_var`;
 %
 sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent)       `?X`;
 eblock        <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent)       `?X`;
-_s            <- ws?                                                     `?X`; % Optional whitespace
-ws            <- (space / nl)+                                           `?X`; % At least one whitespace/newline
-nl            <- comment? newline                                        `?X`; % End of a line
 eos           <- _sp (";" / nl / !.)                                     `?X`; % End of a statement
+_s            <- s?                                                      `?X`; % Optional whitespace
+s             <- (space / nl)+                                           `?X`; % At least one whitespace/newline
+nl            <- comment? newline                                        `?X`; % End of a line
 _sp           <- sp?                                                     `?X`; % Optional spacing (no newline)
 sp            <- space+                                                  `?X`; % At least one space (not newline)
 
