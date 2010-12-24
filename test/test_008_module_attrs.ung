@@ -8,23 +8,20 @@
 #@ module test_008_module_attrs Name Opts
 @ module some.package.test_008_module_attrs Name Opts
 
-#|@ parameters Name Position
+@ parameters Name Position
 @ package    utilities
-@ export     main another/1
-# -export([main/0,main/1,another/1]).
+#@ export     main another/1
+## Equivalent to -export([main/0,main/1,another/1]).
 
-@ inline     main/1 another
+#@ inline     main/1 another
 main ->     first
-main|foo -> second
 
-@ compile    compressed
-@ compile    no_strict_record_test bin_opt_info
-another|foo -> another_second
+#@ compile    compressed
+#@ compile    no_strict_record_test bin_opt_info
 another-> another_first
 
-@ behavior   irrational
-@ vsn        '0.0.1'
-@ random     (yes it is)
-@ another    [no that are]
-@ author     "Joseph Wecker <joseph.wecker@gmail.com>"
-|#
+#@ behavior   irrational
+#@ vsn        '0.0.1'
+#@ random     (yes it is)
+#@ another    [no that are]
+#@ author     "Joseph Wecker <joseph.wecker@gmail.com>"

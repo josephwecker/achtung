@@ -13,6 +13,7 @@
 -define(p5, ?p5(?N)).
 -define(p6, ?p6(?N)).
 -define(flat, ?flat(?N)).
+-define(rev, ?rev(?N)).
 -define(p1(L), lists:nth(1,L)).
 -define(p2(L), lists:nth(2,L)).
 -define(p3(L), lists:nth(3,L)).
@@ -31,6 +32,7 @@
 % ?i(3,4) == ?ip3(?p4)
 -define(i(IPos,OPos), [lists:nth(IPos, IL)||IL<-lists:nth(OPos,?N)]).
 -define(flat(L), lists:flatten(L)).
+-define(rev(L), lists:reverse(L)).
 -define(all(Key,L), proplists:get_all_values(Key,?flat(L))).
 -define(listify, ?listify(?N)). % Ensure it's a list
 -define(listify(V), case V of [_|_]->V;_->[V] end).
@@ -59,10 +61,10 @@
 -define(c_atom(N),{atom,?pos,case N of [_|_]->?scan(N);_->N end}).
 -define(v_atom(A), element(3,A)).
 -define(c_fsig(NameParts,Arity), % See function / fun references below
-  case lists:reverse(NameParts) of
+  case ?rev(NameParts) of
     [One]     -> {'fun',?pos,{function,One,list_to_integer(Arity)}};
     [Fun,Mod] -> {'fun',?pos,{function,Mod,Fun,list_to_integer(Arity)}};
-    [Fun|ModP]-> {'fun',?pos,{function,combine_atoms(ModP),Fun,list_to_integer(Arity)}}
+    [Fun|ModP]-> {'fun',?pos,{function,combine_atoms(?rev(ModP)),Fun,list_to_integer(Arity)}}
   end).
 -define(c_mod(Name, Params),  % Name is either atom or list of atoms (packages) - Params should be a list of Variables
   case Params of
@@ -71,6 +73,13 @@
   end).
 -define(c_var, ?c_var(?N)).
 -define(c_var(Name), {var,?pos,list_to_atom(?flat(Name))}).
+-define(c_attr, ?c_attr(?N)).
+-define(c_attr(N), begin [Nm, Val] = N, ?c_attr(Nm, Val) end).
+-define(c_attr(Nm,V),
+  case Nm of
+    [_|_] -> {attribute, ?pos, list_to_atom(Nm), ?unlist1(V)};
+    _ -> {attribute, ?pos, Nm, ?unlist1(V)}
+  end).
 
 % == Function / fun references ==
 % toplevelfun() -> ...   -->  {function,P,toplevelfun,0,[{clause...},...]}

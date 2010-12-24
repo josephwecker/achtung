@@ -1,11 +1,31 @@
 %------------ Grammar --------------------------------------------------------
-grammar       <- (_s form)* _s                        `{ok, ?ip2(?p1), ?pos}`;
+grammar       <- (_s form)* _s                       `?post_process(?i(2,1))`;
 form          <- attribute / function                                       ~;
 
 %------------ Attributes -----------------------------------------------------
-attribute     <- module                                                     ~;
-module        <- "@" _s "module" sp module_name openlist?   `?c_mod(?p5,?p6)`;
+attribute     <- "@" _s (attrs / wild_attr)                             `?p3`;
+attrs         <- module / package / params                                  ~;
+%attrs         <- module / package / params / export / inline / compile
+%                 behavior / extends                                         ~;
+module        <- "module" sp module_name openlist?         `?c_mod2(?p3,?p4)`;
 module_name   <- chained_atom                                      `?unlist1`;
+%export        <- "export" openlist?                          `?c_export(?p2)`;
+%inline        <- "inline" openlist?                          `?c_inline(?p2)`;
+%behavior      <- ("behaviour" / "behavior") _sp atom          `?c_behav(?p3)`;
+%extends       <- "extends" chained_atom           `?c_extends(?unlist1(?p2))`; % ?? Probably take care of w/ preprocessor
+%compile       <- "compile" openlist?         `?c_attr(compile,?unlist1(?p2))`;
+package       <- "package" _sp chained_atom                 `?c_attr(?p1,?p3)`;
+params        <- "parameters" openlist?                              `?c_attr`;
+wild_attr     <- atom openlist?                    `?c_attr(?v_atom(?p1),?p2)`;
+
+% TODO: YOU ARE HERE:
+%  - parameters needs to ensure var-atoms
+%  - make sure wild attributes work
+%  - go get basic module parsing working
+%  - get export working
+%  - get inline working
+%  - move onto something else.
+
 
 %------------ Functions ------------------------------------------------------
 % This is the top-level function definition
@@ -167,16 +187,48 @@ fix_num2(Node,Index)     ->?scan.
 -define(fix_ch_a(Atoms), [?v_atom(A)||A<-Atoms]).
 
 
-rm_char(C,L)      ->rm_char(C,[],L,[]).
-rm_char(C,R,L)    ->rm_char(C,R,L,[]).
-rm_char(_,_,[],A)   ->?flat(lists:reverse(A));
+rm_char(C,L)        ->rm_char(C,[],L,[]).
+rm_char(C,R,L)      ->rm_char(C,R,L,[]).
+rm_char(_,_,[],A)   ->?flat(?rev(A));
 rm_char(C,R,[C|T],A)->rm_char(C,R,T,[R|A]);
 rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
 
+% Separates a normal complex erlang module declaration into three attributes,
+% which then get checked and recombined later in post-processing.
+-define(c_mod2(Name, Ps),  % Separates into several attributes when necessary
+  begin
+      A = case Ps of
+        []->[];
+        _->[{attribute,?pos,parameters,[?v_atom(P)||P<-Ps]}]
+      end,
+      case Name of
+        [M]->[{attribute,?pos,module,M}|A];
+        L when is_list(L) ->
+          [M|Pkg] = ?rev(L),
+          [{attribute,?pos,module,M},{attribute,?pos,package,?rev(Pkg)}|A]
+      end
+  end).
 
 % Higher level semantics
+% Returns {ok, ErlangForms, LastPos} or ...?
 % TODO:
+%   - Gather and possibly reorganize function definitions
+%   - Gather and reorganize module attributes
 %   - Make sure @package and @module don't conflict
+%   - Errors and warnings and their return format
+%
+
+-define(post_process,    post_process(?N,?pos)).
+-define(post_process(N), post_process(N,?pos)).
+post_process(AST, Pos) ->
+  {Attrs, Funs} = lists:partition(fun(V)->element(1,V) == attribute end, lists:flatten(AST)),
+  %{Funs2, Avail, Exports, Inlines} = process_funs(Funs),
+%  Attrs2 = process_attributes(Attrs),
+  {ok, Attrs ++ Funs, Pos}.
+
+%process_attributes(Attr) -> process_attributes(Attr, #atts{})
+
+
 
 % vim: set noai filetype=erlang textwidth=100:
 `
