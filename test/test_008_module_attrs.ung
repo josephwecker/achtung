@@ -1,5 +1,5 @@
 # Not included here are the preprocessor attributes or type/spec (yet)
-@ module     test_008_module_attrs
+@ module     some.package.test_008_module_attrs Name Version
 #|@ parameters Name Position
 @ package    utilities
 @ export     main another/1

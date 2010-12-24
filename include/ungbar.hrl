@@ -57,12 +57,20 @@
 -define(c_list(IT),case IT of []->?c_nil;{I,T}->l2c(I,T,?pos) end).
 -define(c_atom(N),{atom,?pos,case N of [_|_]->?scan(N);_->N end}).
 -define(v_atom(A), element(3,A)).
--define(c_fsig(NameParts,Arity),
+-define(c_fsig(NameParts,Arity), % See function / fun references below
   case lists:reverse(NameParts) of
     [One]     -> {'fun',?pos,{function,?v_atom(One),list_to_integer(Arity)}};
     [Fun,Mod] -> {'fun',?pos,{function,?v_atom(Mod),?v_atom(Fun),list_to_integer(Arity)}};
     [Fun|ModP]-> {'fun',?pos,{function,combine_atoms(ModP),?v_atom(Fun),list_to_integer(Arity)}}
   end).
+-define(c_mod(Name, Params),  % Name is either atom or list of atoms (packages) - Params should be a list of Variables
+  case Params of
+    [] -> {attribute, ?pos, module, Name};
+    _  -> {attribute, ?pos, module, {Name, [?v_atom(P)||P<-Params]}}
+  end).
+-define(c_var, ?c_var(?N)).
+-define(c_var(Name), {var,?pos,list_to_atom(?flat(Name))}).
+
 % == Function / fun references ==
 % toplevelfun() -> ...   -->  {function,P,toplevelfun,0,[{clause...},...]}
 % fun myfun/0            -->  {'fun',P,{function,myfun,0}}
@@ -70,7 +78,6 @@
 % fun pkg.mdl:some_fun/0 -->  {'fun',P,{function,'pkg.mdl',some_fun,0}}
 % fun()->a end           -->  {'fun',P,{clauses,[...]}}  % (Note no arity mentioned)
 % some_fun/2 (in exp/imp)-->  {some_fun, 2}
-
 
 combine_atoms(Atoms) -> list_to_atom(string:join([atom_to_list(?v_atom(A))||A<-Atoms],".")).
 

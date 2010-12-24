@@ -74,9 +74,13 @@ ungbarc(Flags, F) ->
     [] -> nothing
   end,
 
-  % TODO: if the module name is a tuple, mkdir -p the correct output
+  RealMName = case ModuleName of
+    {MName, _Parameters} -> MName;
+    MName -> MName
+  end,
+  % TODO: if the module name is a list, mkdir -p the correct output
   %       directories and correct the output path when saving.
-  OutFile = filename:join(opt(Flags,outputdir),[ModuleName,".beam"]),
+  OutFile = filename:join(opt(Flags,outputdir),[RealMName,".beam"]),
   case Res of
     {ok, _, Code} -> file:write_file(OutFile, Code);
     {ok, _, Code, _} -> file:write_file(OutFile, Code);

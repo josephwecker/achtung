@@ -3,9 +3,9 @@ grammar       <- (_s form)* _s                        `{ok, ?ip2(?p1), ?pos}`;
 form          <- attribute / function                                       ~;
 
 %------------ Attributes -----------------------------------------------------
-attribute     <- module                                        `{attr, Node}`;
-%module        <- "@" _s "module" sp openlist                `?c_modattr(?p5)`;
-module        <- "@" _s "module" sp openlist                `?inspect(?p5), []`;
+attribute     <- module                                                     ~;
+module        <- "@" _s "module" sp module_name openlist?   `?c_mod(?p5,?p6)`;
+module_name   <- chained_atom                                 `?fix_mod_name`;
 
 %------------ Functions ------------------------------------------------------
 % This is the top-level function definition
@@ -36,12 +36,14 @@ expr_with_end <- expr eos                                               `?p1`;
 expr          <- term                                                       ~;
 
 %------------ Terms / Atomic Literals ----------------------------------------
-term          <- string / funsig / atom / number / tuple / list             ~;
+term          <- string / funsig / atom / number / tuple / list / variable  ~;
 
 atom          <- simple_atom / complex_atom                           `?scan`;
 simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
 complex_atom  <- "'" not_apos* "'"                                          ~;
 not_apos      <- !"'" ("\\" . / !"\\" .)                                `?p2`;
+
+chained_atom  <- atom ("." atom)* _sp !"("         `?fix_ch_a([?p1|?i(2,2)])`;
 
 number        <- [+-]? (float / integer)                            `?fixnum`;
 integer       <- base_int / normal_int / character                          ~;
@@ -87,6 +89,9 @@ comma_ol_blk  <- sblock term? (_s "," _s term)* eblock        `[?p2|?i(4,3)]`;
 space_ol      <- space_ol_inl space_ol_blk?                        `?p1++?p2`;
 space_ol_inl  <- (_sp term)* eos                                    `?i(2,1)`;
 space_ol_blk  <- sblock (_s term)* eblock                           `?i(2,2)`;
+
+%------------ Variables ------------------------------------------------------
+variable      <- [A-Z_] [A-Za-z0-9?_]*                               `?c_var`;
 
 %------------ Whitespace, Comments, Delimiters -------------------------------
 % TODO: Clarify/shore-up:
@@ -154,12 +159,28 @@ fix_num2(Node,Index)     ->?scan.
 -define(fixlstr, ?fixlstr(?N)).
 -define(fixlstr(N), ["\"", rm_char($","\\\"",?flat(N)), "\""]).
 
+% Misc
+-define(fix_ch_a(Atoms), [atom_to_list(?v_atom(A))||A<-Atoms]).
+-define(fix_mod_name, ?fix_mod_name(?N)).
+-define(fix_mod_name(Node),  % Erlang likes it as either an atom or tuple of atoms
+  case Node of
+    [O] -> list_to_atom(O);
+    L when is_list(L) -> [list_to_atom(I)||I<-L];
+    A -> A
+  end).
+
+
 
 rm_char(C,L)      ->rm_char(C,[],L,[]).
 rm_char(C,R,L)    ->rm_char(C,R,L,[]).
 rm_char(_,_,[],A)   ->?flat(lists:reverse(A));
 rm_char(C,R,[C|T],A)->rm_char(C,R,T,[R|A]);
 rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
+
+
+% Higher level semantics
+% TODO:
+%   - Make sure @package and @module don't conflict
 
 % vim: set noai filetype=erlang textwidth=100:
 `
