@@ -1,5 +1,6 @@
 # Not included here are the preprocessor attributes or type/spec (yet)
-@ parameters Name Position
+@ module     test_008_module_attrs
+#|@ parameters Name Position
 @ package    utilities
 @ export     main another/1
 # -export([main/0,main/1,another/1]).
@@ -18,3 +19,4 @@ another-> another_first
 @ random     (yes it is)
 @ another    [no that are]
 @ author     "Joseph Wecker <joseph.wecker@gmail.com>"
+|#

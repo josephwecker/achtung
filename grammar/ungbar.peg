@@ -4,7 +4,8 @@ form          <- attribute / function                                       ~;
 
 %------------ Attributes -----------------------------------------------------
 attribute     <- module                                        `{attr, Node}`;
-module        <- "@module" sp atom                                      `?p3`;
+%module        <- "@" _s "module" sp openlist                `?c_modattr(?p5)`;
+module        <- "@" _s "module" sp openlist                `?inspect(?p5), []`;
 
 %------------ Functions ------------------------------------------------------
 % This is the top-level function definition
@@ -76,7 +77,23 @@ comma_l       <- "[" _s term (_s "," _s term)* _s t? "]"`{[?p3|?i(4,4)],?p6}`;
 space_l       <- "[" _s term ("\\"? ws term)* _s t? "]" `{[?p3|?i(3,4)],?p6}`;
 t             <- "|" _s term _s                                         `?p3`;
 
+% openlist acts kind of like a tuple, but doesn't have begin/end delimiters
+% other than the end of the line or block
+openlist      <- _s (empty_ol / comma_ol / space_ol)                    `?p2`;
+empty_ol      <- eos                                                     `[]`;
+comma_ol      <- comma_ol_inl comma_ol_blk?                        `?p1++?p2`;
+comma_ol_inl  <- term (_sp "," _sp term)* ","? eos            `[?p1|?i(4,2)]`;
+comma_ol_blk  <- sblock term? (_s "," _s term)* eblock        `[?p2|?i(4,3)]`;
+space_ol      <- space_ol_inl space_ol_blk?                        `?p1++?p2`;
+space_ol_inl  <- (_sp term)* eos                                    `?i(2,1)`;
+space_ol_blk  <- sblock (_s term)* eblock                           `?i(2,2)`;
+
 %------------ Whitespace, Comments, Delimiters -------------------------------
+% TODO: Clarify/shore-up:
+%   * "super"-indents
+%   * escaped newlines
+%   * openlists (esp. in combination with the two above)
+%
 sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent)       `?X`;
 eblock        <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent)       `?X`;
 indent        <- "\x06"                                                  `?X`;
