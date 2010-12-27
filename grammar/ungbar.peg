@@ -15,7 +15,7 @@ package       <- "package" _sp chained_atom                `?c_attr(?p1,?p3)`;
 params        <- "parameters" openlist                              `?c_attr`;
 wild_attr     <- atom openlist?                                     `?c_attr`;
 
-% TODO: YOU ARE HERE:
+% TODO: YOU ARE HERE (kind of):
 %  - go get basic module parsing working
 %  - get export working
 %  - get inline working
@@ -23,7 +23,8 @@ wild_attr     <- atom openlist?                                     `?c_attr`;
 
 %------------ Functions ------------------------------------------------------
 % This is the top-level function definition
-function      <- atom clauses                          `?c_function(?p1,?p2)`;
+%function      <- atom clauses                          `?c_function(?p1,?p2)`;
+function      <- atom clauses                        `?c_tlfunction(?p1,?p2)`;
 % TODO: ability for all of these to be variables (if supported by erlang)
 funsig        <- chained_atom "/" [0-9]+                   `?c_fsig(?p1,?p3)`;
 
@@ -140,6 +141,11 @@ dedent        <- "\x15"                                                  `?X`;
 % Macros that are specific to this grammar
 
 % Functions
+% Break into simple structures to be recombined later - so that arity and even
+% interleaving don't matter
+-define(c_tlfunction(Name,Clauses),
+  % TODO: YOU ARE HERE!!!
+  
 -define(clause, ?clause(?N)).
 -define(clause(N),
   begin
@@ -207,20 +213,16 @@ rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
 % Returns {ok, ErlangForms, LastPos} or ...?
 % TODO:
 %   - Gather and possibly reorganize function definitions
-%   - Gather and reorganize module attributes
-%   - Make sure @package and @module don't conflict
-%   - Errors and warnings and their return format
 %
 
 -define(post_process,    post_process(?N,?pos)).
 -define(post_process(N), post_process(N,?pos)).
 post_process(AST, Pos) ->
   {Attrs, Funs} = lists:partition(fun(V)->element(1,V) == attribute end, lists:flatten(AST)),
-  %{Funs2, Avail, Exports, Inlines} = process_funs(Funs),
-%  Attrs2 = process_attributes(Attrs),
-  {ok, Attrs ++ Funs, Pos}.
+  {Funs2, Avail, Exports, Inlines} = process_funs(Funs),
+  {ok, Attrs ++ Funs2, Pos}.
 
-%process_attributes(Attr) -> process_attributes(Attr, #atts{})
+process_funs(Funs) ->
 
 
 

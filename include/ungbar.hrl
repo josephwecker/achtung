@@ -83,7 +83,7 @@
 % fun myfun/0            -->  {'fun',P,{function,myfun,0}}
 % fun lists:reverse/1    -->  {'fun',P,{function,lists,    reverse, 1}}
 % fun pkg.mdl:some_fun/0 -->  {'fun',P,{function,'pkg.mdl',some_fun,0}}
-% fun()->a end           -->  {'fun',P,{clauses,[...]}}  % (Note no arity mentioned)
+% fun()->a end           -->  {'fun',P,{clauses,[...]}}  % (Note no arity mentioned though it is enforced)
 % some_fun/2 (in exp/imp)-->  {some_fun, 2}
 
 combine_atoms(Atoms) -> list_to_atom(string:join([atom_to_list(A)||A<-Atoms],".")).

@@ -20,3 +20,13 @@ Errors / Warnings
  - Erlang-ish but enhanced: e.g., No exported functions
  - Possibly lower-level errors during parsing that would need to get handled
    better (don't have examples at the moment)
+
+
+------------------- Language Wishlist -----------
+[ ] - "Ditto" clause:
+      |first  ->>
+      |second -> same_atom
+
+------------------- Minor -----------------------
+[ ] - Syntax highlighting for "official module attributes
+
