@@ -56,15 +56,23 @@ ungbarc(Flags, F) ->
   %  Syntax transormations
   %  ...
   {ok, ParsedForms, LastPos} = ungbar:parse(binary_to_list(DentedBin)),
-  {ModuleName, ModuleAttrForm} = case find_module(ParsedForms) of
-    {true, Nm} -> {Nm, []};
-    false ->
-      Nm = list_to_atom(filename:rootname(filename:basename(F))),
-      {Nm,[{attribute,1,module,Nm}]}
-  end,
+
+  % TODO: Pre-erlang-lint-and-processor
+  %   - Consolidate parameters / package / module - issue warnings if necessary
+  %   - Map ungbar stdlib and insert function defs if necessary, etc.
+
+  % Look for module name, create one if necessary, and put it on top
+  % of the forms.  TODO: package & parameter attribute work
+  {ModuleName, ModuleAttrForm, ParsedForms2} =
+    case fixup_module(ParsedForms,[]) of
+      {none, none, PF} ->
+        Nm = list_to_atom(filename:rootname(filename:basename(F))),
+        {Nm, {attribute,1,module,Nm}, PF};
+      {Nm, MF, PF} -> {Nm, MF, PF}
+    end,
   AllForms = lists:append([[{attribute, 1, file, {F, 1}}],
-                           ModuleAttrForm,
-                           ParsedForms,
+                           [ModuleAttrForm],
+                           ParsedForms2,
                            [{eof,LastPos}]]),
   Info = opt(Flags, info),
   COpts = lists:flatten(proplists:compact([
@@ -76,15 +84,11 @@ ungbarc(Flags, F) ->
       ])),
   Res = compile:forms(AllForms, COpts),
   case Info of
-    true -> info(F, ParsedForms, AllForms, Res);
+    true -> info(F, ParsedForms2, AllForms, Res);
     [] -> nothing
   end,
 
-  % TODO: Pre-erlang-lint-and-processor
-  %   - Consolidate parameters / package / module - issue warnings if necessary
-  %   - Make sure file and then module are the first two attributes
-  %   - Map ungbar stdlib and insert function defs if necessary, etc.
-  %
+
 
   RealMName = case ModuleName of
     {MName, _Parameters} -> MName;
@@ -123,11 +127,12 @@ info(Filename, ParsedForms, AllForms, Compiled) ->
   after 400 -> ok
   end.
 
-find_module([]) -> false;
-find_module([{attribute, _, module, Nm}|_]) -> {true, Nm};
-find_module([_|T]) -> find_module(T).
+fixup_module([],Acc) -> {none, none, lists:reverse(Acc)};
+fixup_module([{attribute,_,module,Nm}=Mf|R],Acc) ->
+  {Nm, Mf, lists:reverse(Acc) ++ R};
+fixup_module([Attr|R],Acc) -> fixup_module(R,[Attr|Acc]).
 
-swapchr(C,R,L)    ->swapchr(C,R,L,[]).
+swapchr(C,R,L)      ->swapchr(C,R,L,[]).
 swapchr(_,_,[],A)   ->lists:flatten(lists:reverse(A));
 swapchr(C,R,[C|T],A)->swapchr(C,R,T,[R|A]);
 swapchr(C,R,[H|T],A)->swapchr(C,R,T,[H|A]).
