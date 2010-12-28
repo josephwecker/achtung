@@ -5,9 +5,9 @@ form          <- attribute / function                                       ~;
 %------------ Attributes -----------------------------------------------------
 attribute     <- "@" _s (attrs / wild_attr)                             `?p3`;
 attrs         <- module / package / params / compile                        ~;
-module        <- "module" sp module_name openlist?         `?c_mod2(?p3,?p4)`;
+module        <- "module" sp module_name openlist?         `?uc_mod(?p3,?p4)`;
 module_name   <- chained_atom                                      `?unlist1`;
-%export        <- "export" openlist                           `?c_export(?p2)`;
+export        <- "export" openlist                          `?uc_export(?p2)`;
 %inline        <- "inline" openlist                           `?c_inline(?p2)`;
 %behavior      <- ("behaviour" / "behavior") _sp atom          `?c_behav(?p3)`;
 compile       <- "compile" openlist                                 `?c_attr`;
@@ -16,7 +16,7 @@ params        <- "parameters" openlist                              `?c_attr`;
 wild_attr     <- atom openlist?                                     `?c_attr`;
 
 % TODO: YOU ARE HERE (kind of):
-%  - go get basic module parsing working
+%  - go get basic module parsing working [check]
 %  - get export working
 %  - get inline working
 %  - move onto something else.
@@ -24,13 +24,13 @@ wild_attr     <- atom openlist?                                     `?c_attr`;
 %------------ Functions ------------------------------------------------------
 % This is the top-level function definition
 %function      <- atom clauses                          `?c_function(?p1,?p2)`;
-function      <- atom clauses                        `?c_tlfunction(?p1,?p2)`;
+function      <- atom clauses                         `?uc_function(?p1,?p2)`;
 % TODO: ability for all of these to be variables (if supported by erlang)
 funsig        <- chained_atom "/" [0-9]+                   `?c_fsig(?p1,?p3)`;
 
 %------------ Clauses --------------------------------------------------------
 clauses       <- clauseblock / clause                              `?listify`;
-clause        <- _s "|"? pattern? guardseq? _s "->" expr_sblk       `?clause`;
+clause        <- _s "|"? pattern? guardseq? _s "->" expr_sblk    `?uc_clause`;
 clauseblock   <- sblock clause+ eblock                                  `?p2`;
 
 pattern       <- (_s term)+                                            `?ip2`; % TMP
@@ -132,16 +132,17 @@ dedent        <- "\x15"                                                  `?X`;
 % Common macros
 -include("../include/ungbar.hrl").
 
-% Macros that are specific to this grammar
+% Macros that are specific to this grammar - when they override something
+% usually done in ungbar.hrl they say uc_... instead of c_...
 
 % Functions
-% Break into simple structures to be recombined later - so that arity and even
-% interleaving don't matter
--define(c_tlfunction(Name,Clauses),
+% Break into simple structures to be recombined later - so that arity and
+% even interleaving don't matter
+-define(uc_function(Name,Clauses),
   [{tl_function, ?pos, Name, length(element(3,C)),C} || C <- Clauses]).
   
--define(clause, ?clause(?N)).
--define(clause(N),
+-define(uc_clause, ?uc_clause(?N)).
+-define(uc_clause(N),
   begin
       [_, _, Pattern, Guard, _, _, Body] = N,
       % TODO: turn type declarations into parts of the guard
@@ -187,9 +188,12 @@ rm_char(_,_,[],A)   ->?flat(?rev(A));
 rm_char(C,R,[C|T],A)->rm_char(C,R,T,[R|A]);
 rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
 
+
+-define(uc_export(L) -> {attribute, ?pos, export, L}).
+
 % Separates a normal complex erlang module declaration into three attributes,
 % which then get checked and recombined later in post-processing.
--define(c_mod2(Name, Ps),  % Separates into several attributes when necessary
+-define(uc_mod(Name, Ps),  % Separates into several attributes when necessary
   begin
       A = case Ps of
         []->[];
@@ -204,9 +208,7 @@ rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
   end).
 
 % Higher level semantics
-% Returns {ok, ErlangForms, LastPos} or ...?
-% TODO:
-%   - Gather and possibly reorganize function definitions
+% Returns {ok, ErlangForms, LastPos} or ...? (error/warnings/infos...)
 %
 
 -define(post_process,    post_process(?N,?pos)).
