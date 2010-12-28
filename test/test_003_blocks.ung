@@ -19,8 +19,8 @@ myfun6 ->{
   ok}
 
 # TODO: FIXME!!!
-#myfun6b ->{
-#ok}
+myfun6b ->{
+ok}
 
 myfun7->{ok
 }
@@ -56,8 +56,8 @@ myfun11 -> one;two;
 myfun12 -> one;two;
   three;four
 
-myfun13 -> one; two;\
-three; four
+myfun13 -> one; two;
+  three; four
 
 
 # TODO- make sure this starts working

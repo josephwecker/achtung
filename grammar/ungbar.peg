@@ -30,9 +30,7 @@ funsig        <- chained_atom "/" [0-9]+                   `?c_fsig(?p1,?p3)`;
 
 %------------ Clauses --------------------------------------------------------
 clauses       <- clauseblock / clause                              `?listify`;
-clause        <- _s "|"? pattern? guardseq? _s "->" clause_expr     `?clause`;
-%clause_expr   <- _s expr_with_end? exp_block?              `?flat([?p2,?p3])`;
-clause_expr   <- _s expressions?
+clause        <- _s "|"? pattern? guardseq? _s "->" expr_sblk       `?clause`;
 clauseblock   <- sblock clause+ eblock                                  `?p2`;
 
 pattern       <- (_s term)+                                            `?ip2`; % TMP
@@ -40,23 +38,10 @@ guardseq      <- _s "||" (_s guard_expr)*                         `?ip2(?p3)`; %
 guard_expr    <- (_s term)+                                            `?ip2`; % TMP
 
 %------------ Expressions ----------------------------------------------------
-% This may look confusing because of the explicit blocks (exp_block) vs.
-% normal blocks (block).  Normal blocks don't have "begin ... end"- but if a
-% block suddenly starts in the middle of a bunch of expressions, it does get
-% a begin...end (that's the exp_block).
-
-%expressions   <- expression+                                          `?flat`;
-%expression    <- _s (block / expr_with_end)                             `?p2`;
-%inner_exp     <- _s (exp_block / expr_with_end)                         `?p2`;
-%exp_block     <- sblock inner_exp* expr? eblock     `?c_block(?app(?p2,?p3))`;
-%block         <- sblock inner_exp* expr? eblock               `?app(?p2,?p3)`;
-
-expressions   <- ( expr_inline expr_block ) / expr_inline / expr_block  `?flat`;
-%expr_inline   <- ( _sp expr _sp nl ) / ( _sp expr eoinline)+        `?i(2,1)`;
-expr_block    <- sblock expr_seq eblock                                 `?p2`;
-expr_seq      <- expression+                                                ~;
-expression    <- expr eos                                               `?p1`;
-expr          <- term                                                       ~;
+expr_sblk     <- expr_seq expr_blk / expr_seq / expr_blk   `?flat([?p1,?p2])`;
+expr_blk      <- sblock expr_seq+ eblock                                `?p2`;
+expr_seq      <- expr (";" expr)* ";"? (nl _s / &"}")         `[?p1|?i(2,2)]`;
+expr          <- _sp (term) _sp                                         `?p2`;
 
 %------------ Terms / Atomic Literals ----------------------------------------
 term          <- string / funsig / atom / number / tuple / list / variable  ~;
@@ -122,8 +107,8 @@ variable      <- [A-Z_] [A-Za-z0-9?_]*                               `?c_var`;
 %   * escaped newlines
 %   * openlists (esp. in combination with the two above)
 %
-sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent)       `?X`;
-eblock        <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent)       `?X`;
+sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent) _s    `?X`;
+eblock        <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent) _s    `?X`;
 eos           <- _sp (";" / nl / !.)                                     `?X`; % End of a statement
 eoinline      <- _sp (";" / !.)                                          `?X`; % End of inline statement
 _s            <- s?                                                      `?X`; % Optional whitespace

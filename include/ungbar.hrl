@@ -14,12 +14,12 @@
 -define(p6, ?p6(?N)).
 -define(flat, ?flat(?N)).
 -define(rev, ?rev(?N)).
--define(p1(L), lists:nth(1,L)).
--define(p2(L), lists:nth(2,L)).
--define(p3(L), lists:nth(3,L)).
--define(p4(L), lists:nth(4,L)).
--define(p5(L), lists:nth(5,L)).
--define(p6(L), lists:nth(6,L)).
+-define(p1(L), lnth(1,L)).
+-define(p2(L), lnth(2,L)).
+-define(p3(L), lnth(3,L)).
+-define(p4(L), lnth(4,L)).
+-define(p5(L), lnth(5,L)).
+-define(p6(L), lnth(6,L)).
 -define(ip1, ?ip1(?N)).
 -define(ip2, ?ip2(?N)).
 -define(ip3, ?ip3(?N)).
@@ -30,7 +30,7 @@
 -define(ip4(L), [?p4(IL)||IL<-L]).
 
 % ?i(3,4) == ?ip3(?p4)
--define(i(IPos,OPos), [lists:nth(IPos, IL)||IL<-lists:nth(OPos,?N)]).
+-define(i(IPos,OPos), [lnth(IPos, IL)||IL<-lnth(OPos,?N)]).
 -define(flat(L), lists:flatten(L)).
 -define(rev(L), lists:reverse(L)).
 -define(all(Key,L), proplists:get_all_values(Key,?flat(L))).
@@ -106,3 +106,9 @@ l2c([H|R],T,Pos) ->
 real({var,_,Name})       -> Name;
 real(T) when is_tuple(T) -> erl_parse:normalise(T);
 real(Other)              -> Other.
+
+lnth(Pos, L) ->
+  case (catch lists:nth(Pos,L)) of
+    {'EXIT',_}->[];
+    O->O
+  end.

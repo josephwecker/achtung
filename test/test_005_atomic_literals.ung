@@ -80,10 +80,6 @@ that spans multiple
   "string that just keeps going"  " and going"
   " and going."
   nop
-  "Weird \x{2504} "
-      "string that just keeps going"  " and going"
-    " and going."
-  nop
   '''First long string'''
   nop
   '''Second long string - going to the
