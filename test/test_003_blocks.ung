@@ -38,9 +38,9 @@ myfun8| ->
   ok_part4
 
                      
-    ok_part5
-    second
-    third
+  ok_part5
+  second
+  third
 
 myfun9 -> first
   second
@@ -49,4 +49,17 @@ myfun9 -> first
 
 myfun10 -> one;two;three;four;five;six;seven;eight;nine;ten
 
+myfun11 -> one;two;
+  three
+  four
 
+myfun12 -> one;two;
+  three;four
+
+myfun13 -> one; two;\
+three; four
+
+
+# TODO- make sure this starts working
+#myfun14 -> one; two;\
+#  three; four

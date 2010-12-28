@@ -30,7 +30,9 @@ funsig        <- chained_atom "/" [0-9]+                   `?c_fsig(?p1,?p3)`;
 
 %------------ Clauses --------------------------------------------------------
 clauses       <- clauseblock / clause                              `?listify`;
-clause        <- _s "|"? pattern? guardseq? _s "->" expressions     `?clause`;
+clause        <- _s "|"? pattern? guardseq? _s "->" clause_expr     `?clause`;
+%clause_expr   <- _s expr_with_end? exp_block?              `?flat([?p2,?p3])`;
+clause_expr   <- _s expressions?
 clauseblock   <- sblock clause+ eblock                                  `?p2`;
 
 pattern       <- (_s term)+                                            `?ip2`; % TMP
@@ -42,12 +44,18 @@ guard_expr    <- (_s term)+                                            `?ip2`; %
 % normal blocks (block).  Normal blocks don't have "begin ... end"- but if a
 % block suddenly starts in the middle of a bunch of expressions, it does get
 % a begin...end (that's the exp_block).
-expressions   <- expression+                                          `?flat`;
-expression    <- _s (block / expr_with_end)                             `?p2`;
-inner_exp     <- _s (exp_block / expr_with_end)                         `?p2`;
-exp_block     <- sblock inner_exp* expr? eblock     `?c_block(?app(?p2,?p3))`;
-block         <- sblock inner_exp* expr? eblock               `?app(?p2,?p3)`;
-expr_with_end <- expr eos                                               `?p1`;
+
+%expressions   <- expression+                                          `?flat`;
+%expression    <- _s (block / expr_with_end)                             `?p2`;
+%inner_exp     <- _s (exp_block / expr_with_end)                         `?p2`;
+%exp_block     <- sblock inner_exp* expr? eblock     `?c_block(?app(?p2,?p3))`;
+%block         <- sblock inner_exp* expr? eblock               `?app(?p2,?p3)`;
+
+expressions   <- ( expr_inline expr_block ) / expr_inline / expr_block  `?flat`;
+%expr_inline   <- ( _sp expr _sp nl ) / ( _sp expr eoinline)+        `?i(2,1)`;
+expr_block    <- sblock expr_seq eblock                                 `?p2`;
+expr_seq      <- expression+                                                ~;
+expression    <- expr eos                                               `?p1`;
 expr          <- term                                                       ~;
 
 %------------ Terms / Atomic Literals ----------------------------------------
@@ -117,6 +125,7 @@ variable      <- [A-Z_] [A-Za-z0-9?_]*                               `?c_var`;
 sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent)       `?X`;
 eblock        <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent)       `?X`;
 eos           <- _sp (";" / nl / !.)                                     `?X`; % End of a statement
+eoinline      <- _sp (";" / !.)                                          `?X`; % End of inline statement
 _s            <- s?                                                      `?X`; % Optional whitespace
 s             <- (space / nl)+                                           `?X`; % At least one whitespace/newline
 nl            <- comment? newline                                        `?X`; % End of a line
@@ -144,7 +153,7 @@ dedent        <- "\x15"                                                  `?X`;
 % Break into simple structures to be recombined later - so that arity and even
 % interleaving don't matter
 -define(c_tlfunction(Name,Clauses),
-  % TODO: YOU ARE HERE!!!
+  [{tl_function, ?pos, Name, length(element(3,C)),C} || C <- Clauses]).
   
 -define(clause, ?clause(?N)).
 -define(clause(N),
@@ -219,11 +228,19 @@ rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
 -define(post_process(N), post_process(N,?pos)).
 post_process(AST, Pos) ->
   {Attrs, Funs} = lists:partition(fun(V)->element(1,V) == attribute end, lists:flatten(AST)),
-  {Funs2, Avail, Exports, Inlines} = process_funs(Funs),
+  {Funs2, Avail, Exports, Inlines} = grouped_funs(Funs),
   {ok, Attrs ++ Funs2, Pos}.
 
-process_funs(Funs) ->
 
+grouped_funs(Funs) -> grouped_funs(Funs, [], [], [], []).
+grouped_funs([],FunsAcc,AvailAcc,ExportAcc,InlineAcc)->{?rev(FunsAcc),AvailAcc,ExportAcc,InlineAcc};
+grouped_funs([{_,FirstPos,AN,AA,_} | _] = Remaining, FunsAcc, AvailAcc, ExportAcc, InlineAcc) ->
+  {FunGroup, Remaining2} = lists:partition(
+    fun({_,_,BN,BA,_})-> {?v_atom(AN),AA}=={?v_atom(BN),BA} end,
+    Remaining),
+  Clauses = [C || {_,_,_,_,C} <- FunGroup],
+  Fun = {function, FirstPos, ?v_atom(AN), AA, Clauses},
+  grouped_funs(Remaining2, [Fun | FunsAcc], [{?v_atom(AN),AA}|AvailAcc],[],[]).
 
 
 % vim: set noai filetype=erlang textwidth=100:

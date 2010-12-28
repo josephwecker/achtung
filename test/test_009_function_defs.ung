@@ -12,7 +12,6 @@ f6
   |-> two
 f7
   | -> two
-
 f8|atom->three
 f9 | atom -> three
 f10
