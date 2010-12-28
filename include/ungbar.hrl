@@ -40,6 +40,15 @@
 -define(unlist1, ?unlist1(?N)).
 -define(unlist1(N), case N of [O]->O;_->N end).
 
+%------------ Error Reporting -----------------------------------------------
+-define(halt_error(Line, Msg, Detail, Example),
+  begin
+    io:format("Confusion on Line ~p : ~s~n(Detail: ~p)~n~n"
+      "Troubleshooting example:~n~s~n", [Line, Msg, Detail, Example]),
+    halt(5)
+  end).
+
+
 %------------ Parse Tree Construction ---------------------------------------
 -define(pos, line(Index)).
 -define(scan,?scan(?N)).

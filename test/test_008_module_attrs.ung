@@ -15,16 +15,24 @@
 @ parameters Name Position
 @ package    utilities
 #@ export     main another/1 # Equivalent to -export([main/0,main/1,another/1]).
+@ export    main
+@ export    another third/3
 
 #@ inline     main/1 another
 main ->     first
 
 @ compile    compressed
 @ compile    no_strict_record_test bin_opt_info
-another-> another_first
+
+another->     another_first
+another|one-> another_second
+
 
 #@ behavior   irrational
 @ vsn        '0.0.1'
 @ random     (yes it is)
 @ another    [no that are]
 @ author     "Joseph Wecker <joseph.wecker@gmail.com>"
+
+third-> third_first
+third|a b c-> third_three

@@ -4,7 +4,7 @@ form          <- attribute / function                                       ~;
 
 %------------ Attributes -----------------------------------------------------
 attribute     <- "@" _s (attrs / wild_attr)                             `?p3`;
-attrs         <- module / package / params / compile                        ~;
+attrs         <- module / package / params / compile / export               ~;
 module        <- "module" sp module_name openlist?         `?uc_mod(?p3,?p4)`;
 module_name   <- chained_atom                                      `?unlist1`;
 export        <- "export" openlist                          `?uc_export(?p2)`;
@@ -14,12 +14,7 @@ compile       <- "compile" openlist                                 `?c_attr`;
 package       <- "package" _sp chained_atom                `?c_attr(?p1,?p3)`;
 params        <- "parameters" openlist                              `?c_attr`;
 wild_attr     <- atom openlist?                                     `?c_attr`;
-
-% TODO: YOU ARE HERE (kind of):
-%  - go get basic module parsing working [check]
-%  - get export working
-%  - get inline working
-%  - move onto something else.
+% TODO: inline, behavior
 
 %------------ Functions ------------------------------------------------------
 % This is the top-level function definition
@@ -110,7 +105,6 @@ variable      <- [A-Z_] [A-Za-z0-9?_]*                               `?c_var`;
 sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent) _s    `?X`;
 eblock        <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent) _s    `?X`;
 eos           <- _sp (";" / nl / !.)                                     `?X`; % End of a statement
-eoinline      <- _sp (";" / !.)                                          `?X`; % End of inline statement
 _s            <- s?                                                      `?X`; % Optional whitespace
 s             <- (space / nl)+                                           `?X`; % At least one whitespace/newline
 nl            <- comment? newline                                        `?X`; % End of a line
@@ -132,22 +126,15 @@ dedent        <- "\x15"                                                  `?X`;
 % Common macros
 -include("../include/ungbar.hrl").
 
+% Usage examples for error messages
+-define(EXPORT_EXAMPLE,
+  "  # Exports all versions of my_function\n"
+  "@export my_function\n"
+  "  # Only my_function with arity 2 and all versions of another_function\n"
+  "@export my_function/2 another_function").
+
 % Macros that are specific to this grammar - when they override something
 % usually done in ungbar.hrl they say uc_... instead of c_...
-
-% Functions
-% Break into simple structures to be recombined later - so that arity and
-% even interleaving don't matter
--define(uc_function(Name,Clauses),
-  [{tl_function, ?pos, Name, length(element(3,C)),C} || C <- Clauses]).
-  
--define(uc_clause, ?uc_clause(?N)).
--define(uc_clause(N),
-  begin
-      [_, _, Pattern, Guard, _, _, Body] = N,
-      % TODO: turn type declarations into parts of the guard
-      ?c_clause(Pattern,Guard,?listify(Body))
-  end).
 
 % Numbers
 -define(base,   base(?N)).
@@ -168,28 +155,38 @@ fix_num(Node,Index)      ->fix_num2(rm_char($_,rm_char($+,?flat)), Index).
 fix_num2([$-|Node],Index)->{T,L,V}=?scan, {T,L,-V};
 fix_num2(Node,Index)     ->?scan.
 
-
 % Strings
 % Not really necessary usually (epp does this as well) - but I think it's safer
 % here anyway: concatenate strings that are in a sequence.
 -define(cats, ?cats(?N)).
 -define(cats(Ss), erl_parse:abstract(?flat(lists:append([erl_parse:normalise(S)||S<-Ss])))).
-
 -define(fixlstr, ?fixlstr(?N)).
 -define(fixlstr(N), ["\"", rm_char($","\\\"",?flat(N)), "\""]).
-
 % Misc
--define(fix_ch_a(Atoms), [?v_atom(A)||A<-Atoms]).
+-define(fix_ch_a(Atoms), [?v_atom(A)||A<-Atoms]). % For atom chains
 
-
+% Remove (or replace) a character
 rm_char(C,L)        ->rm_char(C,[],L,[]).
 rm_char(C,R,L)      ->rm_char(C,R,L,[]).
 rm_char(_,_,[],A)   ->?flat(?rev(A));
 rm_char(C,R,[C|T],A)->rm_char(C,R,T,[R|A]);
 rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
 
+% Functions
+% Break into simple structures to be recombined later - so that arity and
+% even interleaving don't matter
+-define(uc_function(Name,Clauses),
+  [{uc_function, ?pos, Name, length(element(3,C)),C} || C <- Clauses]).
+  
+-define(uc_clause, ?uc_clause(?N)).
+-define(uc_clause(N),
+  begin
+      [_, _, Pattern, Guard, _, _, Body] = N,
+      % TODO: turn type declarations into parts of the guard
+      ?c_clause(Pattern,Guard,?listify(Body))
+  end).
 
--define(uc_export(L) -> {attribute, ?pos, export, L}).
+-define(uc_export(L), {attribute, ?pos, export, L}).
 
 % Separates a normal complex erlang module declaration into three attributes,
 % which then get checked and recombined later in post-processing.
@@ -207,18 +204,20 @@ rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
       end
   end).
 
-% Higher level semantics
-% Returns {ok, ErlangForms, LastPos} or ...? (error/warnings/infos...)
-%
+
+%------------ Higher Level Symantics -----------------------------------------
 
 -define(post_process,    post_process(?N,?pos)).
 -define(post_process(N), post_process(N,?pos)).
 post_process(AST, Pos) ->
   {Attrs, Funs} = lists:partition(fun(V)->element(1,V) == attribute end, lists:flatten(AST)),
   {Funs2, Avail, Exports, Inlines} = grouped_funs(Funs),
-  {ok, Attrs ++ Funs2, Pos}.
+  Attrs2 = fix_exports(Attrs, Exports, Avail),
+  {ok, Attrs2 ++ Funs2, Pos}.
 
 
+% Takes the arbitrarily grouped functions and groups them in a way that erlang
+% expects them- by name/arity.
 grouped_funs(Funs) -> grouped_funs(Funs, [], [], [], []).
 grouped_funs([],FunsAcc,AvailAcc,ExportAcc,InlineAcc)->{?rev(FunsAcc),AvailAcc,ExportAcc,InlineAcc};
 grouped_funs([{_,FirstPos,AN,AA,_} | _] = Remaining, FunsAcc, AvailAcc, ExportAcc, InlineAcc) ->
@@ -228,6 +227,41 @@ grouped_funs([{_,FirstPos,AN,AA,_} | _] = Remaining, FunsAcc, AvailAcc, ExportAc
   Clauses = [C || {_,_,_,_,C} <- FunGroup],
   Fun = {function, FirstPos, ?v_atom(AN), AA, Clauses},
   grouped_funs(Remaining2, [Fun | FunsAcc], [{?v_atom(AN),AA}|AvailAcc],[],[]).
+
+% Takes implied exports and explicit export attributes and puts them into
+% a single export attribute that's in the format Erlang loves.
+fix_exports(Attrs, Exports, Avail) ->
+  {Exps, Attrs2} = find_exports(Attrs, [], []),
+  AllExports = Exps ++ Exports,
+  ExpandedExports = expanded_exports(AllExports, Avail),
+  ExpandedExports ++ Attrs2.
+
+% Extract export statements and separate them out (for line-number on errors)
+find_exports([],Found,Attr) -> {?rev(Found), ?rev(Attr)};
+find_exports([{attribute, Pos, export, L}|R], Found, Attr) ->
+  Separated = [{attribute,Pos,export,LI} || LI <- L],
+  find_exports(R, Separated ++ Found, Attr);
+find_exports([O|R], Found, Attr) ->
+  find_exports(R, Found, [O | Attr]).
+
+% Reformat atoms into all versions of that function if it exists, and reformat all
+% funsigs into the format that erlang expects ({Name,Arity}).
+expanded_exports(Exps, Avail) -> expanded_exports(Exps, Avail, []).
+expanded_exports([],_Avail,Acc) -> ?rev(Acc);
+expanded_exports([{attribute, _, export, {atom,Pos,What}}|R],Avail,Acc) ->
+  expanded_exports(R,Avail,[{attribute,Pos,export,availables(Avail, What, [], Pos)}|Acc]);
+expanded_exports([{attribute, _, export, {'fun',Pos,{function,Name,Arity}}}|R],Avail,Acc) ->
+  expanded_exports(R,Avail,[{attribute,Pos,export,[{Name,Arity}]}|Acc]);
+expanded_exports([{attribute, Pos, export, Err}|_],_,_) ->
+  ?halt_error(Pos, "Unknown export type", Err, ?EXPORT_EXAMPLE).
+
+% Look through list of available functions of one with this name and return
+% all of them (with their arities, ready for the export statement)
+availables([],Find,[], Pos) ->
+  ?halt_error(Pos, "Exporting undefined function", Find, ?EXPORT_EXAMPLE);
+availables([],_,Acc, Pos)              -> ?rev(Acc);
+availables([{Find,Arity}|R],Find,Acc,P)-> availables(R,Find,[{Find,Arity}|Acc],P);
+availables([_|R],Find,Acc,P)           -> availables(R,Find,Acc,P).
 
 
 % vim: set noai filetype=erlang textwidth=100:
