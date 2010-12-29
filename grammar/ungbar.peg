@@ -24,18 +24,19 @@ clauses       <- clauseblock / clause                              `?listify`;
 clause        <- _s "|"? pattern? guardseq? _s "->" expr_sblk    `?uc_clause`;
 clauseblock   <- sblock clause+ eblock                                  `?p2`;
 
-pattern       <- (_s term)+                                            `?ip2`; % TMP
+pattern       <- (_s literal)+                                            `?ip2`; % TMP
 guardseq      <- _s "||" (_s guard_expr)*                         `?ip2(?p3)`; % TMP
-guard_expr    <- (_s term)+                                            `?ip2`; % TMP
+guard_expr    <- (_s literal)+                                            `?ip2`; % TMP
 
 %------------ Expressions ----------------------------------------------------
 expr_sblk     <- expr_seq expr_blk / expr_blk / expr_seq              `?flat`;
 expr_blk      <- sblock expr_seq+ eblock                                `?p2`;
 expr_seq      <- expr_sp (";" expr_sp)* ";"? (nl _s / &"}")   `[?p1|?i(2,2)]`;
-expr_sp       <- _sp term _sp                                           `?p2`;
+expr_sp       <- _sp expr _sp                                           `?p2`;
+expr          <- funsig / literal / tuple / list / variable                 ~;
 
 %------------ Terms / Atomic Literals ----------------------------------------
-term          <- string / funsig / atom / number / tuple / list / variable  ~;
+literal       <- string / atom / number  ~;
 
 atom          <- simple_atom / complex_atom                           `?scan`;
 simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
@@ -69,25 +70,25 @@ not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?p2`;
 % sometimes.  This works, for now, even if it is an eye sore.
 tuple         <- _s (empty_t / comma_t / space_t)             `?c_tuple(?p2)`;
 empty_t       <- "(" _s ")"                                              `[]`;
-comma_t       <- "(" _s term (_s "," _s term)* _s ")"         `[?p3|?i(4,4)]`;
-space_t       <- "(" _s term ("\\"? s term)* _s ")"           `[?p3|?i(3,4)]`;
+comma_t       <- "(" _s expr (_s "," _s expr)* _s ")"         `[?p3|?i(4,4)]`;
+space_t       <- "(" _s expr ("\\"? s expr)* _s ")"           `[?p3|?i(3,4)]`;
 
 list          <- _s (empty_l / comma_l / space_l)              `?c_list(?p2)`;
 empty_l       <- "[" _s t? "]"                                           `[]`;
-comma_l       <- "[" _s term (_s "," _s term)* _s t? "]"`{[?p3|?i(4,4)],?p6}`;
-space_l       <- "[" _s term ("\\"? s term)* _s t? "]"  `{[?p3|?i(3,4)],?p6}`;
-t             <- "|" _s term _s                                         `?p3`;
+comma_l       <- "[" _s expr (_s "," _s expr)* _s t? "]"`{[?p3|?i(4,4)],?p6}`;
+space_l       <- "[" _s expr ("\\"? s expr)* _s t? "]"  `{[?p3|?i(3,4)],?p6}`;
+t             <- "|" _s expr _s                                         `?p3`;
 
 % openlist acts kind of like a tuple, but doesn't have begin/end delimiters
 % other than the end of the line or block
 openlist      <- _s (empty_ol / comma_ol / space_ol)                    `?p2`;
 empty_ol      <- eos                                                     `[]`;
 comma_ol      <- comma_ol_inl comma_ol_blk?                        `?p1++?p2`;
-comma_ol_inl  <- term (_sp "," _sp term)* ","? eos            `[?p1|?i(4,2)]`;
-comma_ol_blk  <- sblock term? (_s "," _s term)* eblock        `[?p2|?i(4,3)]`;
+comma_ol_inl  <- expr (_sp "," _sp expr)* ","? eos            `[?p1|?i(4,2)]`;
+comma_ol_blk  <- sblock expr? (_s "," _s expr)* eblock        `[?p2|?i(4,3)]`;
 space_ol      <- space_ol_inl space_ol_blk?                        `?p1++?p2`;
-space_ol_inl  <- (_sp term)* eos                                    `?i(2,1)`;
-space_ol_blk  <- sblock (_s term)* eblock                           `?i(2,2)`;
+space_ol_inl  <- (_sp expr)* eos                                    `?i(2,1)`;
+space_ol_blk  <- sblock (_s expr)* eblock                           `?i(2,2)`;
 
 %------------ Variables ------------------------------------------------------
 variable      <- [A-Z_] [A-Za-z0-9?_]*                               `?c_var`;
