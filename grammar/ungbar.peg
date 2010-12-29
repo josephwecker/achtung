@@ -21,19 +21,23 @@ funsig        <- chained_atom "/" [0-9]+                   `?c_fsig(?p1,?p3)`;
 
 %------------ Clauses --------------------------------------------------------
 clauses       <- clauseblock / clause                              `?listify`;
-clause        <- _s "|"? pattern? guardseq? _s "->" expr_sblk    `?uc_clause`;
+clause        <- _s "|"? pattern_seq? guardseq? _s "->" expr_sblk `?uc_clause`;
 clauseblock   <- sblock clause+ eblock                                  `?p2`;
 
-pattern       <- (_s literal)+                                            `?ip2`; % TMP
 guardseq      <- _s "||" (_s guard_expr)*                         `?ip2(?p3)`; % TMP
-guard_expr    <- (_s literal)+                                            `?ip2`; % TMP
+guard_expr    <- (_s literal)+                                         `?ip2`; % TMP
+
+pattern       <- literal / p_tuple / p_list / p_variable                    ~;
+pattern_seq   <- space_ps / comma_ps                                        ~;
+comma_ps      <- _s pattern (_s "," _s pattern)*              `[?p2|?i(4,3)]`;
+space_ps      <- _s pattern (s pattern)+                      `[?p2|?i(2,3)]`;
 
 %------------ Expressions ----------------------------------------------------
 expr_sblk     <- expr_seq expr_blk / expr_blk / expr_seq              `?flat`;
 expr_blk      <- sblock expr_seq+ eblock                                `?p2`;
 expr_seq      <- expr_sp (";" expr_sp)* ";"? (nl _s / &"}")   `[?p1|?i(2,2)]`;
 expr_sp       <- _sp expr _sp                                           `?p2`;
-expr          <- funsig / literal / tuple / list / variable                 ~;
+expr          <- funsig / literal / e_tuple / e_list / e_variable           ~;
 
 %------------ Terms / Atomic Literals ----------------------------------------
 literal       <- string / atom / number  ~;
@@ -68,16 +72,26 @@ not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?p2`;
 % You'd think you could factor out a lot of the redundency here, but it
 % currently confuses neotoma, which fails to try subsequent patterns
 % sometimes.  This works, for now, even if it is an eye sore.
-tuple         <- _s (empty_t / comma_t / space_t)             `?c_tuple(?p2)`;
-empty_t       <- "(" _s ")"                                              `[]`;
-comma_t       <- "(" _s expr (_s "," _s expr)* _s ")"         `[?p3|?i(4,4)]`;
-space_t       <- "(" _s expr ("\\"? s expr)* _s ")"           `[?p3|?i(3,4)]`;
+e_tuple       <- _s (empty_t / e_comma_t / e_space_t)         `?c_tuple(?p2)`;
+e_comma_t     <- "(" _s expr (_s "," _s expr)* _s ")"         `[?p3|?i(4,4)]`;
+e_space_t     <- "(" _s expr ("\\"? s expr)* _s ")"           `[?p3|?i(3,4)]`;
 
-list          <- _s (empty_l / comma_l / space_l)              `?c_list(?p2)`;
-empty_l       <- "[" _s t? "]"                                           `[]`;
-comma_l       <- "[" _s expr (_s "," _s expr)* _s t? "]"`{[?p3|?i(4,4)],?p6}`;
-space_l       <- "[" _s expr ("\\"? s expr)* _s t? "]"  `{[?p3|?i(3,4)],?p6}`;
-t             <- "|" _s expr _s                                         `?p3`;
+e_list        <- _s (empty_l / e_comma_l / e_space_l)          `?c_list(?p2)`;
+e_comma_l     <- "[" _s expr (_s "," _s expr)* _s e_t? "]" `{[?p3|?i(4,4)],?p6}`;
+e_space_l     <- "[" _s expr ("\\"? s expr)* _s e_t? "]"   `{[?p3|?i(3,4)],?p6}`;
+e_t           <- "|" _s expr _s                                         `?p3`;
+
+p_tuple       <- _s (empty_t / p_comma_t / p_space_t)         `?c_tuple(?p2)`;
+p_comma_t     <- "(" _s pattern (_s "," _s pattern)* _s ")"   `[?p3|?i(4,4)]`;
+p_space_t     <- "(" _s pattern ("\\"? s pattern)* _s ")"     `[?p3|?i(3,4)]`;
+
+p_list        <- _s (empty_l / p_comma_l / p_space_l)          `?c_list(?p2)`;
+p_comma_l     <- "[" _s pattern (_s "," _s pattern)* _s p_t? "]" `{[?p3|?i(4,4)],?p6}`;
+p_space_l     <- "[" _s pattern ("\\"? s pattern)* _s p_t? "]"   `{[?p3|?i(3,4)],?p6}`;
+p_t           <- "|" _s pattern _s                                      `?p3`;
+
+empty_l       <- "[" _s "]"                                              `[]`;
+empty_t       <- "(" _s ")"                                              `[]`;
 
 % openlist acts kind of like a tuple, but doesn't have begin/end delimiters
 % other than the end of the line or block
@@ -91,7 +105,8 @@ space_ol_inl  <- (_sp expr)* eos                                    `?i(2,1)`;
 space_ol_blk  <- sblock (_s expr)* eblock                           `?i(2,2)`;
 
 %------------ Variables ------------------------------------------------------
-variable      <- [A-Z_] [A-Za-z0-9?_]*                               `?c_var`;
+p_variable    <- [A-Z_] [A-Za-z0-9?_]*                               `?c_var`;
+e_variable    <- [A-Z] [A-Za-z0-9?_]*                                `?c_var`;
 
 %------------ Whitespace, Comments, Delimiters -------------------------------
 sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent) _s    `?X`;

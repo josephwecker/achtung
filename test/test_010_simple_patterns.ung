@@ -1,0 +1,21 @@
+
+f
+  |atom             -> atom
+  |[]               -> nil
+  |[list of atoms]  -> list
+  |(tuple of atoms) -> tuple
+  |Var1             -> variable
+  |_Var2            -> ign_variable
+  |(tuple Var3)     -> tuple_var
+  |(tuple _Ignvar)  -> tuple_ign_var
+  |[_,_,blah]       -> anything_in_list
+  |[_ _ _]          -> anything_in_list2
+  |[_|_]            -> anything_in_cons
+  |_                -> anything
+  |one two          -> two_atoms
+  |[] []            -> two_nils
+  |blah [Two Three] -> with_list
+  |One (_ [T|R]) b  -> complex
+  |a b c d [E F G]  -> more
+  | a,b, c,g,[H I J]-> more_with_commas
+# TODO:  compound, binary, records, allowed-operators
