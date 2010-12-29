@@ -13,6 +13,7 @@
     {tuple,       "(",    ")",    false,  true,        false},
     {list,        "[",    "]",    false,  true,        false},
     {binary,      "<[",   "]>",   false,  true,        false},
+    {clause,      "|",    "->",   false,  false,       false},
     {line_cont,   "\\n",  "\n",   true,   true,        true}]).
 
 main(Opts) ->

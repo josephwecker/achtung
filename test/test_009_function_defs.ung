@@ -23,3 +23,18 @@ f12
   |atom1 -> four_a
   |atom2 -> four_b
   |atom3 -> four_c
+
+f13
+  |atom ->
+    five_a
+  |nother ->
+    five_b
+  |nother2 -> five_c
+  |nother3 ->
+    five_d
+
+f14
+  |one -> two
+    three
+  |two -> three
+    four
