@@ -1,15 +1,46 @@
 [x] - Comment test files - possibly rename to verbose again
 [x] - Fail exit status for ungbarc
 [x] - Quick script to run the test files
-[ ] - Tuples
-[ ] - Lists
-[ ] - Explicit exports
-[ ] - Implicit exports
+[x] - Tuples
+[x] - Lists
+[x] - Correct function divying and recombining (arity processing)
+[x] - Explicit exports
+
 [ ] - Patterns
-[ ] - Function clause patterns
-[ ] - Correct function divying and recombining (arity processing)
+  [ ] - Variable
+  [ ] - Universal (_)
+  [x] - Tuple
+  [x] - Nil
+  [x] - Cons
+  [ ] - Binary
+  [ ] - Pattern-available operators
+  [ ] - Record-creation
+  [ ] - Record-lookup
+  [ ] - Compound (match)
+  [ ] - Type declarations
+  [ ] - All working in function clauses
 
+[ ] - Guards
 
+[ ] - Records
+[ ] - Structs
+
+[ ] - Function call expressions
+[ ] - Guard sequences
+[ ] - Type declaration guards
+[ ] - Structs (including delimited by sblock/eblock)
+[ ] - Records
+[ ] - Binary expressions
+[ ] - Range/sequence lists (0..7)
+[ ] - Error messages with accompanying (fail) tests
+[ ] - Warning messages with accompanying tests
+[ ] - Efene-like small-arrow syntax
+
+[ ] - Stdlib rework: io:format->note
+[ ] - Preprocessor: include, astify, etc.
+
+[ ] - Documentation & website
+[ ] - Working examples
 
 Errors / Warnings
  - ungbarc level - can't open files, create directories, etc.
@@ -17,16 +48,23 @@ Errors / Warnings
  - Semantic issues- like multiple module definitions: Erlang-based
  - Semantic issues that are only Ungbar related
  - Erlang warnings (like terms that are created but not used
- - Erlang-ish but enhanced: e.g., No exported functions
+ - Erlang-ish but enhanced: e.g., No functions were exported
  - Possibly lower-level errors during parsing that would need to get handled
    better (don't have examples at the moment)
 
 
-------------------- Language Wishlist -----------
+------------------- Temporarily Skipped --------
+[ ] - Escaped newlines and super-indents
+[ ] - Questionmarks in atoms (implemented but not tested)
+[ ] - Implicit exports
+[ ] - Package attribute
+[ ] - Parameters attribute
+[ ] - Implicit (or easy explicit- not using compile) inlines
+[ ] - Behavior attribute special functionality
 [ ] - "Ditto" clause:
-      |first  ->>
+      |first  -|
       |second -> same_atom
 
 ------------------- Minor -----------------------
-[ ] - Syntax highlighting for "official module attributes
+[ ] - Syntax highlighting for "official" module attributes
 
