@@ -19,11 +19,11 @@ f
   |a b c d [E F G]  -> more
   | a,b, c,g,[H I J]-> more_with_commas
   | a,b, 
- c,g,[H I J]-> with_weird_spacing
+      c,g,[H I J]-> with_weird_spacing
     yeah
   |another
-with weird
-            spacing -> weird
+      with weird
+      spacing -> weird
     very
     ugly
   |fin -> done
