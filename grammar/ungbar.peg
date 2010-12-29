@@ -8,17 +8,13 @@ attrs         <- module / package / params / compile / export               ~;
 module        <- "module" sp module_name openlist?         `?uc_mod(?p3,?p4)`;
 module_name   <- chained_atom                                      `?unlist1`;
 export        <- "export" openlist                          `?uc_export(?p2)`;
-%inline        <- "inline" openlist                           `?c_inline(?p2)`;
-%behavior      <- ("behaviour" / "behavior") _sp atom          `?c_behav(?p3)`;
 compile       <- "compile" openlist                                 `?c_attr`;
 package       <- "package" _sp chained_atom                `?c_attr(?p1,?p3)`;
 params        <- "parameters" openlist                              `?c_attr`;
 wild_attr     <- atom openlist?                                     `?c_attr`;
-% TODO: inline, behavior
 
 %------------ Functions ------------------------------------------------------
 % This is the top-level function definition
-%function      <- atom clauses                          `?c_function(?p1,?p2)`;
 function      <- atom clauses                         `?uc_function(?p1,?p2)`;
 % TODO: ability for all of these to be variables (if supported by erlang)
 funsig        <- chained_atom "/" [0-9]+                   `?c_fsig(?p1,?p3)`;
@@ -33,10 +29,10 @@ guardseq      <- _s "||" (_s guard_expr)*                         `?ip2(?p3)`; %
 guard_expr    <- (_s term)+                                            `?ip2`; % TMP
 
 %------------ Expressions ----------------------------------------------------
-expr_sblk     <- expr_seq expr_blk / expr_seq / expr_blk   `?flat([?p1,?p2])`;
+expr_sblk     <- expr_seq expr_blk / expr_blk / expr_seq              `?flat`;
 expr_blk      <- sblock expr_seq+ eblock                                `?p2`;
 expr_seq      <- expr (";" expr)* ";"? (nl _s / &"}")         `[?p1|?i(2,2)]`;
-expr          <- _sp (term) _sp                                         `?p2`;
+expr          <- _sp term _sp                                           `?p2`;
 
 %------------ Terms / Atomic Literals ----------------------------------------
 term          <- string / funsig / atom / number / tuple / list / variable  ~;
@@ -97,11 +93,6 @@ space_ol_blk  <- sblock (_s term)* eblock                           `?i(2,2)`;
 variable      <- [A-Z_] [A-Za-z0-9?_]*                               `?c_var`;
 
 %------------ Whitespace, Comments, Delimiters -------------------------------
-% TODO: Clarify/shore-up:
-%   * "super"-indents
-%   * escaped newlines
-%   * openlists (esp. in combination with the two above)
-%
 sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent) _s    `?X`;
 eblock        <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent) _s    `?X`;
 eos           <- _sp (";" / nl / !.)                                     `?X`; % End of a statement
@@ -182,7 +173,6 @@ rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
 -define(uc_clause(N),
   begin
       [_, _, Pattern, Guard, _, _, Body] = N,
-      % TODO: turn type declarations into parts of the guard
       ?c_clause(Pattern,Guard,?listify(Body))
   end).
 
