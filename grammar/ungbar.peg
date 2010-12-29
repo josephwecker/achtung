@@ -31,8 +31,8 @@ guard_expr    <- (_s term)+                                            `?ip2`; %
 %------------ Expressions ----------------------------------------------------
 expr_sblk     <- expr_seq expr_blk / expr_blk / expr_seq              `?flat`;
 expr_blk      <- sblock expr_seq+ eblock                                `?p2`;
-expr_seq      <- expr (";" expr)* ";"? (nl _s / &"}")         `[?p1|?i(2,2)]`;
-expr          <- _sp term _sp                                           `?p2`;
+expr_seq      <- expr_sp (";" expr_sp)* ";"? (nl _s / &"}")   `[?p1|?i(2,2)]`;
+expr_sp       <- _sp term _sp                                           `?p2`;
 
 %------------ Terms / Atomic Literals ----------------------------------------
 term          <- string / funsig / atom / number / tuple / list / variable  ~;
