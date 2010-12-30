@@ -35,6 +35,8 @@ with weird
   |fin -> done
 
 f2
-  |(a,b,C) = In blah -> (C, In)
+  |(A B)=In -> (In is actually just A 'and' B)
+  |(a b C) = In blah -> (C, In)
+  |(a b C) = In, bleh, 7, 9.0e7, "heya " "friend"-> (C, In)
 
 # TODO:  compound, binary, records, pattern-friendly-operators/operations
