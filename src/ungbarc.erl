@@ -2,19 +2,19 @@
 -export([main/1]).
 
 -define(DENT_IGN_BLOCKS, [
-    % Type      | Start | End   | Esc?  | Container? | Total Ignore?
+    % Type      | Start | End   | Skip  | Container? | Total Ignore?
     {atom,        "'",    "'",    true,   false,       false},
     {n_string,    "\"",   "\"",   true,   false,       false},
     {l_string,    "'''",  "'''",  true,   false,       false},
     {regex1,      "/",    "/",    true,   false,       false},
     {regex2,      "r{",   "}",    true,   false,       false},
-    {ml_comment,  "#|",   "|#",   true,   false,       true},
+    {ml_comment,  "#|",   "|#",   true,   ["#|"],      true},
     {comment,     "#",    "\n",   false,  false,       true},
     {tuple,       "(",    ")",    false,  true,        false},
-    {list,        "[",    "]",    false,  true,        false},
-    {binary,      "<[",   "]>",   false,  true,        false},
-    %{clause,      "|",    "->",   false,  false,       false},
-    {line_cont,   "\\n",  "\n",   true,   true,        true}]).
+    {list,        "[",    "]",    ["|"],  true,        false},
+    {clause,      "|",    "->",   ["|"],  true,        false},
+    {binary,      "<[",   "]>",   false,  true,        false}
+  ]).
 
 main(Opts) ->
   {Flags, Files} = parse_opts([], Opts),

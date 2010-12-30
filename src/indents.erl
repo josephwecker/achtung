@@ -42,6 +42,12 @@
 -export([file_scan/1, file_scan/2,
          full_scan/1, full_scan/2,
          scan/1,      scan/2]).
+%% Esc means to skip the End tokens, preceded by a backslash, it can also be a
+%% list of strings (though only a list with one item is implemented).
+%% Contain means contains the other blocks- for nesting recursively.  It can
+%% also be a list of "Start" tokens to limit the kinds of blocks that are
+%% contained within it (though only a list with one start-string is implemented
+%% at the moment).
 -define(DEFAULT_IGN_BLOCKS, [
     % Type     Start   End     Esc?    Contain? Total-ignore?
     {string,   "\"",   "\"",   true,   false,   false},
@@ -112,17 +118,22 @@ new_state([O|T], S) ->
   error_logger:warning("Unsupported indents option \"~p\". Ignoring.", [O]),
   new_state(T, S).
 
-create_ignoreblock_fun([{_,Start,End,Esc,Cont,Ign}|T]) ->
+create_ignoreblock_fun([{_,Start,End,Skip,Cont,Ign}|T]) ->
   % One function returns false or
-  %  {{Escaped matcher, End matcher, Contains?, Ignore?}, Rest}
-  IsEscaped = case Esc of
+  %  {{Skip matcher, End matcher, Contains?, Ignore?}, Rest}
+  DoSkip = case Skip of
+      false -> fun(_)->false end;
       true -> bin_matcher(["\\",[End]]);
-      false -> fun(_)->false end
+      [_] -> bin_matcher(Skip)
+      % TODO: chained bin_matcher like one below if multiple skip items
     end,
   bin_matcher([Start],
-    {IsEscaped, bin_matcher([End]), Cont, Ign},
+    {DoSkip, bin_matcher([End]), make_binaries(Cont), Ign},
     create_ignoreblock_fun(T));
 create_ignoreblock_fun([]) -> fun(_)->false end.
+
+make_binaries(A) when is_atom(A) -> A;
+make_binaries(L) when is_list(L) -> [iolist_to_binary([LI]) || LI <- L].
 
 bin_matcher(M) ->
   B = iolist_to_binary(M),
@@ -201,16 +212,19 @@ inblock(Dat,A,[{EscMF, EndMF, Contains, _}|R]=BS, _, S) ->
   case EscMF(Dat) of
     {true,Toks,D2} -> inblock(D2,?ADD(A,Toks),BS,[],S); % Moving along
     false ->
-      case {EndMF(Dat), Contains} of
-        {{true,Toks,D2},_}->inblock(D2,?ADD(A,Toks),R,Toks,S); % Done with this block
-        {false, false} ->
-          ?NXT(C,D2) = Dat,inblock(D2,?ADD(A,C),BS,[],S); % Moving along
-        {false, true} ->
+      case EndMF(Dat) of
+        {true,Toks,D2}->inblock(D2,?ADD(A,Toks),R,Toks,S); % Done with this block
+        false ->
           IsBlock = ?S.igb_fun,
-          case IsBlock(Dat) of
-            {NewBDef, Toks, D2} ->
+          case {Contains, IsBlock(Dat)} of
+            {true, {NewBDef, Toks, D2}} -> % Can contain all others
               inblock(D2,?ADD(A,Toks),[NewBDef|BS],[],S); % Block within a block
-            false -> ?NXT(C,D2) = Dat, inblock(D2,?ADD(A,C),BS,[],S) % Moving along
+            {[Toks], {NewBDef, Toks, D2}} ->
+              inblock(D2,?ADD(A,Toks),[NewBDef|BS],[],S);
+            % TODO: Multiple token-watches in the list of what it contains
+            {_, _} ->
+              ?NXT(C,D2) = Dat,
+              inblock(D2,?ADD(A,C),BS,[],S) % Moving along
           end
       end
   end.

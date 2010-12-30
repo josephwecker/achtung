@@ -8,6 +8,11 @@
  |  It's been a long time.
 |#
 
+#| Basic
+    #| nested |#
+  Stuff
+ |#
+
 #|# Another story
  |  That isn't #|very #|good (nested!)|#|#
 |##The end
