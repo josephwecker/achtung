@@ -80,8 +80,8 @@ e_comma_t     <- "(" _s expr (_s "," _s expr)* _s ")"         `[?p3|?i(4,4)]`;
 e_space_t     <- "(" _s expr (sd expr)* _s ")"                `[?p3|?i(2,4)]`;
 
 e_list        <- _s (empty_l / e_comma_l / e_space_l)          `?c_list(?p2)`;
-e_comma_l     <- "[" _s expr (_s "," _s expr)* _s e_t? "]" `{[?p3|?i(4,4)],?p6}`;
-e_space_l     <- "[" _s expr (sd expr)* _s e_t? "]"        `{[?p3|?i(2,4)],?p6}`;
+e_comma_l     <- "[" _s expr (_s "," _s expr)* _s e_t? "]"      `{[?p3|?i(4,4)],?p6}`;
+e_space_l     <- "[" _s expr (sd expr)* _s e_t? "]"             `{[?p3|?i(2,4)],?p6}`;
 e_t           <- "|" _s expr _s                                         `?p3`;
 
 p_tuple       <- _s (empty_t / p_comma_t / p_space_t)         `?c_tuple(?p2)`;
