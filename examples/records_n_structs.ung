@@ -1,0 +1,53 @@
+
+##
+##
+## records:
+##  - can be used in guard expressions
+##  - static attributes
+##  - no runtime introspection
+## structs:
+##  - 
+
+## tuple/list -> record -> proplist/struct -> dict/tree/etc. -> ets -> dets -> mnesia
+
+##
+##  array   PARAM
+##  dict    PARAM
+##  digraph PARAM
+##  gb_sets
+##  gb_trees
+##  orddict
+##  ordsets
+##  proplists
+##  queue
+##  sets
+##  sofs
+##
+##
+##  gen_event
+##  gen_server
+##  gen_fsm
+##  gen_tcp
+##  gen_udp
+##  gen_sctp
+##  httpc
+##  io/file/etc.
+##
+##  lists
+##  bifs for lists/tuples/iolists
+##  string
+##
+##  parameterized module
+##  
+
+##
+##  A.lists.reverse
+##  A.lists:reverse
+##  
+##
+##
+
+thefun ->
+  Rec = new person(a:
+
+
