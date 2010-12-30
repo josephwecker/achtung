@@ -12,7 +12,7 @@
   [x] - Tuple
   [x] - Nil
   [x] - Cons
-  [ ] - Binary
+  [x] - Binary
   [ ] - Pattern-available operators
   [ ] - Record-creation
   [ ] - Record-lookup
@@ -21,16 +21,19 @@
   [~] - All working in function clauses
 
 [ ] - Guards
+  [ ] - Type declaration guards
 
 [ ] - Records
-[ ] - Structs
-
-[ ] - Function call expressions
-[ ] - Guard sequences
-[ ] - Type declaration guards
 [ ] - Structs (including delimited by sblock/eblock)
-[ ] - Records
-[ ] - Binary expressions
+
+[ ] - Expressions:
+  ...
+  [ ] - Function call expressions
+  ...
+  [~] - Binary expressions
+  ...
+
+
 [ ] - Range/sequence lists (0..7)
 [ ] - Error messages with accompanying (fail) tests
 [ ] - Warning messages with accompanying tests
