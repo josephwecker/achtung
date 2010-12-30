@@ -29,7 +29,8 @@ guard_expr    <- (_s literal)+                                         `?ip2`; %
 
 %------------ Patterns -------------------------------------------------------
 pattern       <- comp_pattern / pattern_part                                ~;
-pattern_part  <- literal / p_tuple / p_list / p_variable                    ~;
+
+pattern_part  <- literal / p_tuple / p_list / p_variable / bitstring        ~;
 pattern_seq   <- space_ps / comma_ps                                        ~;
 comma_ps      <- _s pattern (_s "," _s pattern)*              `[?p2|?i(4,3)]`;
 space_ps      <- _s pattern (sd pattern)+                     `[?p2|?i(2,3)]`;
@@ -42,8 +43,27 @@ expr_seq      <- expr_sp (";" expr_sp)* ";"? (nl _s / &"}")   `[?p1|?i(2,2)]`;
 expr_sp       <- _sp expr _sp                                           `?p2`;
 expr          <- funsig / literal / e_tuple / e_list / e_variable           ~;
 
+%------------ Bitstrings -----------------------------------------------------
+bitstring     <- _s (empty_bs / space_bs / comma_bs)      `?c_bitstring(?p2)`;
+
+empty_bs      <- "<[" _s '""'? _s "]>"                                 `[]`;
+space_bs      <- "<[" _s bit_seg (sd bit_seg)* _s "]>"        `[?p3|?i(2,4)]`;
+comma_bs      <- "<[" _s bit_seg (_s "," _s bit_seg)* _s "]>" `[?p3|?i(4,4)]`;
+
+bit_seg       <- bs_value bs_size? bs_type?          `?c_bitseg(?p1,?p2,?p3)`;
+bs_value      <- literal / p_variable                                       ~;
+bs_size       <- ":" (pos_int / e_variable)                             `?p2`;
+bs_type       <- "/" bs_type_val ("-" bs_type_val)*           `[?p2|?i(2,3)]`;
+bs_type_val   <- bs_type_comp / bs_type_atom                                ~;
+bs_type_comp  <- bs_type_atom ":" pos_int                `{?p1,?v_atom(?p3)}`;
+bs_type_atom  <- bs_type_bits / bs_type_bytes / bs_type_id                  ~;
+
+bs_type_bits  <- "__" / "bitstring" / "bits"                      `bitstring`;
+bs_type_bytes <- "_" / "bytes" / "binary"                            `binary`;
+bs_type_id    <- simple_atom                                 `?v_atom(?scan)`;
+
 %------------ Terms / Atomic Literals ----------------------------------------
-literal       <- string / atom / number  ~;
+literal       <- string / atom / number                                     ~;
 
 atom          <- simple_atom / complex_atom                           `?scan`;
 simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
@@ -52,8 +72,9 @@ not_apos      <- !"'" ("\\" . / !"\\" .)                                `?p2`;
 
 chained_atom  <- atom ("." atom)* _sp !"("         `?fix_ch_a([?p1|?i(2,2)])`;
 
-number        <- [+-]? (float / integer)                            `?fixnum`;
-integer       <- base_int / normal_int / character                          ~;
+number        <- float / integer                                            ~;
+integer       <- ([+-]? base_int) / ([+-]? normal_int) / character  `?fixnum`;
+pos_int       <- [0-9] [0-9_]*                                      `?fixnum`;
 normal_int    <- [0-9] [0-9_]*                                              ~;
 base_int      <- base_prefix [A-Za-z0-9_]+                                  ~;
 base_prefix   <- "0" [xX] / "0" [oO] / "0" [bB] / ([1-9] [0-9]* [rR]) `?base`;
@@ -62,7 +83,9 @@ char_escapes  <- "\\^" [a-zA-Z] / "\\" o (o o?)? / "\\x{" h+ "}" /
                  "\\x" h h / "\\" .                                         ~;
 o             <- [0-7]                                                      ~;
 h             <- [0-9a-fA-F]                                                ~;
-float         <- normal_int "." normal_int+ ([eE] [-+]? normal_int)?        ~;
+
+float         <- [+-]? normal_int "." normal_int+
+                 ([eE] [-+]? normal_int)?                           `?fixnum`;
 
 string        <- (_s string_part)+                              `?cats(?ip2)`;
 string_part   <- simple_string / long_string                          `?scan`;

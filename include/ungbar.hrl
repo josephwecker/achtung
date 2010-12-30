@@ -86,6 +86,13 @@
 -define(c_attr(N), begin [Nm, Val] = N, ?c_attr(Nm, Val) end).
 -define(c_attr(Nm,V), {attribute,?pos,real(Nm),?unlist1([real(Vp)||Vp<-V])}).
 -define(c_match(L,R), {match, ?pos, L, R}).
+-define(c_bitstring(BS), {bin, ?pos, BS}).
+-define(c_bitseg(V,S,T),
+  begin
+      S2 = case S of []->default;_->S end,
+      T2 = case T of []->default;_->T end,
+      {bin_element, ?pos, V, S2, T2}
+  end).
 
 % == Function / fun references ==
 % toplevelfun() -> ...   -->  {function,P,toplevelfun,0,[{clause...},...]}

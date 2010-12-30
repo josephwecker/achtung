@@ -1,0 +1,34 @@
+# TODO:  records, pattern-friendly-operators/operations
+
+binaries
+  |<[]>              -> empty
+  |<[
+ ]>                  -> empty
+  |<[""]>            -> empty_string
+
+  |<[1]>             -> one
+  |<[1 2]>           -> one_two
+  |<[1,2]>           -> same
+  |<[A 2]>           -> (got A)
+  |<[A,B,C]>         -> [A B C]
+
+  |<[1:16 2:3]>      -> weirdo
+  |<[A:16 B:3 8]>    -> weird_more
+  |<["heya!"]>       -> stringy
+  |<["heya" End]>    -> string_more
+
+  |<[$H/integer 2/float]>           -> types
+  |<[Num/native-signed _/bytes]>    -> ok
+  |<[1 B/_]>                        -> bytes
+  |<[1 B/__]>                       -> bits
+  |<["starts-with " _/_]>           -> starts_with
+
+  |<[Num:8/integer-unit:1 _/bytes]> -> ok
+  |a <["binary" _/_]> yeah          -> ok
+  |c,<["binary",_/_]>,woop          -> ok
+
+compounds
+  |(A B)=In -> (In is actually just A 'and' B)
+  |(a b C) = In blah -> (C, In)
+  |(a b C) = In, bleh, 7, 9.0e7, "heya " "friend"-> (C, In)
+
