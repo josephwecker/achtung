@@ -27,10 +27,13 @@ clauseblock   <- sblock clause+ eblock                                  `?p2`;
 guardseq      <- _s "||" (_s guard_expr)*                         `?ip2(?p3)`; % TMP
 guard_expr    <- (_s literal)+                                         `?ip2`; % TMP
 
-pattern       <- literal / p_tuple / p_list / p_variable                    ~;
+%------------ Patterns -------------------------------------------------------
+pattern       <- comp_pattern / pattern_part                                ~;
+pattern_part  <- literal / p_tuple / p_list / p_variable                    ~;
 pattern_seq   <- space_ps / comma_ps                                        ~;
 comma_ps      <- _s pattern (_s "," _s pattern)*              `[?p2|?i(4,3)]`;
-space_ps      <- _s pattern (s pattern)+                      `[?p2|?i(2,3)]`;
+space_ps      <- _s pattern (sd pattern)+                     `[?p2|?i(2,3)]`;
+comp_pattern  <- pattern_part _s "=" _s pattern_part      `?c_match(?p1,?p5)`;
 
 %------------ Expressions ----------------------------------------------------
 expr_sblk     <- expr_seq expr_blk / expr_blk / expr_seq              `?flat`;
@@ -74,20 +77,20 @@ not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?p2`;
 % sometimes.  This works, for now, even if it is an eye sore.
 e_tuple       <- _s (empty_t / e_comma_t / e_space_t)         `?c_tuple(?p2)`;
 e_comma_t     <- "(" _s expr (_s "," _s expr)* _s ")"         `[?p3|?i(4,4)]`;
-e_space_t     <- "(" _s expr ("\\"? s expr)* _s ")"           `[?p3|?i(3,4)]`;
+e_space_t     <- "(" _s expr (sd expr)* _s ")"                `[?p3|?i(2,4)]`;
 
 e_list        <- _s (empty_l / e_comma_l / e_space_l)          `?c_list(?p2)`;
 e_comma_l     <- "[" _s expr (_s "," _s expr)* _s e_t? "]" `{[?p3|?i(4,4)],?p6}`;
-e_space_l     <- "[" _s expr ("\\"? s expr)* _s e_t? "]"   `{[?p3|?i(3,4)],?p6}`;
+e_space_l     <- "[" _s expr (sd expr)* _s e_t? "]"        `{[?p3|?i(2,4)],?p6}`;
 e_t           <- "|" _s expr _s                                         `?p3`;
 
 p_tuple       <- _s (empty_t / p_comma_t / p_space_t)         `?c_tuple(?p2)`;
 p_comma_t     <- "(" _s pattern (_s "," _s pattern)* _s ")"   `[?p3|?i(4,4)]`;
-p_space_t     <- "(" _s pattern ("\\"? s pattern)* _s ")"     `[?p3|?i(3,4)]`;
+p_space_t     <- "(" _s pattern (sd pattern)* _s ")"          `[?p3|?i(2,4)]`;
 
 p_list        <- _s (empty_l / p_comma_l / p_space_l)          `?c_list(?p2)`;
 p_comma_l     <- "[" _s pattern (_s "," _s pattern)* _s p_t? "]" `{[?p3|?i(4,4)],?p6}`;
-p_space_l     <- "[" _s pattern ("\\"? s pattern)* _s p_t? "]"   `{[?p3|?i(3,4)],?p6}`;
+p_space_l     <- "[" _s pattern (sd pattern)* _s p_t? "]"        `{[?p3|?i(2,4)],?p6}`;
 p_t           <- "|" _s pattern _s                                      `?p3`;
 
 empty_l       <- "[" _s "]"                                              `[]`;
@@ -101,8 +104,8 @@ comma_ol      <- comma_ol_inl comma_ol_blk?                        `?p1++?p2`;
 comma_ol_inl  <- expr (_sp "," _sp expr)* ","? eos            `[?p1|?i(4,2)]`;
 comma_ol_blk  <- sblock expr? (_s "," _s expr)* eblock        `[?p2|?i(4,3)]`;
 space_ol      <- space_ol_inl space_ol_blk?                        `?p1++?p2`;
-space_ol_inl  <- (_sp expr)* eos                                    `?i(2,1)`;
-space_ol_blk  <- sblock (_s expr)* eblock                           `?i(2,2)`;
+space_ol_inl  <- expr ( ("\\"? sp) expr)* eos                 `[?p1|?i(2,2)]`;
+space_ol_blk  <- sblock expr (sd expr)* eblock                `[?p2|?i(2,3)]`;
 
 %------------ Variables ------------------------------------------------------
 p_variable    <- [A-Z_] [A-Za-z0-9?_]*                               `?c_var`;
@@ -112,6 +115,7 @@ e_variable    <- [A-Z] [A-Za-z0-9?_]*                                `?c_var`;
 sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent) _s    `?X`;
 eblock        <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent) _s    `?X`;
 eos           <- _sp (";" / nl / !.)                                     `?X`; % End of a statement
+sd            <- ( "\\"? (space / nl) )+                                 `?X`; % Space delimiter
 _s            <- s?                                                      `?X`; % Optional whitespace
 s             <- (space / nl)+                                           `?X`; % At least one whitespace/newline
 nl            <- comment? newline                                        `?X`; % End of a line

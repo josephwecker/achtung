@@ -85,7 +85,7 @@
 -define(c_attr, ?c_attr(?N)).
 -define(c_attr(N), begin [Nm, Val] = N, ?c_attr(Nm, Val) end).
 -define(c_attr(Nm,V), {attribute,?pos,real(Nm),?unlist1([real(Vp)||Vp<-V])}).
-
+-define(c_match(L,R), {match, ?pos, L, R}).
 
 % == Function / fun references ==
 % toplevelfun() -> ...   -->  {function,P,toplevelfun,0,[{clause...},...]}

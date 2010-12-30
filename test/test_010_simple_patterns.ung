@@ -1,4 +1,6 @@
+@export f2
 
+# Literal, Variable, Atom, universal, tuple, list, cons
 f
   |atom             -> atom
   |[]               -> nil
@@ -13,7 +15,11 @@ f
   |[_|_]            -> anything_in_cons
   |_                -> anything
   |one two          -> two_atoms
+  | one 1           -> (one 1)
+  |two 2 3 4        -> several_nums
   |[] []            -> two_nils
+  |"heythere" "hm"  -> arity_1
+  |"heythere"\ "hm"  -> arity_2
   |blah [Two Three] -> with_list
   |One (_ [T|R]) b  -> complex
   |a b c d [E F G]  -> more
@@ -27,4 +33,8 @@ with weird
     very
     ugly
   |fin -> done
+
+f2
+  |(a,b,C) = In blah -> (C, In)
+
 # TODO:  compound, binary, records, pattern-friendly-operators/operations

@@ -7,8 +7,8 @@
 [x] - Explicit exports
 
 [ ] - Patterns
-  [ ] - Variable
-  [ ] - Universal (_)
+  [x] - Variable
+  [x] - Universal (_)
   [x] - Tuple
   [x] - Nil
   [x] - Cons
@@ -18,7 +18,7 @@
   [ ] - Record-lookup
   [ ] - Compound (match)
   [ ] - Type declarations
-  [ ] - All working in function clauses
+  [~] - All working in function clauses
 
 [ ] - Guards
 
