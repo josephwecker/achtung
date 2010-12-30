@@ -16,7 +16,7 @@
   [ ] - Pattern-available operators
   [ ] - Record-creation
   [ ] - Record-lookup
-  [ ] - Compound (match)
+  [x] - Compound (match)
   [ ] - Type declarations
   [~] - All working in function clauses
 

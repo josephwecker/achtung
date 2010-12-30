@@ -13,6 +13,9 @@
 
 ------------------- Language
 
+blah[n] syntax that translates into nth(blah) and nth is either lists:nth(...)
+or element(...)
+
 Make hot code swapping & other OTP stuff really obvious...  (like
 ungbar-update-code or something)
 
