@@ -21,10 +21,10 @@ funsig        <- chained_atom "/" [0-9]+                   `?c_fsig(?p1,?p3)`;
 % Calling functions
 %term_call     <-
 %chained_call  <-
-%fun_call      <- fun_name_seq fun_params               `?uc_funcall(?p1,?p2)`;
-%fun_params    <- empty_t / e_comma_t / e_space_t                            ~;
-%fun_name_seq  <- fun_name_part ("." fun_name_part)*           `[?p1|?i(2,2)]`;
-%fun_name_part <- e_variable / atom                                          ~;
+fun_call      <- fun_name_seq fun_params               `?uc_funcall(?p1,?p2)`;
+fun_params    <- empty_t / e_comma_t / e_space_t                            ~;
+fun_name_seq  <- fun_name_part ("." fun_name_part)*           `[?p1|?i(2,2)]`;
+fun_name_part <- e_variable / atom                                          ~;
 %fun_name_part <- package_mod / variable / atom
 
 %------------ Clauses --------------------------------------------------------
@@ -55,7 +55,8 @@ expr_sp       <- _sp expr _sp                                           `?p2`;
 expr          <- match / expr_part ~;
 match         <- pattern_part _s "=" match_body          `?c_match(?p1, ?p4)`;
 match_body    <- (sblock expr eblock) / (_s expr)                       `?p2`;
-expr_part     <- funsig / literal / e_tuple / e_list / e_variable           ~;
+expr_part     <- fun_call / funsig / literal / e_tuple / e_list /
+                 e_variable                                                 ~;
 
 %------------ Bitstrings -----------------------------------------------------
 bitstring     <- _s (empty_bs / space_bs / comma_bs)      `?c_bitstring(?p2)`;
@@ -250,6 +251,12 @@ rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
           [M|Pkg] = ?rev(L),
           [{attribute,?pos,module,M},{attribute,?pos,package,?rev(Pkg)}|A]
       end
+  end).
+
+-define(uc_funcall(Name,Params),
+  case Name of
+    [{atom,_,_}=A] -> {call,?pos,A,Params};
+    [{atom,_,_}=Mod,{atom,_,_}=F] -> {call,?pos,{remote,?pos,Mod,F},Params}
   end).
 
 

@@ -1,6 +1,7 @@
-f
+@export f2
+val
   | -> A = [1 2 3.0]
-  |1 ->
+  |a ->
     B =
       [1 2 3.0]
   |2-> [B|_] = [1 2 3.0]; B
@@ -8,8 +9,19 @@ f
   |1 2 3-> B=[2 1 3.0];(ok B)
   | 4 -> B = A = (oh boy)
     (B, A, same)
-#|f->
-  val()
-  V = val( a )
-  io.format("~p~n~p~n" [(heya there howdy) V])
-  |#
+  |_ -> weird
+
+pretty_val
+  |     -> A =     [1 2 3.0]
+  |a    -> B =     [1 2 3.0]
+  |2    -> [B|_] = [1 2 3.0]; B
+  |3    -> A =     [1 2 3.0]; A
+  |1 2 3-> B=      [2 1 3.0];(ok B)
+  |4    -> B = (A _) = (oh boy); (B, A, part)
+  |_    -> weird
+
+f2->
+  V1 = val()
+  V2 = val( a )
+  V3 = val(val(a))
+  io.format("~p~n~p~n~n" [(heya there howdy) (V1 V2 V3)])
