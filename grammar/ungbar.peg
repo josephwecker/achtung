@@ -42,9 +42,7 @@ pattern_part  <- literal / p_tuple / p_list / p_variable / bitstring        ~;
 pattern_seq   <- space_ps / comma_ps                                        ~;
 comma_ps      <- _s pattern (_s "," _s pattern)*              `[?p2|?i(4,3)]`;
 space_ps      <- _s pattern (sd pattern)+                     `[?p2|?i(2,3)]`;
-comp_pattern  <- pattern_part _s "=" _s pattern_part      `?c_match(?p1,?p5)`;
-% TODO: Nested matches as per next line (untested)
-%comp_pattern  <- pattern_part _s "=" _s pattern           `?c_match(?p1,?p5)`;
+comp_pattern  <- pattern_part _s "=" _s pattern           `?c_match(?p1,?p5)`;
 
 %------------ Expressions ----------------------------------------------------
 expr_sblk     <- expr_seq expr_blk / expr_blk / expr_seq              `?flat`;

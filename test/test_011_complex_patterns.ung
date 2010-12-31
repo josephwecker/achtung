@@ -32,3 +32,4 @@ binaries
   |a <["binary" _/_]> yeah          -> ok
   |c,<["binary",_/_]>,woop          -> ok
 
+  |[_|R] = [B|_] = L -> (nested B R)
