@@ -13,6 +13,40 @@
 
 ------------------- Language
 
+@export *
+
+dot-syntax for parameterized modules or specialized p-modules for lists/strings
+and other core data-types.
+	Mylist.reverse().append([3])
+	Mydict.fetch_keys()
+	MyModName.FunName()  # MyModName having just an atom / chained atom
+	MyArray[0]
+	MyList[3]
+	MyString[-/^http://www\./-]
+
+	B = utils.binqueue.new()    #  B  = utils.binqueue:new().
+	B2 = B.append(<<"heya">>)   #  B2 = B:append(...). % B2 = do_call(B,append,[<<"heya">>])
+	A = B2[0]                   #  A  = B2:array_access([{0,integer}]).
+
+	[1,2,3].reverse()
+	123.abs()
+
+  (Way to distinguish between a parameterized module variable and a normal
+  tuple?)
+
+  Some way to do same thing as array_access, but for list-comprehensions?
+
+  Super-module:
+    - Parameterized with parameter holding main state
+    - ung_array_access
+    - ung_to_list
+    - ung_unknown_function
+
+shorthand case syntax:   case(Term)|one->blah|two->beh|three->doof;
+
+Fixed "extends" implementation (so that children can override parent behavior
+even when it's called by the parent).
+
 blah[n] syntax that translates into nth(blah) and nth is either lists:nth(...)
 or element(...)
 
@@ -108,7 +142,7 @@ Redis? http-bridge?
 Drop-in erlc replacement
 Drop-in erl replacement ?
 Super better shell
-
+Easy way to extend standard library systemwide
 
 == Don't know yet... ==
 Take any spec/type or combo and turn it into a (possibly deeply nested) guard
@@ -119,9 +153,11 @@ More common use of packages?
 Special reassign variable syntax (like Var! or something) that is essentially
   going to turn into a parsing hack, but allows redefinition when it really
   makes sense...?
+  Var := new_value
 
 
-
+@import that allows any imported functions to be compile-time and allows them
+to do parse transforms ... ...
 
 
 
