@@ -13,6 +13,9 @@
 
 ------------------- Language
 
+list-of-lists (esp list of strings) with its own stdlib functions /
+  special-module
+
 @export *
 
 dot-syntax for parameterized modules or specialized p-modules for lists/strings
@@ -110,10 +113,10 @@ Structs coexisting with Parameterized modules:
 
 
 Dashes in atom names (and therefore function-names)?
-Questionmarks in atoms and therefore function-names - also variables?
+[DONE??] Questionmarks in atoms and therefore function-names - also variables?
 
-Whitespace deliniated lists
-Dangling commas in lists
+[DONE] Whitespace deliniated lists
+[DONE??] Dangling commas in lists
 
 "Built-in" regular expressions (compiles re at compile-time)
 String interpolation  ("blah ~s" ~ MyStr) or ("blah ~b ~s" ~ [123, MyStr])
@@ -125,11 +128,11 @@ Shortcut guard expressions
   - is_list()  -> l?() etc.
   - some_fun|Blah:atom, etc
 
-Clean and easily nested record syntax
+[DONE] Clean and easily nested record syntax
 
 Perhaps an ungbar specific include-file syntax for parse-tranforms, stdlib
   transforms, etc. etc.
-
+ 
 == Basic libraries ==
 Way better string & binary string library
 Wrap around things like ~p and other pretty-print / basic string IO for the

@@ -1,10 +1,16 @@
-[x] - Comment test files - possibly rename to verbose again
-[x] - Fail exit status for ungbarc
-[x] - Quick script to run the test files
-[x] - Tuples
-[x] - Lists
-[x] - Correct function divying and recombining (arity processing)
-[x] - Explicit exports
+[ ] - Misc (earlier uncategorized)
+  [x] - Comment test files - possibly rename to verbose again
+  [x] - Fail exit status for ungbarc
+  [x] - Quick script to run the test files
+  [x] - Tuples
+  [x] - Lists
+  [x] - Correct function divying and recombining (arity processing)
+  [x] - Explicit exports
+
+[ ] - Module
+  [ ] - Types and specs
+[ ] - Literals
+  [ ] - Regular-expression strings
 
 [ ] - Patterns
   [x] - Variable
@@ -21,18 +27,47 @@
   [~] - All working in function clauses
 
 [ ] - Guards
-  [ ] - Type declaration guards
+  [ ] - Type declaration for variables -> guards
+  [ ] - Simplified guard bifs
 
-[ ] - Records
 [ ] - Structs (including delimited by sblock/eblock)
+  [ ] - Specialized "proplist" syntax (blah := val)
+[ ] - Records
+  [ ] - Defining / declaring
+  [ ] - Initializing
+  [ ] - Getting properties (also see Record function calls below in expressions)
+  [ ] - In patterns
+  [ ] - Full expression syntax options
 
 [ ] - Expressions:
+  [ ] - Match expression
+  [ ] - Reassignment expression (with := )
   ...
-  [ ] - Function call expressions
+  [ ] - Basic function call expressions
+  [ ] - Package function calls
+  [ ] - Variable function calls
+  [ ] - Parameterized module function calls
+  [ ] - Record function calls
+  [ ] - Chained function calls
+  [ ] - Array-access-type function calls for modules
+  [ ] - Array-access-type function calls for records
+  [ ] - Chained array-access (with functions)
+  [ ] - Specialized list function calls
+  [ ] - Chaining off of terms and various expressions
+
+  [ ] - Ungbar bif rework / aliasing
+
+  [ ] - Fun declarations (including all clauses)
+  [ ] - Calling funs
+  [ ] - Calling funs stored in various records
+
+  [ ] - String interpolation
+  [ ] - Better if block (auto-true if not there)
+  [ ] - 
   ...
   [~] - Binary expressions
   ...
-
+  [ ] - Regular expressions (part of strings module? special syntax?)
 
 [ ] - Range/sequence lists (0..7)
 [ ] - Error messages with accompanying (fail) tests
@@ -70,4 +105,4 @@ Errors / Warnings
 
 ------------------- Minor -----------------------
 [ ] - Syntax highlighting for "official" module attributes
-
+[ ] - Probably better allow blocks after = or :=
