@@ -1,3 +1,18 @@
+%
+%
+% TODO:
+%  - Parser (or do_call) distinguishing between package chain and properties
+%  returning types with more properties:
+%      utils.net.socket_server.start()
+%  vs. my_record.other_record.has_default_fun()
+%  vs. utils/net/socket_server.start     <------   LGTM
+%
+%  - Specialized tuple handler on exception when do_call(PM...) fails...
+%  - Better yet, some tuple-handling functions/properties that are always
+%    there and can't be overridden... (?)
+%  - Define clearly when do_call is not necessary (for the parser)
+%
+
 -module(trycall).
 
 -compile([export_all, {inline, [do_call/2]}]).
@@ -11,7 +26,7 @@ test() ->
   D2= do_call(D, append, [a, <<"value!">>]),                %  D2 = D.append(a <<"value!">>)
   A = do_call(D2, fetch_keys),                              %  A  = D2.fetch_keys()
 
-  R = #tester{f_one=4, f_two=[weirdo]},                             % R  = tester[f_one:4 f_two:[weirdo]]
+  R = #tester{f_one=4, f_two=[weirdo]},                             % R  = tester[f_one:=4 f_two:=[weirdo]]
   R2= do_call(R, ung_array_access, [{f_one,8},{f_two,[boo, hoo]}]), % R2 = R[f_one:=8 f_two:=[boo hoo]]
   RV= do_call(R, ung_property, [f_one]),                            % RV = R.f_one
   RV= do_call(R, ung_array_access, [f_one]),                        % RV = R[f_one]
