@@ -3,10 +3,14 @@ set -o errexit
 
 mkdir -p ebin
 mkdir -p bin
+
 echo Compiling indents
 erlc -o ebin src/indents.erl
 echo Compiling ungbarc
 erlc -o ebin src/ungbarc.erl
+echo Compiling ungbar_compile
+erlc -o ebin src/ungbar_compile.erl
+
 echo Turning peg into erl via neotoma
 erl -noinput -eval 'neotoma:file("grammar/ungbar.peg").' -run init stop
 ## Uncomment next line for debug-info to screen
@@ -17,12 +21,14 @@ erlc -o ebin grammar/ungbar.erl
 #rm grammar/ungbar.erl
 rm -f ungbar.erl.bk
 rm -f grammar/ungbar.erl.bk
+
 echo Creating archive
 erl -noinput -eval '
 	zip:create(".ungbarc.ez",
-		["ungbarc.beam", "indents.beam", "ungbar.beam"],
+		["ungbarc.beam", "ungbar_compile.beam", "indents.beam", "ungbar.beam"],
 		[{cwd,"ebin"},{compress, all}, {uncompress, [".beam", ".app"]}]).
 	' -run init stop
+
 echo Turning archive into escript executable
 echo '#!/usr/bin/env escript' > bin/ungbarc
 echo '%%! -smp enable +h 4096' >> bin/ungbarc
