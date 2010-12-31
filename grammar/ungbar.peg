@@ -5,7 +5,7 @@ form          <- attribute / function                                       ~;
 %------------ Attributes -----------------------------------------------------
 attribute     <- "@" _s (attrs / wild_attr)                             `?p3`;
 attrs         <- module / package / params / compile / export               ~;
-module        <- "module" sp module_name openlist?         `?uc_mod(?p3,?p4)`;
+module        <- "module" sp module_name sp openlist?      `?uc_mod(?p3,?p4)`;
 module_name   <- chained_atom                                      `?unlist1`;
 export        <- "export" openlist                          `?uc_export(?p2)`;
 compile       <- "compile" openlist                                 `?c_attr`;
@@ -16,16 +16,15 @@ wild_attr     <- atom openlist?                                     `?c_attr`;
 %------------ Functions ------------------------------------------------------
 % This is the top-level function definition
 function      <- atom clauses                         `?uc_function(?p1,?p2)`;
-% TODO: ability for all of these to be variables (if supported by erlang)
-funsig        <- chained_atom "/" [0-9]+                   `?c_fsig(?p1,?p3)`;
+funsig        <- (chained_atom2 ".")? atom "/" [0-9]+
+                                          `?c_fsig(?p1(?p1),?v_atom(?p2),?p4)`;
 % Calling functions
 %term_call     <-
 %chained_call  <-
 fun_call      <- fun_name_seq fun_params               `?uc_funcall(?p1,?p2)`;
 fun_params    <- empty_t / e_comma_t / e_space_t                            ~;
 fun_name_seq  <- fun_name_part ("." fun_name_part)*           `[?p1|?i(2,2)]`;
-fun_name_part <- e_variable / atom                                          ~;
-%fun_name_part <- package_mod / variable / atom
+fun_name_part <- chained_atom3 / e_variable / atom                          ~;
 
 %------------ Clauses --------------------------------------------------------
 clauses       <- clauseblock / clause                              `?listify`;
@@ -85,7 +84,9 @@ simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
 complex_atom  <- "'" not_apos* "'"                                          ~;
 not_apos      <- !"'" ("\\" . / !"\\" .)                                `?p2`;
 
-chained_atom  <- atom ("." atom)* _sp !"("         `?fix_ch_a([?p1|?i(2,2)])`;
+chained_atom  <- atom ("/" atom)*                 `?split_cha([?p1|?i(2,2)])`;
+chained_atom2 <- atom ("/" atom)*               `?combine_cha([?p1|?i(2,2)])`;
+chained_atom3 <- atom ("/" atom)+               `?combine_cha([?p1|?i(2,2)])`;
 
 number        <- float / integer                                            ~;
 integer       <- ([+-]? base_int) / ([+-]? normal_int) / character  `?fixnum`;
@@ -213,7 +214,9 @@ fix_num2(Node,Index)     ->?scan.
 -define(fixlstr, ?fixlstr(?N)).
 -define(fixlstr(N), ["\"", rm_char($","\\\"",?flat(N)), "\""]).
 % Misc
--define(fix_ch_a(Atoms), [?v_atom(A)||A<-Atoms]). % For atom chains
+-define(split_cha(Atoms), [?v_atom(A)||A<-Atoms]). % For atom chains
+-define(combine_cha(Atoms),
+  list_to_atom(string:join([atom_to_list(?v_atom(A))||A<-Atoms], "."))).
 
 % Remove (or replace) a character
 rm_char(C,L)        ->rm_char(C,[],L,[]).
@@ -256,15 +259,18 @@ rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
 -define(uc_funcall(Name,Params),
   case Name of
     [{atom,_,_}=A] -> {call,?pos,A,Params};
-    [{atom,_,_}=Mod,{atom,_,_}=F] -> {call,?pos,{remote,?pos,Mod,F},Params}
+    [{atom,_,_}=Mod,{atom,_,_}=F] -> {call,?pos,{remote,?pos,Mod,F},Params};
+    [A,{atom,_,_}=F] when is_atom(A) -> {call,?pos,{remote,?pos,A,F},Params}
   end).
 
 
 %------------ Higher Level Symantics -----------------------------------------
 
+% TODO: Move all of this into ungbarc or helpers
 -define(post_process,    post_process(?N,?pos)).
 -define(post_process(N), post_process(N,?pos)).
 post_process(AST, Pos) ->
+  %AST2 = append_do_call(AST),
   {Attrs, Funs} = lists:partition(fun(V)->element(1,V) == attribute end, lists:flatten(AST)),
   {Funs2, Avail, Exports, Inlines} = grouped_funs(Funs),
   Attrs2 = fix_exports(Attrs, Exports, Avail),

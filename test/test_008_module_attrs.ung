@@ -9,11 +9,11 @@
 #@ module test_008_module_attrs Name Opts
 
 # TODO: Put module below others to make sure it gets put on top of final forms
-@ module some.package.test_008_module_attrs Name Opts
+@ module some/package/test_008_module_attrs Name Opts
 
 
 @ parameters Name Position
-@ package    utilities
+@ package    utilities/net
 #@ export     main another/1 # Equivalent to -export([main/0,main/1,another/1]).
 @ export    main
 @ export    another third/3

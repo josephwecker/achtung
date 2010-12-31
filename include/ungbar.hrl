@@ -69,11 +69,11 @@
 -define(c_list(IT),case IT of []->?c_nil;{I,T}->l2c(I,T,?pos) end).
 -define(c_atom(N),{atom,?pos,case N of [_|_]->?scan(N);_->N end}).
 -define(v_atom(A), element(3,A)).
--define(c_fsig(NameParts,Arity), % See function / fun references below
-  case ?rev(NameParts) of
-    [One]     -> {'fun',?pos,{function,One,list_to_integer(Arity)}};
-    [Fun,Mod] -> {'fun',?pos,{function,Mod,Fun,list_to_integer(Arity)}};
-    [Fun|ModP]-> {'fun',?pos,{function,combine_atoms(?rev(ModP)),Fun,list_to_integer(Arity)}}
+-define(c_fsig(Mod,Fun,Arity),
+  case Mod of
+    [] -> {'fun',?pos,{function,Fun,list_to_integer(Arity)}};
+    [M]-> {'fun',?pos,{function,M,Fun,list_to_integer(Arity)}};
+    M  -> {'fun',?pos,{function,M,Fun,list_to_integer(Arity)}}
   end).
 -define(c_mod(Name, Params),  % Name is either atom or list of atoms (packages) - Params should be a list of Variables
   case Params of
@@ -101,8 +101,6 @@
 % fun pkg.mdl:some_fun/0 -->  {'fun',P,{function,'pkg.mdl',some_fun,0}}
 % fun()->a end           -->  {'fun',P,{clauses,[...]}}  % (Note no arity mentioned though it is enforced)
 % some_fun/2 (in exp/imp)-->  {some_fun, 2}
-
-combine_atoms(Atoms) -> list_to_atom(string:join([atom_to_list(A)||A<-Atoms],".")).
 
 % List to Conses - basically recursively (not tail recursively at the moment)
 % takes a proper list with a tail (usually [] when the result is going to be

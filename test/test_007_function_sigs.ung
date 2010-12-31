@@ -2,8 +2,4 @@
 fundefs ->
   fundefs/0
   lists.reverse/1
-  utilities.net.socket.start/2
-  # A = lists
-  # A.reverse/1
-  # B = reverse
-  # A.B/1
+  utilities/net/socket.start/2

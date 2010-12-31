@@ -24,4 +24,6 @@ f2->
   V1 = val()
   V2 = val( a )
   V3 = val(val(a))
+  #M = lists
+  #F = reverse
   io.format("~p~n~p~n~n" [(heya there howdy) (V1 V2 V3)])
