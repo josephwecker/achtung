@@ -11,6 +11,8 @@
 %  - Better yet, some tuple-handling functions/properties that are always
 %    there and can't be overridden... (?)
 %  - Define clearly when do_call is not necessary (for the parser)
+%  - Try and move recursive parts of do_call into its own function and trigger
+%    only when absolutely necessary (even though it won't look as clean)
 %
 
 -module(trycall).
