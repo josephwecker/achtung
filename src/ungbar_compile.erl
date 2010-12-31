@@ -29,12 +29,24 @@
     {binary,      "<[",   "]>",   false,  true,        false}
   ]).
 
+%------------ File Compiling -------------------------------------------------
 % Find option or default
 opt([],outputdir)   -> ".";
 opt([],bin_opt_info)-> true;
 opt([],_)           -> [];
 opt([{Key,V}|_],Key)-> V;
 opt([_|T],Key)      -> opt(T,Key).
+
+% Cull to only compiler options / defaults (more to come in the future)
+get_compiler_options(Flags) ->
+  Info = opt(Flags, info),
+  {Info, lists:flatten(proplists:compact([
+        case Info of true->return;_->report end,
+        opt(Flags,bin_opt_info),
+        opt(Flags,compressed),
+        opt(Flags,debug_info),
+        opt(Flags,verbose)
+      ]))}.
 
 file(F) -> file(F, []).
 file(F, Flags) ->
@@ -64,8 +76,14 @@ file(F, Flags) ->
     Err2 -> error_logger:error_msg("Error: ~p", [Err2]), halt(10)
   end.
 
+
+%------------ Parsing Forms --------------------------------------------------
+
 parse_forms(B) when is_binary(B) -> parse_forms(binary_to_list(B));
 parse_forms(L) -> ungbar:parse(L).
+
+
+%------------ Post Processor -------------------------------------------------
 
 post_process_forms(AST, LastPos, F) ->
   % Look for module name, create one if necessary, and put it on top of the forms.
@@ -82,6 +100,13 @@ post_process_forms(AST, LastPos, F) ->
                            [{eof,LastPos}]]),
   {AST3, ModuleName}.
 
+fixup_module([],Acc) -> {none, none, lists:reverse(Acc)};
+fixup_module([{attribute,_,module,Nm}=Mf|R],Acc) ->
+  {Nm, Mf, lists:reverse(Acc) ++ R};
+fixup_module([Attr|R],Acc) -> fixup_module(R,[Attr|Acc]).
+
+
+%------------ Debug Printing -------------------------------------------------
 
 debug_indents(DentedBin)->
     io:format(
@@ -91,20 +116,25 @@ debug_indents(DentedBin)->
       [swapchr(21,"<<<",swapchr(6,">>>",binary_to_list(DentedBin)))]).
 
 debug_info(Filename, AST, Compiled) ->
-  io:format("~n~n+---------------------------------~n"
-            "|  PARSE RESULTS FOR ~s:~n"
-            "+---------------------------------~n"
-            "~P~n~n", [Filename, AST, 60]),
-  io:format("+---------------------------------~n"
-            "|  ERLANG EQUIVALENT:~n"
-            "+---------------------------------~n"
-            "~s",
-            [erl_prettypr:format(erl_syntax:form_list(AST))]),
-  io:format("+---------------------------------~n"
-            "|  COMPILE RESULTS:~n"
-            "+---------------------------------~n"
-            "~P~n~n----------------------------------~n",
-            [Compiled, 20]),
+  io:format(
+    "~n~n"
+    "+---------------------------------~n"
+    "|  PARSE RESULTS FOR ~s:~n"
+    "+---------------------------------~n"
+    "~P~n~n", [Filename, AST, 60]),
+  io:format(
+    "+---------------------------------~n"
+    "|  ERLANG EQUIVALENT:~n"
+    "+---------------------------------~n"
+    "~s",
+    [erl_prettypr:format(erl_syntax:form_list(AST))]),
+  io:format(
+    "+---------------------------------~n"
+    "|  COMPILE RESULTS:~n"
+    "+---------------------------------~n"
+    "~P~n~n"
+    "----------------------------------~n",
+    [Compiled, 20]),
 
   io:format("(pausing for io)~n",[]),
   receive
@@ -112,25 +142,7 @@ debug_info(Filename, AST, Compiled) ->
   after 400 -> ok
   end.
 
-fixup_module([],Acc) -> {none, none, lists:reverse(Acc)};
-fixup_module([{attribute,_,module,Nm}=Mf|R],Acc) ->
-  {Nm, Mf, lists:reverse(Acc) ++ R};
-fixup_module([Attr|R],Acc) -> fixup_module(R,[Attr|Acc]).
-
 swapchr(C,R,L)      ->swapchr(C,R,L,[]).
 swapchr(_,_,[],A)   ->lists:flatten(lists:reverse(A));
 swapchr(C,R,[C|T],A)->swapchr(C,R,T,[R|A]);
 swapchr(C,R,[H|T],A)->swapchr(C,R,T,[H|A]).
-
-% Plenty more to come, I'm sure
-get_compiler_options(Flags) ->
-  Info = opt(Flags, info),
-  {Info, lists:flatten(proplists:compact([
-        case Info of true->return;_->report end,
-        opt(Flags,bin_opt_info),
-        opt(Flags,compressed),
-        opt(Flags,debug_info),
-        opt(Flags,verbose)
-      ]))}.
-
-
