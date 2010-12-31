@@ -1,12 +1,12 @@
-[ ] - Misc (earlier uncategorized)
-  [x] - Comment test files - possibly rename to verbose again
-  [x] - Fail exit status for ungbarc
-  [x] - Quick script to run the test files
-  [x] - Tuples
-  [x] - Lists
-  [x] - Correct function divying and recombining (arity processing)
-  [x] - Explicit exports
 
+------------------- Current --------
+[ ] - Refactor / simplify post-processing if possible
+[ ] - Move post-processing out of ungbar.peg and into ungbar_compile.erl (or
+      possibly even a new one- ungbar_post_process.erl or something)
+[ ] - Get ung_call basic working for Module/Function vars and for parameterized
+      modules - get another chunk of tests to pass.
+
+------------------- Main Tasks --------
 [ ] - Module
   [ ] - Types and specs
 [ ] - Literals
@@ -33,6 +33,8 @@
 [ ] - Structs (including delimited by sblock/eblock)
   [ ] - Specialized "proplist" syntax (blah := val)
 [ ] - Records
+  [ ] - Figure out syntax for record pattern matching / unpacking (equivalent
+        of `#person{blah=Blah} = Person` to get the value of blah into Blah.
   [ ] - Defining / declaring
   [ ] - Initializing
   [ ] - Getting properties (also see Record function calls below in expressions)
@@ -80,16 +82,14 @@
 [ ] - Documentation & website
 [ ] - Working examples
 
-Errors / Warnings
- - ungbarc level - can't open files, create directories, etc.
- - Neotoma parser can't find a way through
- - Semantic issues- like multiple module definitions: Erlang-based
- - Semantic issues that are only Ungbar related
- - Erlang warnings (like terms that are created but not used
- - Erlang-ish but enhanced: e.g., No functions were exported
- - Possibly lower-level errors during parsing that would need to get handled
-   better (don't have examples at the moment)
-
+------------------- Misc / Uncategorized / Finished --------
+  [x] - Comment test files - possibly rename to verbose again
+  [x] - Fail exit status for ungbarc
+  [x] - Quick script to run the test files
+  [x] - Tuples
+  [x] - Lists
+  [x] - Correct function divying and recombining (arity processing)
+  [x] - Explicit exports
 
 ------------------- Temporarily Skipped --------
 [ ] - Escaped newlines and super-indents

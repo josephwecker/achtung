@@ -13,6 +13,19 @@
 
 ------------------- Language
 
+Maybe triple back-ticks or something breaks into erlang?
+
+Errors / Warnings
+ - ungbarc level - can't open files, create directories, etc.
+ - Neotoma parser can't find a way through
+ - Semantic issues- like multiple module definitions: Erlang-based
+ - Semantic issues that are only Ungbar related
+ - Erlang warnings (like terms that are created but not used
+ - Erlang-ish but enhanced: e.g., No functions were exported
+ - Possibly lower-level errors during parsing that would need to get handled
+   better (don't have examples at the moment)
+
+
 list-of-lists (esp list of strings) with its own stdlib functions /
   special-module
 
