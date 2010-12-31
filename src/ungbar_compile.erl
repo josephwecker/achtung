@@ -56,7 +56,7 @@ file(F, Flags) ->
   case opt(Flags,show_indents) of true->debug_indents(DentedBin);_->nop end,
 
   {AST, ModuleName} = case parse_forms(DentedBin) of
-    {ok, ParsedForms, LastPos} -> post_process_forms(ParsedForms, LastPos, F);
+    {ok, ParsedForms, LastPos} -> ungbar_postprocess:forms(ParsedForms, LastPos, F);
     Err -> error_logger:error_msg("Error: ~p", [Err]), halt(5)
   end,
 
@@ -81,29 +81,6 @@ file(F, Flags) ->
 
 parse_forms(B) when is_binary(B) -> parse_forms(binary_to_list(B));
 parse_forms(L) -> ungbar:parse(L).
-
-
-%------------ Post Processor -------------------------------------------------
-
-post_process_forms(AST, LastPos, F) ->
-  % Look for module name, create one if necessary, and put it on top of the forms.
-  {ModuleName, ModuleAttrForm, AST2} =
-    case fixup_module(AST,[]) of
-      {none, none, PF} ->
-        Nm = list_to_atom(filename:rootname(filename:basename(F))),
-        {Nm, {attribute,1,module,Nm}, PF};
-      {Nm, MF, PF} -> {Nm, MF, PF}
-    end,
-  AST3 = lists:append([[{attribute, 1, file, {F, 1}}],
-                           [ModuleAttrForm],
-                           AST2,
-                           [{eof,LastPos}]]),
-  {AST3, ModuleName}.
-
-fixup_module([],Acc) -> {none, none, lists:reverse(Acc)};
-fixup_module([{attribute,_,module,Nm}=Mf|R],Acc) ->
-  {Nm, Mf, lists:reverse(Acc) ++ R};
-fixup_module([Attr|R],Acc) -> fixup_module(R,[Attr|Acc]).
 
 
 %------------ Debug Printing -------------------------------------------------

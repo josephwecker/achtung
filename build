@@ -10,6 +10,8 @@ echo Compiling ungbarc
 erlc -o ebin src/ungbarc.erl
 echo Compiling ungbar_compile
 erlc -o ebin src/ungbar_compile.erl
+echo Compiling ungbar_postprocess
+erlc -o ebin src/ungbar_postprocess.erl
 
 echo Turning peg into erl via neotoma
 erl -noinput -eval 'neotoma:file("grammar/ungbar.peg").' -run init stop
@@ -25,7 +27,8 @@ rm -f grammar/ungbar.erl.bk
 echo Creating archive
 erl -noinput -eval '
 	zip:create(".ungbarc.ez",
-		["ungbarc.beam", "ungbar_compile.beam", "indents.beam", "ungbar.beam"],
+		["ungbarc.beam", "ungbar_compile.beam", "ungbar_postprocess.beam",
+		 "indents.beam", "ungbar.beam"],
 		[{cwd,"ebin"},{compress, all}, {uncompress, [".beam", ".app"]}]).
 	' -run init stop
 

@@ -1,4 +1,6 @@
 %------------ Neotoma unpacking ----------------------------------------------
+-compile({nowarn_unused_function, [{l2c,3},{real,1},{lnth,2}]}).
+
 -define(X, []). % Consume but ignore
 -define(N, Node).
 -define(I, Index).
