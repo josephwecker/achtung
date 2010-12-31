@@ -18,6 +18,14 @@ wild_attr     <- atom openlist?                                     `?c_attr`;
 function      <- atom clauses                         `?uc_function(?p1,?p2)`;
 % TODO: ability for all of these to be variables (if supported by erlang)
 funsig        <- chained_atom "/" [0-9]+                   `?c_fsig(?p1,?p3)`;
+% Calling functions
+%term_call     <-
+%chained_call  <-
+%fun_call      <- fun_name_seq fun_params               `?uc_funcall(?p1,?p2)`;
+%fun_params    <- empty_t / e_comma_t / e_space_t                            ~;
+%fun_name_seq  <- fun_name_part ("." fun_name_part)*           `[?p1|?i(2,2)]`;
+%fun_name_part <- e_variable / atom                                          ~;
+%fun_name_part <- package_mod / variable / atom
 
 %------------ Clauses --------------------------------------------------------
 clauses       <- clauseblock / clause                              `?listify`;
@@ -35,13 +43,21 @@ pattern_seq   <- space_ps / comma_ps                                        ~;
 comma_ps      <- _s pattern (_s "," _s pattern)*              `[?p2|?i(4,3)]`;
 space_ps      <- _s pattern (sd pattern)+                     `[?p2|?i(2,3)]`;
 comp_pattern  <- pattern_part _s "=" _s pattern_part      `?c_match(?p1,?p5)`;
+% TODO: Nested matches as per next line (untested)
+%comp_pattern  <- pattern_part _s "=" _s pattern           `?c_match(?p1,?p5)`;
 
 %------------ Expressions ----------------------------------------------------
 expr_sblk     <- expr_seq expr_blk / expr_blk / expr_seq              `?flat`;
 expr_blk      <- sblock expr_seq+ eblock                                `?p2`;
-expr_seq      <- expr_sp (";" expr_sp)* ";"? (nl _s / &"}")   `[?p1|?i(2,2)]`;
+expr_seq      <- expr_sp (";" expr_sp)* eol                   `[?p1|?i(2,2)]`;
 expr_sp       <- _sp expr _sp                                           `?p2`;
-expr          <- funsig / literal / e_tuple / e_list / e_variable           ~;
+
+% TODO: delim_expr- `asdf`, reassign- ...:=..., chain- blah().blah()
+%expr          <- delim_expr / match / reassign / chain / expr_part
+expr          <- match / expr_part ~;
+match         <- pattern_part _s "=" match_body          `?c_match(?p1, ?p4)`;
+match_body    <- (sblock expr eblock) / (_s expr)                       `?p2`;
+expr_part     <- funsig / literal / e_tuple / e_list / e_variable           ~;
 
 %------------ Bitstrings -----------------------------------------------------
 bitstring     <- _s (empty_bs / space_bs / comma_bs)      `?c_bitstring(?p2)`;
@@ -138,6 +154,7 @@ e_variable    <- [A-Z] [A-Za-z0-9?_]*                                `?c_var`;
 sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent) _s    `?X`;
 eblock        <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent) _s    `?X`;
 eos           <- _sp (";" / nl / !.)                                     `?X`; % End of a statement
+eol           <- _sp ";"? (nl _s / &eblock / !.)                         `?X`; % End of a expression line
 sd            <- ( "\\"? (space / nl) )+                                 `?X`; % Space delimiter
 _s            <- s?                                                      `?X`; % Optional whitespace
 s             <- (space / nl)+                                           `?X`; % At least one whitespace/newline
