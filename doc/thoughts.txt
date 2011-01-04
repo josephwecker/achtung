@@ -20,6 +20,10 @@ New PEG implementation:
   - If memoize only on _second_ pass-   does a second pass mean a 3rd (and so
     forth) is more likely?
 
+  - Whenever there is a * (or + operator that has already found one match) you
+    know it's going to succeed so you can throw away all memoized results from
+    further down the input (?)
+
 Memoization is used when:
 >> long -> d d d d d d / d d d d d / d d d d / d d d / d d / d
 >> d -> (expensive to calculate)

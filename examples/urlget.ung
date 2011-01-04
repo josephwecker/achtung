@@ -2,53 +2,53 @@
 @export [test direct proxy get_http/5]
 
 test
-  |1 -> direct("http://www.ericsson.se/cslab/~joe")
-  |2 -> direct("http://www.viasat.se/index9.html")
-  |3 -> proxy("http://www.ericsson.se/cslab/~joe")
-  |4 -> proxy("http://www.viasat.se/index9.html")
+  |1|-> direct("http://www.ericsson.se/cslab/~joe")
+  |2|-> direct("http://www.viasat.se/index9.html")
+  |3|-> proxy("http://www.ericsson.se/cslab/~joe")
+  |4|-> proxy("http://www.viasat.se/index9.html")
 
-direct|URL ->
+direct|URL|->
   case get_http(progress/2 URL [] noproxy 60000)
-    |(ok (URL Reply Head Body)) -> (ok (URL Reply Head list(Body)))
-    |Other                      -> Other
+    |(ok (URL Reply Head Body))|-> (ok (URL Reply Head list(Body)))
+    |Other                     |-> Other
 
-proxy|URL ->
+proxy|URL|->
   case get_http(progress/2 URL [] ("proxy" 82) 60000)
-    |(ok (URL Reply Head Body)) -> (ok (URL Reply Head list(Body)))
-    |Other                      -> Other
+    |(ok (URL Reply Head Body))|-> (ok (URL Reply Head list(Body)))
+    |Other                     |-> Other
 
 progress
-  |not_known Y  -> info("progress:#bytes = ~p~n" [Y])
-  |(length N) Y ->
+  |not_known Y |-> info("progress:#bytes = ~p~n" [Y])
+  |(length N) Y|->
     K = trunc(Y*100/N)
     info("progress:#bytes (~w\%) = ~p~n" [K Y])
 
 get_http
-  |Fun URL Opts Proxy Timeout ->
+  |Fun URL Opts Proxy Timeout|->
     case get_ip_port(URL Proxy)
-      |(ok (IP Port Url0)) ->
+      |(ok (IP Port Url0))|->
         Cmd = ["Get " Url0 " HTTP/1.0\r\n" Opts "\r\n"]
         get_http(Fun URL IP Port Cmd Opts Proxy Timeout)
-      |Other -> Other
-  |Fun URL IP Port Cmd Opts Proxy Timeout ->
+      |Other|-> Other
+  |Fun URL IP Port Cmd Opts Proxy Timeout|->
     info("Here connect:~p ~p~n" [IP Port])
     case gen_tcp.connect(IP Port [binary (packet 0)])
-      |(error Why) -> (error (socket_error Why))
-      |(ok Socket) ->
+      |(error Why)|-> (error (socket_error Why))
+      |(ok Socket)|->
         ok = gen_tcp.send(Socket Cmd)
         Return = case receive_header(Fun URL binary([]) Socket Timeout)
-          |(redo URL1) -> get_http(Fun URL1 Opts Proxy Timeout)
-          |Other       -> Other
+          |(redo URL1)|-> get_http(Fun URL1 Opts Proxy Timeout)
+          |Other      |-> Other
         ok = gen_tcp.close(Socket)
         Return
 
 get_ip_port|URL Proxy ->
   case Proxy
-    |noproxy -> case parse(URL)
-      |(error Why)         -> (error (badURL (Why URL)))
-      |(http IP Port URL0) -> (ok (IP Port Url0))
-      |Other               -> (error (unknown Other))
-    |(IP Port) -> (ok (IP Port URL))
+    |noproxy|-> case parse(URL)
+      |(error Why)        |-> (error (badURL (Why URL)))
+      |(http IP Port URL0)|-> (ok (IP Port Url0))
+      |Other              |-> (error (unknown Other))
+    |(IP Port)|-> (ok (IP Port URL))
 
 receive_header|Fun URL Bin Socket Timeout ->
   receive

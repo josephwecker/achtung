@@ -11,7 +11,62 @@
   "  # Only my_function with arity 2 and all versions of another_function\n"
   "@export my_function/2 another_function").
 
+% Post-Processes forms from the parser- doing a bunch of transformations etc.
+%
+% == Responsibilities ==
+% Attributes:
+%  - Create export attributes- based on existing attributes in expanded form
+%    and based on implied export on function definition forms.
+%  - Turn inline attribute into compile and expand etc.
+%  - Check and combine package & parameters attributes into module attribute
+%  - Create a module/module-name based on filename if none exists
+%  - Add file attribute
+%
+% Functions:
+%  - Regroup & see which functions are defined in the module for exporting etc.
+%  - Turn into proper function parse forms (remove any extra info)
+%  - Create ung_call function forms after scanning for records
+%
+% Overall:
+%  - Make sure the module declaration is on top of all attributes, and that all
+%    module attributes come before any function forms.
+%
+%
+% (filename) + @module + @package + @parameters --> @module (on top) + ModuleName
+% (filename) --> @file
+% (LastPos)  --> eof-parse-form on bottom
+%
+%
+
+
+
 forms(AST, LastPos, F) ->
+  %% 1. Basic reorganizing
+  %%    - attributes together
+  %%    - functions regrouped and available functions with their attributes
+  %%      returned
+  %%
+  %% 1. Analyze & regroup
+  %%    - record information
+  %%    - function attributes including:
+  %%      * export indications
+  %%      * inline indications
+  %%      * (eventually doc and specs etc.)
+  %%    - module + package + parameters info
+  %%    - file
+  %%
+  %%
+  %% N. Add ung_call & compiler-nowarn-unused-function directive
+  %%
+
+  %% get_attributes(package, AST)
+  %% get_attributes(module,  AST)
+  %% rm_attributes(package,  AST)
+  %% prepend_attribute(...,  AST)
+  %% append_attribute(...,   AST)
+  %%
+
+
   %AST2 = append_do_call(AST),
   {Attrs, Funs} = lists:partition(fun(V)->element(1,V) == attribute end, lists:flatten(AST)),
   {Funs2, Avail, Exports, _Inlines} = grouped_funs(Funs),

@@ -1,6 +1,9 @@
 ------------------- High level (all need to be awesome)
 - Standalone compiler with no/few dependencies
+  - debug-info on by default for better error messages
 - Shell
+  - shell menu via ctrl-d instead of just ctrl-c, with less scary name than
+    "abort"
 - Module with equivalent of:
   - parse_file -> Erlang parse tree
   - parse_string -> Erlang parse tree
@@ -10,7 +13,14 @@
   - file:consult -> List of terms
 - Manpages / html / pdf documentation
 - Commandline completion
-
+- Way-better edoc system and templates
+- Possibly automatic integration with:
+  - Dialyzer
+  - edoc
+  - eunit
+- Runtime
+  - Awesome runtime errors / traces
+  - Awesome debugging / profiling / etc.
 ------------------- Language
 
 Maybe triple back-ticks or something breaks into erlang?

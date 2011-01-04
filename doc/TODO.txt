@@ -1,8 +1,11 @@
 
 ------------------- Current --------
-[ ] - Refactor / simplify post-processing if possible
-[ ] - Move post-processing out of ungbar.peg and into ungbar_compile.erl (or
+[x] - Move post-processing out of ungbar.peg and into ungbar_compile.erl (or
       possibly even a new one- ungbar_post_process.erl or something)
+[~] - Refactor / simplify post-processing if possible
+[ ] - Allow attributes to continue for entire following block if it's there-
+      also figure out how to distinguish between term-based values vs. text
+      values.
 [ ] - Get ung_call basic working for Module/Function vars and for parameterized
       modules - get another chunk of tests to pass.
 

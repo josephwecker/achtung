@@ -14,6 +14,10 @@
 %  - Try and move recursive parts of do_call into its own function and trigger
 %    only when absolutely necessary (even though it won't look as clean)
 %
+% -----
+%  - Need to make sure that it's really essentially a macro! so inline it
+%    ourselves so that dialyzer isn't thrown off.
+%
 
 -module(trycall).
 

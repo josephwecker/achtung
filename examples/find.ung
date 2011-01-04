@@ -1,7 +1,7 @@
-@module: find
-@author: klacke@erix.ericsson.se
-@include_lib: kernel/include/file.hrl
-@export: [files/3]
+:module: find
+:author: klacke@erix.ericsson.se
+:include_lib: kernel/include/file.hrl
+:export: [files/3]
 
 ## Top is the Top directory where everything starts
 ## Re is a regular expression to match for (see module regexp)
@@ -15,6 +15,7 @@
 ## return a long list of (File, CompilationResult) tuples
 ## If an error occurs, (error, (File, Reason)) is returned 
 ## The Action fun is passed the full long file name as parameter
+
 
 files
   |Top Re Action ->
