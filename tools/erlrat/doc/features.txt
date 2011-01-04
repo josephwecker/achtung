@@ -1,0 +1,5 @@
+
+
+ - Multiple entry-points designated (e.g.-> module,form,expression,term)
+ - Allow appending to warning stack in parse-transform
+ - Allow error-transform clause that is given the error(s)

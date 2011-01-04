@@ -5,7 +5,7 @@
 
 % Parser function:
 % Params:   {Binary, Idx}, Position, State
-% Return:   {succ, NewIdx, NewPos, Output, NewState} | {fail, Pos, Reason}
+% Return:   {succ, NewIdx, NewPos, Output, NewState} | {fail, {Pos, Reason}}
 %   Reason -> {unexpected, FoundChar, Expecting}
 %           | {...
 %
@@ -29,18 +29,91 @@
 %
 % "funable" -> terminal expression that can be expressed in a single erlang function
 %
-% Terminals always expand at the next level
+% (Terminals always expand at the next level ?)
 %
-%
+% Always try to reduce multis (+/*) to a single accumulate/consume recursive
+% function.
+%   Example-
+%     given: NL<-'\r\n'/'\r'/'\n'
+%     given: COMMENT<-'#'(!NL .)* NL
+%     The COMMENT rule becomes: COMMENT<-'#' (!('\r\n'/'\r'/'\n') .)* NL
+%     The middle clause there is a multi- (In this case consumer because
+%       COMMENT is a tokened rule and therefore won't use the result).
+%     So the middle clause pseudo-code becomes:
+%       clauses(!'\r\n','\r','\n') !eof consume+recurse)
+%     Which
+%       
 %
 
+%  (types of expression)
+% rule -> existing rule
+% ord  -> ordered choice
+% seq  -> sequence
+%
+%  (literal terminals)
+% lit  -> string
+% char -> character class
+% any  -> any
+% 
+%   (expression attributes)
+% notp -> '!'
+% andp -> '&'
+% star -> '*'
+% plus -> '+'
+% opt  -> '?'
+% tok  -> returns token (name in all uppercase)
+% drop -> '{...}' dropped before parse transform
+%
+% ! and ? = no-op for grammar, but possibly used in parse-transform
+% & and ? = no-op for grammar, but possibly used in parse-transform
+% * and ? = *
+% + and ? = *
+% + = (one) and *
+%
+% GRAMMAR TRANSFORMS:
+%  1. Separate into main real-functions (entry-points, recurse-points) &
+%     lowerlevel atoms
+%  2. Reduce all *?->*, +?->*, +->seq(1*)
+%  3. Apply attributes (notp, andp, opt)
+%  4. Separate out cons/agg functions
+%
+% Need to be their own functions: cons/agg, entry-points, recurse-points
+% All else can be turned into a single function
+%
+% test(Input,ToMatch,Match,NoMatch)
+%   when ToMatch is lit == case clause
+%   when ToMatch is rule== last-result->case-expression
+%
+% test(Inp,Pos,Match,NoMatch)
+%
+% NL<-'\r\n'/'\r'/'\n'
+%
+% m('\r\n',consume_succ,
+%   m('\r',consume_succ,
+%     m('\n',consume_succ,fail)))
+%
+% !NL
+% m('\r\n',fail,
+%   m('\r',fail,
+%     m('\n',fail, consume_succ)))
+%
+% COMMENT
+% 
+%
+%
+% Arith:
+%   !ord(a,b,c) = seq(!a,!b,!c)  (because predicates behave abnormally- no consuming/accumulating)
+%   !ord(a,b,c) = inverse_ord(a,b,c)
+% 
+% create_[tok]_[ord|seq|one]_[z][
+% consume is implied when 'tok' and 'z' or 'p'
 
 
 % ------------------- Grammar line ----------------------
 % NL "newline" <- '\r\n' / '\r' / '\n'
 %
 % ------------------- PEG AST ---------------------------
-% NL/newline (pri|_|[(lit|_|"\r\n"),
+% NL/newline (ord|_|[(lit|_|"\r\n"),
 %                    (lit|_|"\r"),
 %                    (lit|_|"\n")])
 % 
@@ -53,7 +126,7 @@
 'EOF'({Bin,Idx},Pos,State) ->
   case Bin of
     <<_:Idx/bytes>> -> {succ, Idx, Pos,':EOF', State};
-    <<_:Idx/bytes,C:1/bytes,_/bytes>> -> {fail, Pos, {unexpected, C, "end of file"}, State};
+    <<_:Idx/bytes,C:1/bytes,_/bytes>> -> {fail, {Pos, {unexpected, C, "end of file"}}};
     _ -> {succ, Idx, Pos, ':EOF', State}
   end.
       
@@ -63,7 +136,7 @@
     <<_:Idx/bytes,$\r,_/bytes>> -> {succ, Idx+1, {Line+1,0}, $\n, State};
     <<_:Idx/bytes,$\n,_/bytes>> -> {succ, Idx+1, {Line+1,0}, $\n, State};
     <<_:Idx/bytes,C:1/bytes,_/bytes>> -> {succ, Idx+1, {Line,Col+1}, C, State};
-    _ -> {fail, Pos, {unexpected, eof, "anything"}, State}
+    _ -> {fail, {Pos, {unexpected, eof, "anything"}}}
   end.
 
 'NL'({Bin,Idx},{Line,Col}=Pos,State) ->
@@ -71,16 +144,16 @@
     <<_:Idx/bytes,$\r,$\n,_/bytes>> -> {succ, Idx+2, {Line+1,0}, ':NL', State};
     <<_:Idx/bytes,$\r,_/bytes>> -> {succ, Idx+1, {Line+1,0}, ':NL', State};
     <<_:Idx/bytes,$\n,_/bytes>> -> {succ, Idx+1, {Line+1,0}, ':NL', State};
-    <<_:Idx/bytes,C:1/bytes,_/bytes>> -> {fail, Pos, {unexpected, C, "newline"}, State};
-    _ -> {fail, Pos, {unexpected, eof, "newline"}, State}
+    <<_:Idx/bytes,C:1/bytes,_/bytes>> -> {fail, {Pos, {unexpected, C, "newline"}}};
+    _ -> {fail, {Pos, {unexpected, eof, "newline"}}}
   end.
 
 'SPACE'({Bin,Idx},{Line,Col}=Pos,State) ->
   case Bin of
     <<_:Idx/bytes,$ ,_/bytes>> -> {succ, Idx+1, {Line,Col+1}, ':SPACE', State};
     <<_:Idx/bytes,$\t,_/bytes>>-> {succ, Idx+1, {Line,Col+1}, ':SPACE', State};
-    <<_:Idx/bytes,C:1/bytes,_/bytes>> -> {fail, Pos, {unexpected, C, "space"}, State};
-    _ -> {fail, Pos, {unexpected, eof, "space"}, State}
+    <<_:Idx/bytes,C:1/bytes,_/bytes>> -> {fail, {Pos, {unexpected, C, "space"}}};
+    _ -> {fail, {Pos, {unexpected, eof, "space"}}}
   end.
 
 
@@ -106,25 +179,25 @@
         {succ, Idx3, Pos3, _, State3} -> {succ, Idx3, Pos3, ':COMMENT', State3};
         Fail -> Fail
       end;
-    <<_:Idx/bytes,C:1/bytes,_/bytes>> -> {fail, Pos, {unexpected, C, {"comment", "#"}},State};
-    _ -> {fail, Pos, {unexpected, eof, {"comment", "#"}}, State}
+    <<_:Idx/bytes,C:1/bytes,_/bytes>> -> {fail, {Pos, {unexpected, C,{"comment", "#"}}}};
+    _ -> {fail, {Pos, {unexpected, eof, {"comment", "#"}}}}
   end.
 
 'COMMENT:2'({Bin,Idx}=Inp,{Line,Col}=Pos,State) ->
   case 'NL'({Bin,Idx},Pos,State) of % succ/fail are inverted
     {succ,_,_,_,_} -> {succ, Idx, Pos, none, State};
-    {fail,_,_,_} ->
+    {fail,_} ->
       case 'any'(Inp,Pos,State) of
         {succ, Idx2, Pos2,_,State2} -> 'COMMENT:2'({Bin,Idx2},Pos2,State2);
-        {fail,_,_,_} -> {succ, Idx, Pos, none, State}
+        {fail,_} -> {succ, Idx, Pos, none, State}
       end
   end.
 
 % ------------------- Grammar line ----------------------
-% EOL        <- NL / COMMENT
+% EOL        <- NL / COMMENT    E`Expecting a newline here`
 %
 % ------------------- PEG AST ---------------------------
-% EOL (pri|_|[(rul|_|COMMENT)
+% EOL (ord|_|[(rul|_|COMMENT)
 %             (rul|_|NL)])
 %
 % ------------------- Generator function call -----------
@@ -134,9 +207,22 @@
 'EOL'({Bin,Idx}=Inp,{Line,Col}=Pos,State) ->
   case 'NL'(Inp,Pos,State) of
     {succ, Idx2, Pos2, _, State2} -> {succ, Idx2, Pos2, ':EOL', State2};
-    Fail ->
+    {fail, Fail1} ->
       case 'COMMENT'(Inp,Pos,State) of
         {succ, Idx2, Pos2, _, State2} -> {succ, Idx2, Pos2, ':EOL', State2};
-        % PUT POS BACK IN REASON TUPLE SO THEY CAN BE COMBINED HERE!
-        
+        {fail, Fail2} -> {fail, [Fail1,Fail2]}
+      end
+  end.
+
+% ------------------- Grammar line ----------------------
+% _S         <- (SPACE / EOL)*
+%
+% ------------------- PEG AST ---------------------------
+% _S (ord|*|[(rul|_|SPACE)
+%            (rul|_|EOL)])
+%
+% ------------------- Generator function call -----------
+% create_tok_
+%
+% ------------------- Final output ----------------------
 

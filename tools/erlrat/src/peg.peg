@@ -1,3 +1,7 @@
+#|
+  parsing_expr <- choice / sequence / primary
+|#
+
 # Heirarchical
 grammar    <- {_S} rule+ {EOF}
 rule       <- symbol {LEFTARROW} expression
@@ -38,7 +42,6 @@ OPEN       <- '('  _S
 CLOSE      <- ')'  _S
 DOT        <- '.'  _S
 EOF        <- !.
-
 _S         <- (SPACE / EOL)*
 SPACE      <- [ \t]                                        # FUNABLE:1
 EOL        <- COMMENT / NL
