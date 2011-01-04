@@ -71,11 +71,12 @@
 % + = (one) and *
 %
 % GRAMMAR TRANSFORMS:
-%  1. Separate into main real-functions (entry-points, recurse-points) &
+%  #. Separate into main real-functions (entry-points, recurse-points) &
 %     lowerlevel atoms
-%  2. Reduce all *?->*, +?->*, +->seq(1*)
-%  3. Apply attributes (notp, andp, opt)
-%  4. Separate out cons/agg functions
+%  #. Reduce all seq([],(seq,[])) to single sequence (automatic?)
+%  #. Reduce all *?->*, +?->*, +->seq(1*)
+%  #. Apply attributes (notp, andp, opt)
+%  #. Separate out cons/agg functions
 %
 % Need to be their own functions: cons/agg, entry-points, recurse-points
 % All else can be turned into a single function
