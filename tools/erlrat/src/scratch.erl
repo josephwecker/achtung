@@ -1,4 +1,4 @@
--module(woodrat).
+-module(erlrat).
 -compile(export_all).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

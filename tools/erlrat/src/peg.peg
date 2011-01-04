@@ -1,0 +1,57 @@
+# Heirarchical
+grammar    <- {_S} rule+ {EOF}
+rule       <- symbol {LEFTARROW} expression
+
+
+expression <- choice / sequence / primary
+#expression <- sequence ({SLASH} sequence)*
+#sequence   <- (prefix? (primary / discard) suffix?)*
+prefix     <- AND / NOT
+suffix     <- QUESTION / STAR / PLUS
+primary    <- symbol !{LEFTARROW}
+            / {OPEN} expression {CLOSE}
+            / literal
+            / class
+            / DOT
+discard    <- {DISC_LEFT} primary {DISC_RIGHT}
+
+# Lexical
+symbol     <- token_sym / normal_sym {_S}
+token_sym  <- [A-Z] [A-Z\\_-]*
+normal_sym <- [a-zA-Z0-9\\_-]+
+#literal    <- {["]} (!["] char)* {["]} {_S}
+            / {[']} (!['] char)* {[']} {_S}
+class      <- {'['} (!']' range)+ {']'} {_S}
+range      <- char {[-]} char / char
+char       <- '\\' [nrt] / {'\\'} . / .
+
+LEFTARROW  <- '<-' _S
+DISC_LEFT  <- '{'  _S
+DISC_RIGHT <- '}'  _S
+SLASH      <- '/'  _S
+AND        <- '&'  _S
+NOT        <- '!'  _S
+QUESTION   <- '?'  _S
+STAR       <- '*'  _S
+PLUS       <- '+'  _S
+OPEN       <- '('  _S
+CLOSE      <- ')'  _S
+DOT        <- '.'  _S
+EOF        <- !.
+
+_S         <- (SPACE / EOL)*
+SPACE      <- [ \t]                                        # FUNABLE:1
+EOL        <- COMMENT / NL
+NL         <- '\r\n' / '\r' / '\n'                         # FUNABLE:1
+COMMENT    <- '#' (!NL .)* NL                              # FUNABLE:2 (?)
+
+#|
+
+NL         <- '\r\n' / '\r' / '\n'                         # $litpri
+COMMENT    <- '#' (!NL .)* NL                              # FUNABLE:2 (?)
+COMMENT    <- '#'   (!('\r\n' / '\r' / '\n') .)*   ('\r\n' / '\r' / '\n')
+               $lit    $any-but-litpri                   $litpri
+EOL        <- COMMENT / NL
+SPACE      <- [ \t]                                        # FUNABLE:1
+
+|#
