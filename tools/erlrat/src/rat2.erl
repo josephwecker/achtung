@@ -98,15 +98,45 @@
 % create_tok_p_seq('COMMENT', [$#, clauses_consume_zero_or_more([{not, 'NL'}, any]), 'NL'])
 %
 % ------------------- Final output ----------------------
-'COMMENT:1'({Bin,Idx},{Line,Col}=Pos) ->
+'COMMENT'({Bin,Idx},{Line,Col}=Pos,State) ->
   case Bin of
     <<_:Idx/bytes,$#,_/bytes>> ->
-      {succ, Idx2, Pos2, none} = 'COMMENT:2'({Bin,Idx+1},{Line,Col+1}),  % Simplified because zero_or_more always succeeds
-      'COMMENT:3'({Bin,Idx2},Pos2);  % Simplified because last in the sequence- propagate result directly
-    <<_:Idx/bytes,C:1/bytes,_/bytes>> -> {fail, {unexpected, C, Pos, {"comment", "#"}}};
-    _ -> {fail, {unexpected, eof, Pos, {"comment", "#"}}}
+      {succ, Idx2, Pos2, none, State2} = 'COMMENT:2'({Bin,Idx+1},{Line,Col+1},State), % always succ
+      case 'NL'({Bin,Idx2},Pos2,State2) of
+        {succ, Idx3, Pos3, _, State3} -> {succ, Idx3, Pos3, ':COMMENT', State3};
+        Fail -> Fail
+      end;
+    <<_:Idx/bytes,C:1/bytes,_/bytes>> -> {fail, Pos, {unexpected, C, {"comment", "#"}},State};
+    _ -> {fail, Pos, {unexpected, eof, {"comment", "#"}}, State}
   end.
-'COMMENT:2'({Bin,Idx},{Line,Col}=Pos,S) ->
-  case 'NL'({Bin,Idx},Pos) of
-    {succ, Idx2, Pos2, _} -> {succ, Idx, Pos, none};
-    {fail, _} ->
+
+'COMMENT:2'({Bin,Idx}=Inp,{Line,Col}=Pos,State) ->
+  case 'NL'({Bin,Idx},Pos,State) of % succ/fail are inverted
+    {succ,_,_,_,_} -> {succ, Idx, Pos, none, State};
+    {fail,_,_,_} ->
+      case 'any'(Inp,Pos,State) of
+        {succ, Idx2, Pos2,_,State2} -> 'COMMENT:2'({Bin,Idx2},Pos2,State2);
+        {fail,_,_,_} -> {succ, Idx, Pos, none, State}
+      end
+  end.
+
+% ------------------- Grammar line ----------------------
+% EOL        <- NL / COMMENT
+%
+% ------------------- PEG AST ---------------------------
+% EOL (pri|_|[(rul|_|COMMENT)
+%             (rul|_|NL)])
+%
+% ------------------- Generator function call -----------
+% create_tok
+%
+% ------------------- Final output ----------------------
+'EOL'({Bin,Idx}=Inp,{Line,Col}=Pos,State) ->
+  case 'NL'(Inp,Pos,State) of
+    {succ, Idx2, Pos2, _, State2} -> {succ, Idx2, Pos2, ':EOL', State2};
+    Fail ->
+      case 'COMMENT'(Inp,Pos,State) of
+        {succ, Idx2, Pos2, _, State2} -> {succ, Idx2, Pos2, ':EOL', State2};
+        % PUT POS BACK IN REASON TUPLE SO THEY CAN BE COMBINED HERE!
+        
+
