@@ -4,3 +4,4 @@
 .attic/haxe/test/.build/
 bin/ungbarc
 grammar/*.erl
+ebin
