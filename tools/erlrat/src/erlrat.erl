@@ -13,7 +13,7 @@
   }).
 
 ast_to_matchfuns([]) ->
-  error_logger:error("Empty grammar- parse it yourself.",[]);
+  error_logger:error_msg("Empty grammar- parse it yourself.",[]);
 ast_to_matchfuns(AST) ->
   % Turn it into a dictionary
   {Defs, EntryPoints} = make_defs(AST, dict:new(), []),
@@ -22,7 +22,15 @@ ast_to_matchfuns(AST) ->
   % Scan for recursive rules & entry-points
   TopLevels = scan_tls(EPs, Defs),
   % Take toplevels and build full versions
-  Combined = [combine_rules(TL,Defs,TopLevels)||{TL,true}<-TopLevels:to_list],
+  %Combined = [combine_rules(TL,Defs,TopLevels)||{TL,true}<-TopLevels:to_list()],
+  Combined = combine_rules('%object',Defs,TopLevels),
+  %Bin = term_to_binary(Combined),
+  %file:write_file("output.bin",Bin).
+
+  % TODO: YOU ARE HERE - creating stuff that's way too big.  Either figure out
+  % automatically some nice additional top-levels or jump in and pull out the
+  % star clauses, or make all non-token rules top-level...
+
   Combined.
 
 % Create general purpose lookup dictionary for the rules
@@ -49,7 +57,7 @@ scan_for_tops(Defs,{rule,_,Name},Seen,Tops) ->
         true -> Tops:store(Name,true);
         false ->
           case Defs:find(Name) of
-            error -> error_logger:error("Couldn't find a definition for ~p",[Name]);
+            error -> error_logger:error_msg("Couldn't find a definition for ~p",[Name]);
             {ok, {_,_,Body}} -> scan_for_tops(Defs,Body,[Name|Seen],Tops)
           end
       end
@@ -59,33 +67,28 @@ scan_for_tops(Defs,{_,_,Exprs},Seen,Tops) when is_list(Exprs) ->
     Tops, Exprs);
 scan_for_tops(_,_,_,Tops) -> Tops.
 
-
 combine_rules(TLName, Defs, TLs) ->
-  {TrP,TrE,Body} = Defs:fetch(TLName),
-  {TLName, match_form(Body,TrP,TrE,Defs,TLs)}.
+  {_TrP,_TrE,Body} = Defs:fetch(TLName),
+  {TLName, mform(Body,Defs,TLs,succ,fail)}.
 
-% Returns:
-% 
-
-% any
-match_form({any,Attrs},TrP,TrE,_,_) ->
-  {match,{any,Attrs},{succ,TrP},{fail,TrE}};
-
-% lit (literal strings)
-match_form({lit,Attrs,Str},TrP,TrE,_,_) ->
-  {match,{Str,Attrs},{succ,TrP},{fail,TrE}};
-
-% char (list of character ranges e.g., [A-Z_])
-match_form({char,Attrs,[]},TrP,TrE,_,_) -> {fail,TrE};
-match_form({char,Attrs,[Range|R]},TrP,TrE,_,_) ->
-  {match,{Range,Attrs},{succ,TrP},
-    match_form({char,[],R},TrP,TrE,_,_)};
-
-% ord (ordered choices)
-match_form({ord,Attrs,[]},TrP,TrE,Defs,TLs) -> fail;
-match_form({ord,Attrs,[Choice|R]},TrP,TrE,Defs,TLs) ->
-
-
-
-
-
+% mform(Body, Defs, TopLevels, Succ, Fail) -> {m,Type,Succ,Fail}
+mform({any,Attrs},_,_,S,F)             -> {m,{lit,Attrs,any},S,F};
+mform({lit,_,_}=L,_,_,S,F)             -> {m,L,S,F};
+mform({char,_,[]},_,_,_S,F)            -> F;
+mform({char,Attrs,[Range|R]},D,T,S,F)  -> {m,{lit,Attrs,Range},S,mform({char,[],R},D,T,S,F)};
+mform({ord,_,[]},_,_,_S,F)             -> F;
+mform({ord,_Attrs,[Choice|R]},D,T,S,F) ->
+  % TODO: need to process Attrs here
+  mform(Choice,D,T,S,mform({ord,[],R},D,T,S,F));
+mform({seq,_,[]},_,_,S,_F)             -> S;
+mform({seq,_Attrs,[Expr|R]},D,T,S,F)   ->
+  % TODO: need to process Attrs here
+  mform(Expr,D,T,mform({seq,[],R},D,T,S,F),F);
+mform({rule,Attrs,N},D,T,S,F)          ->
+  case T:is_key(N) of
+    true -> {m,{redirect,Attrs,N},S,F};
+    false ->
+      % TODO: if TrP or TrE are not empty- have them modify S&F
+      {_TrP,_TrE,Body} = D:fetch(N),
+      mform(Body,D,T,S,F)
+  end.
