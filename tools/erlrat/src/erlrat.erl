@@ -3,7 +3,7 @@
 
 
 -record(attrs, {
-    notp=false,  % 
+    notp=false,
     andp=false,
     star=false,
     plus=false,
@@ -65,26 +65,26 @@ combine_rules(TLName, Defs, TLs) ->
   {TLName, match_form(Body,TrP,TrE,Defs,TLs)}.
 
 % Returns:
-%  {match, Attrs, ParseTrans, ErrorTrans, Succ, Fail}
 % 
 
 % any
 match_form({any,Attrs},TrP,TrE,_,_) ->
-  {match,{any,Attrs},TrP,TrE,succ,fail};
+  {match,{any,Attrs},{succ,TrP},{fail,TrE}};
 
 % lit (literal strings)
 match_form({lit,Attrs,Str},TrP,TrE,_,_) ->
-  {match,{Str,Attrs},TrP,TrE,succ,fail};
+  {match,{Str,Attrs},{succ,TrP},{fail,TrE}};
 
 % char (list of character ranges e.g., [A-Z_])
-match_form({char,Attrs,[]},TrP,TrE,_,_) -> fail;
+match_form({char,Attrs,[]},TrP,TrE,_,_) -> {fail,TrE};
 match_form({char,Attrs,[Range|R]},TrP,TrE,_,_) ->
-  {match,{Range,Attrs},TrP,TrE,succ,
+  {match,{Range,Attrs},{succ,TrP},
     match_form({char,[],R},TrP,TrE,_,_)};
 
 % ord (ordered choices)
 match_form({ord,Attrs,[]},TrP,TrE,Defs,TLs) -> fail;
 match_form({ord,Attrs,[Choice|R]},TrP,TrE,Defs,TLs) ->
+
 
 
 
