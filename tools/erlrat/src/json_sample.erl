@@ -62,7 +62,7 @@ sample_peg_ast() ->
   % >array      <- '[' s? json_value (s? ',' s? json_value)* s? ']'
   %              / '[' s? ']' `array()`
    {{'ENTRY','array'},"array()",[],
-     {opt,[],[{seq,[],[{lit,[],"["},
+     {ord,[],[{seq,[],[{lit,[],"["},
                        {rule,[opt],'s'},
                        {rule,[],json_value},
                        {seq,[star],[{rule,[opt],'s'},
