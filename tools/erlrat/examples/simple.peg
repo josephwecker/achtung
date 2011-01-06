@@ -1,8 +1,8 @@
 #
 #
 
-lines <- line*
-line  <- (!nl .)* _nl
+lines <- line*                       -> {lines, $_}
+line  <- (!nl .)* _nl                -> $1[$2]
 nl    <- "\r\n" / "\n" / "\r" / !.
 
 # vim: set noai filetype=ungbar textwidth=79:

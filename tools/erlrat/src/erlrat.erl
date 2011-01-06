@@ -30,6 +30,12 @@ ast_to_matchfuns(AST) ->
   % TODO: YOU ARE HERE - creating stuff that's way too big.  Either figure out
   % automatically some nice additional top-levels or jump in and pull out the
   % star clauses, or make all non-token rules top-level...
+  %
+  %  * Star expressions
+  %  * Any rule that has a parse transform
+  %
+  %  ... or
+  %  maybe I should look at transformations I want to make first...
 
   Combined.
 
