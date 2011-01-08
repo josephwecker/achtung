@@ -1,0 +1,129 @@
+%------------ Grammar -------------------------------------------------------|
+peg_grammar   <- _S rule+ EOF                                           `?p2`;
+rule          <- ENTRY? nonterm _S DEFINE _S expr _S    `c_rule(?p1,?p2,?p6)`;
+
+expr          <- ordered / sequence / primary                               ~;
+
+ordered       <- alt (_S ORD alt)+              `{ord,?noattr,[?p1|?i(2,3)]}`;
+alt           <- sequence / primary                                         ~;
+sequence      <- primary primary+                   `{seq,?noattr,[?p1|?p2]}`;
+primary       <- prefix* atomic suffix*              `c_primary(?p1,?p2,?p3)`;
+prefix        <- notp / andp                                                ~;
+suffix        <- star / plus / opt                                          ~;
+
+atomic        <- _S (call / paren_expr / literal / charclass / any) _S  `?p2`;
+%atomic        <- _S (call / paren_expr / literal / charclass / any) _S  `?p2`;
+call          <- nonterm !(_S DEFINE)               `{call,?noattr,?e2(?p1)}`;
+any           <- "."                                      `{any,?noattr,any}`;
+paren_expr    <- GRP_OPEN expr GRP_CLOSE                                `?p2`;
+
+nonterm       <- token_sym / normal_sym                                     ~;
+token_sym     <- [A-Z] [A-Z\\_-]*                 `{token,?scan([$',?N,$'])}`;
+normal_sym    <- [a-zA-Z0-9\\_-]+                `{normal,?scan([$',?N,$'])}`;
+
+literal       <- singlequoted / doublequoted            `{lit,?noattr,?scan}`;
+singlequoted  <- "'" not_squot* "'"                         `["\"",?p2,"\""]`;
+doublequoted  <- '"' not_dquot* '"'                                         ~;
+not_squot     <- !"'" ("\\" . / !"\\" .)                                `?p2`;
+not_dquot     <- !'"' ("\\" . / !"\\" .)                                `?p2`;
+
+charclass     <- "[" range* char* "]"               `{char,?noattr,?p2++?p3}`;
+range         <- char "-" char                                    `{?p1,?p3}`;
+char          <- (&. char_escapes) / (!"]" .)                           `?p2`;
+char_escapes  <- "\\^" [a-zA-Z] / "\\" o (o o?)? / "\\x{" h+ "}" /
+                 "\\x" h h / "\\" .                                         ~;
+o             <- [0-7]                                                      ~;
+h             <- [0-9a-fA-F]                                                ~;
+
+%------------ Lexical -------------------------------------------------------|
+notp          <- "!" _S                                                `notp`;
+andp          <- "&" _S                                                `andp`;
+star          <- "*" _S                                                `star`;
+plus          <- "+" _S                                                `plus`;
+opt           <- "?" _S                                                 `opt`;
+
+GRP_OPEN      <- "(" _S                                          `'GRP_OPEN'`;
+GRP_CLOSE     <- ")" _S                                         `'GRP_CLOSE'`;
+ORD           <- "/" _S                                               `'ORD'`;
+DEFINE        <- "<-" _S                                           `'DEFINE'`;
+ENTRY         <- "<" _S                                             `'ENTRY'`;
+EOF           <- !.                                                   `'EOF'`;
+_S            <- S?                                                    `'_S'`; % Optional whitespace
+S             <- (SPACE / NL)+                                          `'S'`; % At least one whitespace/newline
+NL            <- COMMENT? NEWLINE                                      `'NL'`; % End of a line
+
+% These build up the whiteSPACE rules above and should (I think) never be used
+% except in those rules just above.
+NEWLINE       <- "\n" / "\r\n" / "\r"                             `'NEWLINE'`;
+SPACE         <- [ \t] / ML_COMMENT                                 `'SPACE'`;
+COMMENT       <- "#" (!NEWLINE .)* &NEWLINE                       `'COMMENT'`;
+ML_INNER      <- ML_COMMENT / (!"#|" !"|#" .)+                   `'ML_INNER'`;
+ML_COMMENT    <- "#|" ML_INNER* "|#"                           `'ML_COMMENT'`;
+
+%------------ Transforms / Helpers ------------------------------------------|
+`
+% [{rule,Name,RAttr,Body}]
+% Body ::{Type,{Pref,Suff,MiscAttr},Value}
+%  Type :: ref|ord|seq|lit|char|any
+%  Pref :: notp|andp
+%  Suff :: star|plus|opt
+%  MiscAttr :: [{Att,Val}]
+%         Att :: entry -> true|false
+%                drop  -> true|false
+%
+%                strans -> ParseTransform (success)
+%                ftrans -> ErrorTransform (fail)
+
+-define(noattr, {[],[],[]}).
+
+c_primary(Prefs, {Type,{CPrefs,CSuffs,CAttrs},Body}, Suffs) ->
+  {Type, {Prefs++CPrefs,Suffs++CSuffs,CAttrs}, Body}.
+
+c_rule('ENTRY',{token, Name},Expr) -> {rule,Name,[entry,orig,token],Expr};
+c_rule(_,{token, Name},Expr)       -> {rule,Name,[orig,token],Expr};
+c_rule(_,{normal, Name},Expr)      -> {rule,Name,[orig],Expr}.
+
+
+%------------ Misc Helpers --------------------------------------------------|
+
+-define(N, Node).
+-define(pos, line(Index)).
+-define(e1, ?e1(?N)).
+-define(e2, ?e2(?N)).
+-define(e3, ?e3(?N)).
+-define(p1, ?p1(?N)).
+-define(p2, ?p2(?N)).
+-define(p3, ?p3(?N)).
+-define(p4, ?p4(?N)).
+-define(p5, ?p5(?N)).
+-define(p6, ?p6(?N)).
+-define(flat, ?flat(?N)).
+-define(rev, ?rev(?N)).
+-define(e1(T), element(1,T)).
+-define(e2(T), element(2,T)).
+-define(e3(T), element(3,T)).
+-define(p1(L), lnth(1,L)).
+-define(p2(L), lnth(2,L)).
+-define(p3(L), lnth(3,L)).
+-define(p4(L), lnth(4,L)).
+-define(p5(L), lnth(5,L)).
+-define(p6(L), lnth(6,L)).
+-define(i(OPos,IPos), [lnth(IPos, IL)||IL<-lnth(OPos,?N)]).
+-define(flat(L), lists:flatten(L)).
+-define(rev(L), lists:reverse(L)).
+-define(scan,?scan(?N)).
+-define(scan(V), % For simple terms that the erlang scanner can handle (most atomic literals)
+  case erl_scan:string(?flat(V),?pos) of
+    {ok, [One], _} -> element(3,One);
+    {ok, Tokens, _} ->
+      {ok, Parsed} = erl_parse:parse_term(Tokens ++ [{dot,?pos}]),
+      Abs = erl_parse:abstract(Parsed);
+    Err -> throw(Err)
+  end).
+lnth(Pos, L) ->
+  case (catch lists:nth(Pos,L)) of
+    {'EXIT',_}->[];
+    O->O
+  end.
+% vim: set noai filetype=erlang textwidth=100:
+`
