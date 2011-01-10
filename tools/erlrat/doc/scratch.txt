@@ -48,7 +48,11 @@ seq  -> sequence
  (literal terminals)
 lit  -> string
 char -> character class
+
+ (special atomics)
 any  -> any
+eof  -> !any
+emp  -> &(any/eof) # match empty string
 
   (expression attributes)
 notp -> '!'

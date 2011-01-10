@@ -1,19 +1,165 @@
 
-{ord/seq,Attr,[OneExpr]} -> OneExpr(MergedAttrs)
-!any -> eof
 
+Every production
+ - consume version (for inside predicates and tokens)
+ - aggregate version (everything else)
+
+
+Goal
+ - remove pluses (while normalizing attributes)
+ - un_alias
+ - collapse ord/seqs (recurse somehow) (while normalizing attributes)
+ - collapse stars, predicates, and sequences as much as possible
+ - Separate out all predicate and multi clauses
+ - 
+
+
+(play example- thinking about when memoization is really necessary)
+a <- b / c / d
+b <- e / f / g
+c <- e / f / h
+d <- i / f / g
+
+e <- '-2'
+f <- '-3'
+g <- '-4'
+h <- '-5'
+i <- e
+
+input: '-2-3-5'
+
+<a>[0] -> b
+<b>[0] -> e
+<e>[0] -> succ, succ -> succ
+<b>[2] -> f
+<f>[2] -> succ, succ -> succ
+<b>[4] -> g
+<g>[4] -> succ, fail -> fail
+<b>[4] -> fail
+BACK
+<a>[0] -> c
+<c>[0] -> e
+SHOULD BE MEM
+<e>[0] -> succ, succ -> succ
+<c>[2] -> f
+SHOULD BE MEM
+<f>[2] -> succ, succ -> succ
+<c>[4] -> h
+<h>[4] -> succ, succ -> succ
+<c>[6] -> succ
+<a>[6] -> succ
+
+a <- b / c / d
+b <- e / f / g
+c <- e / f / h
+d <- i / f / g
+e <- '-2'
+f <- '-3'
+g <- '-4'
+h <- '-5'
+i <- e
+---------- unalias
+a <- b / c / d
+b <- e / f / g
+c <- e / f / h
+d <- e / f / g
+e <- '-2'
+f <- '-3'
+g <- '-4'
+h <- '-5'
+---------- inline_terminals
+a <- b / c / d
+b <- '-2' / '-3' / '-4'
+c <- '-2' / '-3' / '-5'
+d <- '-2' / '-3' / '-4'
+---------- inline again
+a <- ('-2' / '-3' / '-4') / ('-2' / '-3' / '-5') / ('-2' / '-3' / '-4')
+---------- ord-simplify (???)
+a <- ('-2' / '-3') / ('-4' / '-5')
+
+
+--------------------- lit_to_char
+e <- [2]
+f <- [3]
+g <- [4]
+h <- [5]
+
+
+-------
+
+a <- b ':' c
+b <- (!':' .)*
+c <- .*
+
+=== factor_out_not
+!e1 !e2 = !(e1 / e2)  (because it doesn't consume)
+!e1 / !e2 = !(e1 / e2)
+
+=== no_
+
+=== collapse_list
+{ord/seq,Attr,[OneExpr]} -> OneExpr(MergedAttrs)
+
+e1 / e2 / (e3 / e4) = e1 / e2 / e3 / e4
+
+e1 e2 (e3 e4) = e1 e2 e3 e4
+(TODO: figure out how to handle context and how the transforms change with
+different attributes)
+
+=== same_choice (remove duplicate)
+e1 / e1 = e1
+e1 / e2 / e1 = e1 / e2
+
+=== lit_to_char (so it can be combined w/ other chars)
+'l' = [l]
+
+=== chars_to_lit
+[a] [s] [d] [f] = 'asdf'
+
+=== combine_chars
+charset1 / charset2 = combine(charset1,charset2)
+charset1 / charset2 / e2 = combine(charset1,charset2) / e2
+
+=== factor_out
 (e1 e2 / e1 e3 / e1 e4) = e1 (e2 / e3 / e4)
 
-!(e1 / e2) = !e1 !e2
+e1 / e2 / (e3 / e4) = e1 / e2 / e3 / e4
+e1 (e2 e3) = e1 e2 e3
 
+(e1 / e2) / (e1 / e3) = e1 / (e2 / e3)    # ********* Important - eliminates need for memoization
+
+! & * -> specialized implementations
+
+
+=== no_plus
 e1+ = e1 e1*
 
-e1? = e1 / ''
-
+=== extend_multi
 e1(*|+) e1(any) = e1(*|+)
+
+=== unalias
+r1 <- r2; r2 <- e1 = r1 <- e1
+(references to r2 at that point wrap r2's parse/error transforms around r1's)
+
+===== (Misc - don't know if they'll help)
+
+
+=== eof
+!any -> eof
+!eof -> any
+
+=== no_opt
+e1? = e1 / ''
 
 e1 <- e1 e2  =  e3 <- e1* e2  (???)
 
 fold duplicates
 eliminate dead rules
-direct-left-recursion as 
+direct-left-recursion as multi?
+
+
+-------------
+BIG:
+- determine if an ord can be rearranged safely and rearrange in order to enable
+  other simpler optimizations.
+
