@@ -1,3 +1,14 @@
+Parser transform:
+ - Position variables (inc. inner and scan)
+ - Labeled variables  (combined as in find(flat([$_])))
+ - Rules as variables
+
+AutoAST:
+ - Ignore tokens, literals, and 1-char characterclasses
+ - Groups of ignored stuff is ignored   a -> b c d  b -> 
+ - Rule becomes tuple head
+
+
 Parser function:
 Params:   {Binary, Idx}, Position, State
 Return:   {succ, NewIdx, NewPos, Output, NewState} | {fail, {Pos, Reason}}

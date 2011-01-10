@@ -1,6 +1,6 @@
-
+"kfewj \x{f32} oh \x3fhey\7039\"3 209"
 <json_value <- _S (object/array/string/number/true/false/null) S?
-object      <- '{' S? pair (S? ',' S? pair)* S? '}'
+object      <- '{'>S?>pair>(S? ',' S? pair)* S? '}'
              / '{' S? '}'
 pair        <- S? string S? ':' S? json_value S?
 array      <- '[' S? json_value (S? ',' S? json_value)* S? ']'

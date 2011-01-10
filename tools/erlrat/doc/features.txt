@@ -8,3 +8,7 @@
  - parameterized rules (like a preprocessor to abstract certain patterns- use
    for example to have one string-matcher that is given single-quotes or
    double-quotes.
+ 
+ - convention over configuration for parse and error transforms- simply looks
+   for a fun with the same name as the rule (and checks to see if it handles a
+   "fail" case as well)
