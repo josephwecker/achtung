@@ -1,4 +1,5 @@
-
+ - Only memoize when it's truly necessary, and remove memoized entry at the
+   earliest possible time.
 
  - Multiple entry-points designated (e.g.-> module,form,expression,term)
  - Allow appending to warning stack in parse-transform

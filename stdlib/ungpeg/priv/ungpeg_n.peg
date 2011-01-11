@@ -37,7 +37,15 @@ o             <- [0-7]                                                      ~;
 h             <- [0-9a-fA-F]                                                ~;
 
 transform     <- TRANS transexpr                                        `?p2`;
-transexpr     <- '' ~;
+transexpr     <- _S list / tuple / term                                 `?p2`;
+list          <- empty_list / delim_list                                    ~;
+empty_list    <- '[' _S ']'                                              `[]`;
+delim_list    <- '[' _S transexpr (_S transexpr)* _S ']'      `[?p3|?i(4,2)]`;
+tuple         <- empty_tuple / delim_tuple                                  ~;
+empty_tuple   <- '(' _S ')'                                              `{}`;
+delim_tuple   <- '(' _S transexpr (_S transexpr)* _S ')'  `list_to_tuple([?p3|?i(4,2)])`;
+term          <- pos_var / named_var / fun_call / atom                      ~;
+% TODO: you are here
 
 %------------ Lexical -------------------------------------------------------|
 notp          <- "!" _S                                                `notp`;
