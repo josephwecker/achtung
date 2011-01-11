@@ -1,5 +1,3 @@
-# fjeiwo
-#jf iewo
-lines <- line*
-line  <- (!nl .)* _nl
-<nl    <- "\r\n" / "\n" / "\r" / !.
+:lines <- line*         -> $1
+line   <- (!NL any)* NL -> $any
+NL     <- "\r\n"/"\n"/"\r"/eof

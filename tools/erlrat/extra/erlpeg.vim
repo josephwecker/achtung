@@ -18,10 +18,12 @@ syn match   erlpegOctNum          /[0-7]\{1,3\}/ contained
 syn match   erlpegDLitDelim       /\\\@!"/ contained
 syn match   erlpegSLitDelim       /\\\@!'/ contained
 
-syn match   erlpegToken           /\<[A-Z][a-zA-Z_]*/
-syn match   erlpegRuleRef         /\<[a-z][a-zA-Z_]*/
-syn match   erlpegOptToken        /\<[A-Z][a-zA-Z_]*?/
-syn match   erlpegOptRuleRef      /\<[a-z][a-zA-Z_]*?/
+
+syn match   erlpegToken           /\<[A-Z][a-zA-Z_:]*/ contains=erlpegTaggedRule
+syn match   erlpegRuleRef         /\<[a-z][a-zA-Z_:]*/ contains=erlpegTaggedRule
+syn match   erlpegOptToken        /\<[A-Z][a-zA-Z_:]*?/ contains=erlpegTaggedRule
+syn match   erlpegOptRuleRef      /\<[a-z][a-zA-Z_:]*?/ contains=erlpegTaggedRule
+syn match   erlpegTaggedRule      /:[a-zA-Z_]*/ contained
 
 " Rule
 syn match   erlpegEntryRule       /\(^\|;\)\s*:[a-z][a-zA-Z_]*/ contains=erlpegEntryDelim
@@ -50,14 +52,11 @@ syn match erlpegRangeDelim /-/ contained
 syn match erlpegRangeSpec1 /\[/ contained
 syn match erlpegRangeSpec2 /\]/ contained
 
-" TODO:
-" transforms
-"   position vars
-"   named vars
-"   tagged vars
-"   lists
-"   tuples
-"   transform calls
+syn match erlpegTransform /->.*/ contains=erlpegTransMacro,erlpegTransPosMacro,erlpegTransAtom,erlpegTransDelim
+syn match erlpegTransAtom  /[a-zA-Z_]*/ contained
+syn match erlpegTransMacro /\$[A-Za-z_]\+/ contained
+syn match erlpegTransPosMacro /\$[1-9][0-9]*/ contained
+syn match erlpegTransDelim    /->/ contained
 
 hi link erlpegComment             Comment
 hi link erlpegBlockComment        Comment
@@ -93,5 +92,11 @@ hi link erlpegRangeSpec1          Special
 hi link erlpegRangeSpec2          Special
 hi link erlpegDLitDelim           Delimiter
 hi link erlpegSLitDelim           Delimiter
+hi link erlpegTaggedRule          Comment
+hi link erlpegTransform           Delimiter
+hi link erlpegTransMacro          Macro
+hi link erlpegTransPosMacro       Include
+hi link erlpegTransAtom           Constant
+hi link erlpegTransDelim          Exception
 
 let b:current_syntax = "erlpeg"

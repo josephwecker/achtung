@@ -1,0 +1,5 @@
+[D] Syn highlight for proposed parse-transform stuff
+[ ] Change parser etc. so that new entry-point marker is ':'
+[ ] Change parser etc. so that it allows optional rule delimiter ';'
+[ ] Ability to tag items
+[ ] In transformer, swap out "orig" for all relevant tags before inlining
