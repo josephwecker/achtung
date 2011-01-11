@@ -1,6 +1,6 @@
 %------------ Grammar -------------------------------------------------------|
 peg_grammar   <- _S rule+ EOF                                           `?p2`;
-rule          <- ENTRY? nonterm _S DEFINE _S expr _S transform `c_rule(?p1,?p2,?p6,?p8)`;
+rule          <- ENTRY? nonterm _S DEFINE _S expr _S transform? _S `c_rule(?p1,?p2,?p6,?p8)`;
 
 expr          <- ordered / sequence / primary                               ~;
 
@@ -17,7 +17,7 @@ paren_expr    <- GRP_OPEN expr GRP_CLOSE                                `?p2`;
 call          <- nonterm !(_S DEFINE)               `{call,?noattr,?e2(?p1)}`;
 any           <- "."                                      `{any,?noattr,any}`;
 
-nonterm       <- token_sym / normal_sym                                     ~;
+nonterm       <- !TRANS (token_sym / normal_sym)                        `?p2`;
 token_sym     <- [A-Z] [A-Z\\_-]*                 `{token,?scan([$',?N,$'])}`;
 normal_sym    <- [a-zA-Z0-9\\_-]+                `{normal,?scan([$',?N,$'])}`;
 
@@ -35,7 +35,7 @@ char_escapes  <- "\\^" [a-zA-Z] / "\\" o (o o?)? / "\\x{" h+ "}" /
 o             <- [0-7]                                                      ~;
 h             <- [0-9a-fA-F]                                                ~;
 
-transform     <- '->' ~;
+transform     <- TRANS ~;
 
 %------------ Lexical -------------------------------------------------------|
 notp          <- "!" _S                                                `notp`;
@@ -49,6 +49,7 @@ GRP_OPEN      <- "(" _S                                          `'GRP_OPEN'`;
 GRP_CLOSE     <- ")" _S                                         `'GRP_CLOSE'`;
 ORD           <- "/" _S                                               `'ORD'`;
 DEFINE        <- "<-" _S                                           `'DEFINE'`;
+TRANS         <- "->" _S                                            `'TRANS'`;
 ENTRY         <- "<" _S                                             `'ENTRY'`;
 EOF           <- !.                                                   `'EOF'`;
 _S            <- S?                                                    `'_S'`; % Optional whitespace
@@ -88,7 +89,7 @@ c_rule(Entry,{NType,Name},Expr,Trans) ->
   OrigProp  = {orig, Name},
   TokProp   = case NType of token -> token; _ -> [] end,
   TransProp = case Trans of [] -> []; _ -> {trans,Trans} end,
-  {rule, Name, ?flat(EntryProp,OrigProp,TokProp,TransProp), Expr}.
+  {rule, Name, lists:flatten([EntryProp,OrigProp,TokProp,TransProp]), Expr}.
 
 
 
@@ -105,6 +106,8 @@ c_rule(Entry,{NType,Name},Expr,Trans) ->
 -define(p4, ?p4(?N)).
 -define(p5, ?p5(?N)).
 -define(p6, ?p6(?N)).
+-define(p7, ?p7(?N)).
+-define(p8, ?p8(?N)).
 -define(flat, ?flat(?N)).
 -define(rev, ?rev(?N)).
 -define(e1(T), element(1,T)).
@@ -116,6 +119,8 @@ c_rule(Entry,{NType,Name},Expr,Trans) ->
 -define(p4(L), lnth(4,L)).
 -define(p5(L), lnth(5,L)).
 -define(p6(L), lnth(6,L)).
+-define(p7(L), lnth(7,L)).
+-define(p8(L), lnth(8,L)).
 -define(i(OPos,IPos), [lnth(IPos, IL)||IL<-lnth(OPos,?N)]).
 -define(flat(L), lists:flatten(L)).
 -define(rev(L), lists:reverse(L)).

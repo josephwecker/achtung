@@ -5,4 +5,4 @@
 bin/ungbarc
 grammar/*.erl
 ebin
-tools/*/priv/*.erl
+stdlib/*/priv/*.erl

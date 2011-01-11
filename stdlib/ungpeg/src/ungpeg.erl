@@ -2,8 +2,8 @@
 -export([file/1, parse/1, optimize/1]).
 
 
-file(FName) -> optimize(peg_neotoma:file(FName)).
-parse(Txt) when is_list(Txt) -> optimize(peg_neotoma:parse(Txt)).
+file(FName) -> optimize(ungpeg_n:file(FName)).
+parse(Txt) when is_list(Txt) -> optimize(ungpeg_n:parse(Txt)).
 
 optimize([]) ->
   error_logger:error_msg("Empty grammar- parse it yourself.",[]);
