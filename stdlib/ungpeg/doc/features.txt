@@ -5,6 +5,10 @@
  - Allow error-transform clause that is given the error(s)
  - pegexps (peg expressions - single line pegs sharing some syntax w/ regex's
    for easily doing things like nested parens etc.)
+   # Specials: (,),.,%,/,\,*,+
+   # Str = p-/"(!"(\\\\/\\"/.))*"/- # String with escapes
+   # Par = p-/\((!\)(./%1))*\)/- # Matched parenthasese
+
  - parameterized rules (like a preprocessor to abstract certain patterns- use
    for example to have one string-matcher that is given single-quotes or
    double-quotes.
