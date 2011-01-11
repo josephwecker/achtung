@@ -1,6 +1,7 @@
 %------------ Grammar -------------------------------------------------------|
 peg_grammar   <- _S rule+ EOF                                           `?p2`;
-rule          <- ENTRY? nonterm _S DEFINE _S expr _S transform? _S `c_rule(?p1,?p2,?p6,?p8)`;
+rule          <- ENTRY? nonterm _S DEFINE _S expr _S
+                 transform? _S RULE_DELIM?          `c_rule(?p1,?p2,?p6,?p8)`;
 
 expr          <- ordered / sequence / primary                               ~;
 
@@ -35,7 +36,8 @@ char_escapes  <- "\\^" [a-zA-Z] / "\\" o (o o?)? / "\\x{" h+ "}" /
 o             <- [0-7]                                                      ~;
 h             <- [0-9a-fA-F]                                                ~;
 
-transform     <- TRANS ~;
+transform     <- TRANS transexpr                                        `?p2`;
+transexpr     <- '' ~;
 
 %------------ Lexical -------------------------------------------------------|
 notp          <- "!" _S                                                `notp`;
@@ -50,7 +52,8 @@ GRP_CLOSE     <- ")" _S                                         `'GRP_CLOSE'`;
 ORD           <- "/" _S                                               `'ORD'`;
 DEFINE        <- "<-" _S                                           `'DEFINE'`;
 TRANS         <- "->" _S                                            `'TRANS'`;
-ENTRY         <- "<" _S                                             `'ENTRY'`;
+ENTRY         <- ":" _S                                             `'ENTRY'`;
+RULE_DELIM    <- ";" _S                                        `'RULE_DELIM'`;
 EOF           <- !.                                                   `'EOF'`;
 _S            <- S?                                                    `'_S'`; % Optional whitespace
 S             <- (SPACE / NL)+                                          `'S'`; % At least one whitespace/newline
@@ -85,11 +88,10 @@ c_primary(Prefs, {Type,CAttrs,Body}, Suffs) ->
   {Type, Prefs++CAttrs++Suffs, Body}.
 
 c_rule(Entry,{NType,Name},Expr,Trans) ->
-  EntryProp = case Entry of 'ENTRY' -> entry; _ -> [] end,
-  OrigProp  = {orig, Name},
+  OrigProp  = case Entry of 'ENTRY' -> {entry,Name}; _ -> {orig,Name} end,
   TokProp   = case NType of token -> token; _ -> [] end,
   TransProp = case Trans of [] -> []; _ -> {trans,Trans} end,
-  {rule, Name, lists:flatten([EntryProp,OrigProp,TokProp,TransProp]), Expr}.
+  {rule, Name, lists:flatten([OrigProp,TokProp,TransProp]), Expr}.
 
 
 
