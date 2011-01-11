@@ -6,7 +6,7 @@ expr          <- ordered / sequence / primary                               ~;
 
 ordered       <- alt (_S ORD alt)+              `{ord,?noattr,[?p1|?i(2,3)]}`;
 alt           <- sequence / primary                                         ~;
-sequence      <- primary primary+                   `{seq,?noattr,[?p1|?p2]}`;
+sequence      <- primary ([,]? _S primary)+     `{seq,?noattr,[?p1|?i(2,3)]}`;
 
 primary       <- prefix* atomic suffix*              `c_primary(?p1,?p2,?p3)`;
 prefix        <- notp / andp / opt2                                         ~;
