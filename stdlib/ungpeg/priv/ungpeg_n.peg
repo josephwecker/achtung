@@ -37,15 +37,18 @@ o             <- [0-7]                                                      ~;
 h             <- [0-9a-fA-F]                                                ~;
 
 transform     <- TRANS transexpr                                        `?p2`;
-transexpr     <- _S list / tuple / term                                 `?p2`;
+transexpr     <- _S (list / tuple / term)                               `?p2`;
 list          <- empty_list / delim_list                                    ~;
 empty_list    <- '[' _S ']'                                              `[]`;
-delim_list    <- '[' _S transexpr (_S transexpr)* _S ']'      `[?p3|?i(4,2)]`;
+delim_list    <- '[' transexpr transexpr* _S ']'                  `[?p2|?p3]`;
 tuple         <- empty_tuple / delim_tuple                                  ~;
 empty_tuple   <- '(' _S ')'                                              `{}`;
 delim_tuple   <- '(' _S transexpr (_S transexpr)* _S ')'  `list_to_tuple([?p3|?i(4,2)])`;
-term          <- pos_var / named_var / fun_call / atom                      ~;
-% TODO: you are here
+term          <- fun_call / pos_var / named_var / atom / literal            ~;
+fun_call      <- (pos_var / named_var / atom) '(' transexpr ')' `{call,?p1,?p3}`;
+pos_var       <- '$' [1-9] [0-9]*                         `?scan([$',?N,$'])`;
+named_var     <- '$' [a-zA-Z_] [a-zA-Z0-9_]*              `?scan([$',?N,$'])`;
+atom          <- [a-z] [a-zA-Z0-9_]+                      `?scan([$',?N,$'])`;
 
 %------------ Lexical -------------------------------------------------------|
 notp          <- "!" _S                                                `notp`;
