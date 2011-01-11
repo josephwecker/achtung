@@ -1,6 +1,6 @@
 %------------ Grammar -------------------------------------------------------|
 peg_grammar   <- _S rule+ EOF                                           `?p2`;
-rule          <- ENTRY? nonterm _S DEFINE _S expr _S    `c_rule(?p1,?p2,?p6)`;
+rule          <- ENTRY? nonterm _S DEFINE _S expr _S transform `c_rule(?p1,?p2,?p6,?p8)`;
 
 expr          <- ordered / sequence / primary                               ~;
 
@@ -34,6 +34,8 @@ char_escapes  <- "\\^" [a-zA-Z] / "\\" o (o o?)? / "\\x{" h+ "}" /
                  "\\x" h h / "\\" .                                         ~;
 o             <- [0-7]                                                      ~;
 h             <- [0-9a-fA-F]                                                ~;
+
+transform     <- '->' ~;
 
 %------------ Lexical -------------------------------------------------------|
 notp          <- "!" _S                                                `notp`;
@@ -79,13 +81,15 @@ ML_COMMENT    <- "#|" ML_INNER* "|#"                           `'ML_COMMENT'`;
 -define(noattr, []).
 
 c_primary(Prefs, {Type,CAttrs,Body}, Suffs) ->
-  %{Type, {Prefs++CMods++SuffsCAttrs}, Body}.
   {Type, Prefs++CAttrs++Suffs, Body}.
 
-c_rule('ENTRY',{token, Name},Expr) -> {rule,Name,[entry,orig,token],Expr};
-c_rule(_,{token, Name},Expr)       -> {rule,Name,[orig,token],Expr};
-c_rule('ENTRY',{normal,Name},Expr) -> {rule,Name,[entry,orig],Expr};
-c_rule(_,{normal, Name},Expr)      -> {rule,Name,[orig],Expr}.
+c_rule(Entry,{NType,Name},Expr,Trans) ->
+  EntryProp = case Entry of 'ENTRY' -> entry; _ -> [] end,
+  OrigProp  = {orig, Name},
+  TokProp   = case NType of token -> token; _ -> [] end,
+  TransProp = case Trans of [] -> []; _ -> {trans,Trans} end,
+  {rule, Name, ?flat(EntryProp,OrigProp,TokProp,TransProp), Expr}.
+
 
 
 %------------ Misc Helpers --------------------------------------------------|
