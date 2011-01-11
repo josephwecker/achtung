@@ -1,4 +1,4 @@
--module(erlrat).
+-module(ungpeg).
 -export([file/1, parse/1, optimize/1]).
 
 
