@@ -48,7 +48,7 @@ term          <- fun_call / pos_var / named_var / atom / literal            ~;
 fun_call      <- (pos_var / named_var / atom) '(' transexpr ')' `{call,?p1,?p3}`;
 pos_var       <- '$' [1-9] [0-9]*                         `?scan([$',?N,$'])`;
 named_var     <- '$' [a-zA-Z_] [a-zA-Z0-9_]*              `?scan([$',?N,$'])`;
-atom          <- [a-z] [a-zA-Z0-9_]+                      `?scan([$',?N,$'])`;
+atom          <- [a-z] [a-zA-Z0-9_]*                      `?scan([$',?N,$'])`;
 
 %------------ Lexical -------------------------------------------------------|
 notp          <- "!" _S                                                `notp`;
