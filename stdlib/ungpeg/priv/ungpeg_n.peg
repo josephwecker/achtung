@@ -28,7 +28,7 @@ nonterm       <- !TRANS (token_sym / normal_sym)                        `?p2`;
 token_sym     <- [A-Z] [A-Z\\_-]*                 `{token,?scan([$',?N,$'])}`;
 normal_sym    <- [a-zA-Z0-9\\_-]+                `{normal,?scan([$',?N,$'])}`;
 
-literal       <- singlequoted / doublequoted            `{lit,?noattr,?scan}`;
+literal       <- singlequoted / doublequoted `{lit,?noattr,list_to_binary(?scan)}`;
 singlequoted  <- "'" not_squot* "'"                           `?fixlstr(?p2)`;
 doublequoted  <- '"' not_dquot* '"'                                         ~;
 not_squot     <- !"'" ("\\" . / .)                                      `?p2`;
@@ -53,7 +53,7 @@ empty_tuple   <- '(' _S ')'                                              `{}`;
 delim_tuple   <- '(' _S transexpr (_S transexpr)* _S ')'  `list_to_tuple([?p3|?i(4,2)])`;
 term          <- fun_call / pos_var / named_var / atom / literal            ~;
 fun_call      <- (pos_var / named_var / atom) '(' transexpr ')' `{call,?p1,?p3}`;
-pos_var       <- '$' [1-9] [0-9]*                         `?scan([$',?N,$'])`;
+pos_var       <- '$' [0-9]+                               `?scan([$',?N,$'])`;
 named_var     <- '$' [a-zA-Z_] [a-zA-Z0-9_]*              `?scan([$',?N,$'])`;
 atom          <- [a-z] [a-zA-Z0-9_]*                      `?scan([$',?N,$'])`;
 
@@ -105,7 +105,7 @@ ML_COMMENT    <- "#|" ML_INNER* "|#"                           `'ML_COMMENT'`;
 c_primary(Prefs, {[], {Type, CAttrs,Body}}, Suffs) ->
   {Type, Prefs++CAttrs++Suffs, Body};
 c_primary(Prefs, {{_,Tag}, {Type, CAttrs,Body}}, Suffs) ->
-  {Type, Prefs++CAttrs++Suffs++[{tagged_as, Tag}], Body}.
+  {Type, Prefs++CAttrs++Suffs++[{orig_tag, Tag}], Body}.
 
 c_rule(Entry,{NType,Name},Expr,Trans) ->
   OrigProp  = case Entry of 'ENTRY' -> {entry,Name}; _ -> {orig,Name} end,
