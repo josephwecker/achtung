@@ -13,12 +13,16 @@ primary       <- prefix* atomic suffix*              `c_primary(?p1,?p2,?p3)`;
 prefix        <- notp / andp / opt2                                         ~;
 suffix        <- star / plus / opt                                          ~;
 atomic        <- _S trans_pref?
-                 (call / paren_expr / literal
-                  / charclass / any) _S                           `{?p2,?p3}`;
+                 (specials / call / paren_expr / literal
+                  / charclass) _S                                 `{?p2,?p3}`;
 
 paren_expr    <- GRP_OPEN expr GRP_CLOSE                                `?p2`;
 call          <- nonterm !(_S DEFINE)               `{call,?noattr,?e2(?p1)}`;
-any           <- "."                                      `{any,?noattr,any}`;
+
+specials      <- any / eof / empty                                          ~;
+any           <- "any" !normal_sym / "."              `{special,?noattr,any}`;
+eof           <- "eof" !normal_sym                    `{special,?noattr,eof}`;
+empty         <- "empty" !normal_sym / "''" / '""'  `{special,?noattr,empty}`;
 
 nonterm       <- !TRANS (token_sym / normal_sym)                        `?p2`;
 token_sym     <- [A-Z] [A-Z\\_-]*                 `{token,?scan([$',?N,$'])}`;
