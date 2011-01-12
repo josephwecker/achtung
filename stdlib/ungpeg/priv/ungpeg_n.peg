@@ -12,7 +12,9 @@ sequence      <- primary ([,]? _S primary)+     `{seq,?noattr,[?p1|?i(2,3)]}`;
 primary       <- prefix* atomic suffix*              `c_primary(?p1,?p2,?p3)`;
 prefix        <- notp / andp / opt2                                         ~;
 suffix        <- star / plus / opt                                          ~;
-atomic        <- _S (call / paren_expr / literal / charclass / any) _S  `?p2`;
+atomic        <- _S trans_pref?
+                 (call / paren_expr / literal
+                  / charclass / any) _S                           `{?p2,?p3}`;
 
 paren_expr    <- GRP_OPEN expr GRP_CLOSE                                `?p2`;
 call          <- nonterm !(_S DEFINE)               `{call,?noattr,?e2(?p1)}`;
@@ -36,6 +38,7 @@ char_escapes  <- "\\^" [a-zA-Z] / "\\" o (o o?)? / "\\x{" h+ "}" /
 o             <- [0-7]                                                      ~;
 h             <- [0-9a-fA-F]                                                ~;
 
+trans_pref    <- nonterm ':'                                            `?p1`;
 transform     <- TRANS transexpr                                        `?p2`;
 transexpr     <- _S (list / tuple / term)                               `?p2`;
 list          <- empty_list / delim_list                                    ~;
@@ -95,8 +98,10 @@ ML_COMMENT    <- "#|" ML_INNER* "|#"                           `'ML_COMMENT'`;
 
 -define(noattr, []).
 
-c_primary(Prefs, {Type,CAttrs,Body}, Suffs) ->
-  {Type, Prefs++CAttrs++Suffs, Body}.
+c_primary(Prefs, {[], {Type, CAttrs,Body}}, Suffs) ->
+  {Type, Prefs++CAttrs++Suffs, Body};
+c_primary(Prefs, {{_,Tag}, {Type, CAttrs,Body}}, Suffs) ->
+  {Type, Prefs++CAttrs++Suffs++[{tagged_as, Tag}], Body}.
 
 c_rule(Entry,{NType,Name},Expr,Trans) ->
   OrigProp  = case Entry of 'ENTRY' -> {entry,Name}; _ -> {orig,Name} end,
