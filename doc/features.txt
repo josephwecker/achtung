@@ -26,6 +26,8 @@
 Maybe triple back-ticks or something breaks into erlang?
 
 Errors / Warnings
+ - ability to tell which clause, if not the line-number, in runtime errors
+ - Shows as many errors as possible in single pass
  - ungbarc level - can't open files, create directories, etc.
  - Neotoma parser can't find a way through
  - Semantic issues- like multiple module definitions: Erlang-based
