@@ -8,19 +8,24 @@ parse(Txt) when is_list(Txt) -> optimize(ungpeg_n:parse(Txt)).
 optimize([]) ->
   error_logger:error_msg("Empty grammar- parse it yourself.",[]);
 optimize([{rule,First,_,_}|_] = AST) ->
-  % Turn it into a dictionary
+  % 1. Turn it into a dictionary
   {Defs, EntryPoints} = make_defs(AST, dict:new(), [First]),
-  % Scan for recursive rules & entry-points
-  TopLevels = scan_tls(EntryPoints, Defs),
-  % TODO: look through and warn on unused productions
+  % 2. Parse the parse-transformation functions & tag parts
+  %Defs2 = ast_map(Defs, fun process_transformers/1),
+  Defs2 = Defs,
+  % 3. Scan for recursive rules & entry-points
+  TopLevels = scan_tls(EntryPoints, Defs2),
+  % 4. Warn about any unused productions
 
-  Defs2 = tr_inline_all(TopLevels:to_list(), TopLevels, Defs, dict:new()),
-  %Defs3 = Defs2:map(fun tr_combine_char/2),
-  Defs3 = ast_map(Defs2, fun tr_combine_char/1),
+  % 5. Inline everything that can be, unalias, and minor transforms
+  Defs3 = tr_inline_all(TopLevels:to_list(), TopLevels, Defs2, dict:new()),
+  % 6. Combine character classes wherever appropriate
+  Defs4 = ast_map(Defs3, fun tr_combine_char/1),
+  % 7. 
 
-  Defs3:to_list();
+  Defs4:to_list();
 
-optimize(_) -> error_logger:error_msg("AST doesn't look well.",[]).
+optimize(AST) -> error_logger:error_msg("AST doesn't look well.~n~p",[AST]).
 
 % Create general purpose lookup dictionary for the rules
 
