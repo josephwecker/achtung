@@ -25,7 +25,7 @@ optimize([{rule,First,_,_}|_] = AST) ->
 
   Defs4:to_list();
 
-optimize(AST) -> error_logger:error_msg("AST doesn't look well.~n~p",[AST]).
+optimize(AST) -> error_logger:error_msg("AST doesn't look well:~n  ~p~n~n",[AST]).
 
 % Create general purpose lookup dictionary for the rules
 
@@ -65,20 +65,29 @@ process_transformers(Name,{Attrs,Expr}) ->
   end.
 
 verify_and_tag([],Expr,_Name) -> Expr;
+
 % Location/position-based captures
-verify_and_tag([N|_],{_,_,[_|_]=L},Name) when is_number(N) and (N < length(L)) ->
+verify_and_tag([N|_],{_,_,[_|_]=L},Name) when is_number(N) and (N > length(L)) ->
   error_logger:error_msg("There is nothing at position $~p for rule ~p",[N,Name]);
-verify_and_tag([N|R],{Type,Attr,[_|_]=L},Name) when is_number(N) and (N >= length(L)) ->
-  {Before, [Change|After]} = lists:split(N,L),
+
+verify_and_tag([0|R],Expr,Name) ->
+  verify_and_tag(R,tag_expr(Expr,0,Name),Name);
+
+verify_and_tag([N|R],{Type,Attr,[_|_]=L},Name) when is_number(N) and (N =< length(L)) ->
+  {Before, [Change|After]} = lists:split(N-1,L),
   TaggedExp = tag_expr(Change,N,Name),
   verify_and_tag(R,{Type,Attr,Before++[TaggedExp]++After},Name);
-verify_and_tag([1|R],{Type,Attr,Expr},Name) ->
-  verify_and_tag(R,{Type,Attr,tag_expr(Expr,1,Name)},Name);
-verify_and_tag([0|R],{Type,Attr,Expr},Name) ->
-  verify_and_tag(R,{Type,Attr,tag_expr(Expr,0,Name)},Name);
-verify_and_tag(['_'|R],{Type,Attr,Expr},Name) ->
-  verify_and_tag(R,{Type,Attr,tag_expr(Expr,'_',Name)},Name);
+
+verify_and_tag([1|R],Expr,Name) ->
+  verify_and_tag(R,tag_expr(Expr,1,Name),Name);
+
+verify_and_tag(['_'|R],Expr,Name) ->
+  verify_and_tag(R,tag_expr(Expr,'_',Name),Name);
+
 % Named captures
+verify_and_tag([Name|R],Expr,Name) ->
+  verify_and_tag(R,tag_expr(Expr,Name,Name),Name);
+
 verify_and_tag([A|R],{Type,Attr,[_|_]=L},Name) when is_atom(A) ->
   {TaggedExprs,Found} = lists:mapfoldl(
     fun(Exp,Acc) ->
@@ -88,7 +97,7 @@ verify_and_tag([A|R],{Type,Attr,[_|_]=L},Name) when is_atom(A) ->
         end
     end, 0, L),
   case Found of
-    0 -> error_logger:error_msg("There is no $~p for rule ~p",[A,Name]);
+    0 -> error_logger:error_msg("There is no $~p for rule ~p.~n",[A,Name]);
     _ -> ok
   end,
   verify_and_tag(R,{Type,Attr,TaggedExprs},Name);
@@ -96,11 +105,15 @@ verify_and_tag([A|R],{Type,Attr,[_|_]=L},Name) when is_atom(A) ->
 verify_and_tag([A|R],{Type,Attr,Expr},Name) ->
   case matches_capture(A,Expr) of
     true -> verify_and_tag(R,{Type,Attr,tag_expr(Expr,A,Name)},Name);
-    false -> error_logger:error_msg("There is no $~p for rule ~p",[A,Name])
+    false -> error_logger:error_msg("There is no $~p for rule ~p.~n",[A,Name])
   end.
 
-matches_capture(_Tag,_Expr) -> true.
-tag_expr(Expr,_Tag,_Name) -> Expr.
+tag_expr({Type,Attr,Expr},Tag,Name) -> {Type,[{tag,{Tag,Name}}|Attr],Expr}.
+
+matches_capture(Tag,{call,_,Tag}) -> true;
+matches_capture(Tag,{_,Attr,_}) ->
+  lists:member({orig_tag,Tag},Attr) or
+  lists:member({orig,Tag},Attr).
 
 
 % Add entrypoints to toplevel and scan rules for recursion (which implies they
