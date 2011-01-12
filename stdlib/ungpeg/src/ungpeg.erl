@@ -11,8 +11,8 @@ optimize([{rule,First,_,_}|_] = AST) ->
   % 1. Turn it into a dictionary
   {Defs, EntryPoints} = make_defs(AST, dict:new(), [First]),
   % 2. Parse the parse-transformation functions & tag parts
-  %Defs2 = ast_map(Defs, fun process_transformers/1),
-  Defs2 = Defs,
+  Defs2 = Defs:map(fun process_transformers/2),
+  %Defs2 = Defs,
   % 3. Scan for recursive rules & entry-points
   TopLevels = scan_tls(EntryPoints, Defs2),
   % 4. Warn about any unused productions
@@ -36,6 +36,72 @@ make_defs([{rule,Name,Attrs,Expr}|R],Defs,EPs) ->
     false -> EPs
   end,
   make_defs(R,Defs:store(Name,{Attrs,Expr}),EPs2).
+
+
+% Make sure all tags are where they need to be etc. so that elements can be
+% found again after transformations occur.
+% TODO:
+%   - Deep search so you can tag stuff further down in the rules
+%   - Warn when capturing things not normally captured (literals, !e, etc.)
+process_transformers(Name,{Attrs,Expr}) ->
+  case proplists:lookup(trans,Attrs) of
+    none -> {Attrs,Expr};
+    {_,TransExpr} ->
+      Captures = erl_syntax_lib:fold(
+        fun
+          ({tree,atom,_,N},Acc) ->
+            case atom_to_list(N) of
+              [$$|V] ->
+                case string:to_integer(V) of
+                  {error,_} -> [list_to_atom(V)|Acc];
+                  {Num,[]}  -> [Num|Acc];
+                  _         -> [list_to_atom(V)|Acc]
+                end;
+              _ -> Acc
+            end;
+          (_,Acc) -> Acc
+        end, [], erl_syntax:abstract(TransExpr)),
+      {Attrs, verify_and_tag(Captures, Expr, Name)}
+  end.
+
+verify_and_tag([],Expr,_Name) -> Expr;
+% Location/position-based captures
+verify_and_tag([N|_],{_,_,[_|_]=L},Name) when is_number(N) and (N < length(L)) ->
+  error_logger:error_msg("There is nothing at position $~p for rule ~p",[N,Name]);
+verify_and_tag([N|R],{Type,Attr,[_|_]=L},Name) when is_number(N) and (N >= length(L)) ->
+  {Before, [Change|After]} = lists:split(N,L),
+  TaggedExp = tag_expr(Change,N,Name),
+  verify_and_tag(R,{Type,Attr,Before++[TaggedExp]++After},Name);
+verify_and_tag([1|R],{Type,Attr,Expr},Name) ->
+  verify_and_tag(R,{Type,Attr,tag_expr(Expr,1,Name)},Name);
+verify_and_tag([0|R],{Type,Attr,Expr},Name) ->
+  verify_and_tag(R,{Type,Attr,tag_expr(Expr,0,Name)},Name);
+verify_and_tag(['_'|R],{Type,Attr,Expr},Name) ->
+  verify_and_tag(R,{Type,Attr,tag_expr(Expr,'_',Name)},Name);
+% Named captures
+verify_and_tag([A|R],{Type,Attr,[_|_]=L},Name) when is_atom(A) ->
+  {TaggedExprs,Found} = lists:mapfoldl(
+    fun(Exp,Acc) ->
+        case matches_capture(A,Exp) of
+          false -> {Exp, Acc};
+          true -> {tag_expr(Exp, A, Name), Acc+1}
+        end
+    end, 0, L),
+  case Found of
+    0 -> error_logger:error_msg("There is no $~p for rule ~p",[A,Name]);
+    _ -> ok
+  end,
+  verify_and_tag(R,{Type,Attr,TaggedExprs},Name);
+
+verify_and_tag([A|R],{Type,Attr,Expr},Name) ->
+  case matches_capture(A,Expr) of
+    true -> verify_and_tag(R,{Type,Attr,tag_expr(Expr,A,Name)},Name);
+    false -> error_logger:error_msg("There is no $~p for rule ~p",[A,Name])
+  end.
+
+matches_capture(_Tag,_Expr) -> true.
+tag_expr(Expr,_Tag,_Name) -> Expr.
+
 
 % Add entrypoints to toplevel and scan rules for recursion (which implies they
 % need to be entrypoints as well).
