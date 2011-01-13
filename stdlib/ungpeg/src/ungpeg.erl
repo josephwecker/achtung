@@ -85,32 +85,24 @@ verify_and_tag(['_'|R],Expr,Name) ->
   verify_and_tag(R,tag_expr(Expr,'_',Name),Name);
 
 % Named captures
-verify_and_tag([Name|R],Expr,Name) ->
-  verify_and_tag(R,tag_expr(Expr,Name,Name),Name);
-
-verify_and_tag([A|R],{Type,Attr,[_|_]=L},Name) when is_atom(A) ->
-  {TaggedExprs,Found} = lists:mapfoldl(
-    fun(Exp,Acc) ->
-        case matches_capture(A,Exp) of
-          false -> {Exp, Acc};
-          true -> {tag_expr(Exp, A, Name), Acc+1}
+verify_and_tag([A|R],Expr,Name) when is_atom(A) ->
+  Res = expr_mapfold(fun(E,Acc) ->
+        case matches_capture(A,E) of
+          false -> {E, Acc};
+          true -> {tag_expr(E, A, Name), Acc+1}
         end
-    end, 0, L),
+    end, 0, Expr),
+  {TaggedExprs, Found} = Res,
   case Found of
     0 -> error_logger:error_msg("There is no $~p for rule ~p.~n",[A,Name]);
     _ -> ok
   end,
-  verify_and_tag(R,{Type,Attr,TaggedExprs},Name);
-
-verify_and_tag([A|R],{Type,Attr,Expr},Name) ->
-  case matches_capture(A,Expr) of
-    true -> verify_and_tag(R,{Type,Attr,tag_expr(Expr,A,Name)},Name);
-    false -> error_logger:error_msg("There is no $~p for rule ~p.~n",[A,Name])
-  end.
+  verify_and_tag(R,TaggedExprs,Name).
 
 tag_expr({Type,Attr,Expr},Tag,Name) -> {Type,[{tag,{Tag,Name}}|Attr],Expr}.
 
 matches_capture(Tag,{call,_,Tag}) -> true;
+matches_capture(Special,{special,_,Special}) -> true;
 matches_capture(Tag,{_,Attr,_}) ->
   lists:member({orig_tag,Tag},Attr) or
   lists:member({orig,Tag},Attr).
@@ -151,6 +143,18 @@ ast_map_inner(Expr, Fun) ->
     {ord,Attr,L} -> {ord,Attr,[ast_map_inner(L2,Fun)||L2<-L]};
     {seq,Attr,L} -> {seq,Attr,[ast_map_inner(L2,Fun)||L2<-L]};
     _ -> Expr2
+  end.
+
+expr_mapfold(Fun, Acc, Expr) ->
+  {Expr2, Acc2} = Fun(Expr, Acc),
+  case Expr2 of
+    {ord,Attr,L} ->
+      {Expr3,Acc3}=lists:mapfoldl(fun(LExp,AccIn)->expr_mapfold(Fun,AccIn,LExp) end,Acc2,L),
+      {{ord,Attr,Expr3}, Acc3};
+    {seq,Attr,L} ->
+      {Expr3,Acc3}=lists:mapfoldl(fun(LExp,AccIn)->expr_mapfold(Fun,AccIn,LExp) end,Acc2,L),
+      {{seq,Attr,Expr3}, Acc3};
+    _ -> {Expr2, Acc2}
   end.
 
 %--------------------------------------- TRANSFORMATIONS ---------------------
