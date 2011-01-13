@@ -15,23 +15,28 @@ optimize([{rule,First,_,_}|_] = AST) ->
   Defs2 = Defs:map(fun process_transformers/2),
   % 3. Scan for recursive rules & entry-points
   TopLevelNames = get_toplevels(Entrances, Defs2),
-  % 4. Warn about any unused productions
+  % 4. TODO: Warn about any unused productions
 
   % 5. Transform: Inline everything that can be (unalias)
   MainExprs = TopLevelNames:map(
     fun(TName,true)-> expr_map(Defs2:fetch(TName),
           fun(ExprIn)->tr_inline(ExprIn,TopLevelNames,Defs2) end) end),
-  % 6. Tranform: Simple literals into character-classes
-  Main2 = ast_map(MainExprs, fun tr_simple_lit_to_char/1),
-  % 7. Combine character classes wherever appropriate
-  Main3 = ast_map(Main2, fun tr_combine_char/1),
+  % 6. Rest of transformations
+  MainExprs2 = all_transformations(MainExprs),
 
-  Main3:to_list();
+  MainExprs2:to_list();
 
 optimize(AST) -> error_logger:error_msg("AST doesn't look well:~n  ~p~n~n",[AST]).
 
+all_transformations(Defs) ->
+  lists:foldl(fun ast_map/2,
+    Defs, [
+      fun tr_simple_lit_to_char/1,
+      fun tr_combine_char/1
+    ]).
+
 % Some general utilities for mapping and folding the ast/expression
-ast_map(Defs,Fun) ->
+ast_map(Fun,Defs) ->
   Defs:map(fun(_Name,Expr)-> expr_map(Expr, Fun) end).
 
 expr_map(Expr, Fun) ->
