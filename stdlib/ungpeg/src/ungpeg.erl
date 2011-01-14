@@ -1,5 +1,6 @@
 -module(ungpeg).
--export([file/1, parse/1, optimize/1]).
+-export([file/1, parse/1, pretty_print/1, pretty_print_expr/1,
+    pretty_print_expr/2]).
 
 
 %--------------------------------------- TOPLEVEL ----------------------------
@@ -274,4 +275,78 @@ common_prefix(Lists,Acc) ->
   end.
 
 
+pretty_print(RuleList) -> pretty_print(RuleList, []).
+pretty_print([], Acc)  -> io:format("~s~n~n", [string:join(lists:reverse(Acc),"\n")]);
+pretty_print([{Name,Expr}|R], Acc) ->
+  pretty_print(R, [[atom_to_list(Name), " <- ", pretty_print_expr(Expr,1)] | Acc]).
 
+% ord within seq always parenth.
+% ord within ord always parenth.
+% seq within seq always parenth.
+% space if all children !atomic
+
+pretty_print_expr(Expr)     -> pretty_print_expr(Expr,1,none).
+pretty_print_expr(Expr,Lvl) -> pretty_print_expr(Expr,Lvl,none).
+
+pretty_print_expr({char,Attr,Ranges},_Lvl,_Parent) ->
+  [pp_prefs(Attr),"[",lists:map(fun({C1,C2})->esc_str([C1,$-,C2]);(Ch)->esc_str(Ch) end,Ranges),"]",pp_suffs(Attr)];
+pretty_print_expr({lit,Attr,Bin},_Lvl,_Parent) ->
+  [pp_prefs(Attr),"'",chr_replace($',"\\'",esc_str(binary_to_list(Bin))),"'",pp_suffs(Attr)];
+pretty_print_expr({call,Attr,Name},_Lvl,_Parent) ->
+  [pp_prefs(Attr),atom_to_list(Name),pp_suffs(Attr)];
+pretty_print_expr({special,Attr,Type},_Lvl,_Parent) ->
+  [pp_prefs(Attr),atom_to_list(Type),pp_suffs(Attr)];
+pretty_print_expr({ord,Attr,Exprs},Lvl,Parent) ->
+  Prefs = pp_prefs(Attr),
+  Suffs = pp_suffs(Attr),
+  Paren  = (length(Prefs++Suffs) > 0) or (Parent == seq) or (Parent == ord),
+  {Begin,End} = case Paren of false->{[],[]};_->{[Prefs,$(],[$),Suffs]} end,
+  case all_atomics(Exprs) of
+    true -> [Begin,string:join([pretty_print_expr(E,Lvl+1,ord)||E<-Exprs],"/"),End];
+    false-> [Begin,string:join([pretty_print_expr(E,Lvl+1,ord)||E<-Exprs]," / "),End]
+  end;
+pretty_print_expr({seq,Attr,Exprs},Lvl,Parent) ->
+  Prefs = pp_prefs(Attr),
+  Suffs = pp_suffs(Attr),
+  Paren  = (length(Prefs++Suffs) > 0) or (Parent == seq),
+  {Begin,End} = case Paren of false->{[],[]};_->{[Prefs,$(],[$),Suffs]} end,
+  [Begin,string:join([pretty_print_expr(E,Lvl+1,seq)||E<-Exprs]," "),End].
+
+pp_prefs(Attr)                 -> pp_prefs(Attr,[]).
+pp_prefs([],Acc)               -> lists:reverse(Acc);
+pp_prefs([notp|R],Acc)         -> pp_prefs(R,[$!|Acc]);
+pp_prefs([andp|R],Acc)         -> pp_prefs(R,[$&|Acc]);
+pp_prefs([{orig_tag,T}|R],Acc) -> pp_prefs(R,[[atom_to_list(T)|":"]|Acc]);
+pp_prefs([_|R],Acc)            -> pp_prefs(R,Acc).
+pp_suffs(Attr)                 -> pp_suffs(Attr,[]).
+pp_suffs([],Acc)               -> lists:reverse(Acc);
+pp_suffs([star|R],Acc)         -> pp_suffs(R,[$*|Acc]);
+pp_suffs([plus|R],Acc)         -> pp_suffs(R,[$+|Acc]);
+pp_suffs([opt|R],Acc)          -> pp_suffs(R,[$?|Acc]);
+pp_suffs([_|R],Acc)            -> pp_suffs(R,Acc).
+
+all_atomics(L) ->
+  lists:all(fun
+      ({char,_,_})    -> true;
+      ({lit,_,_})     -> true;
+      ({special,_,_}) -> true;
+      ({call,_,_})    -> true;
+      ({ord,_,_})     -> false;
+      ({seq,_,_})     -> false
+    end, L).
+
+chr_replace(Needle,Replacement,Haystack) ->
+  chr_replace(Needle,Replacement,Haystack,[]).
+chr_replace(_,_,[],A)   ->lists:flatten(lists:reverse(A));
+chr_replace(C,R,[C|T],A)->chr_replace(C,R,T,[R|A]);
+chr_replace(C,R,[H|T],A)->chr_replace(C,R,T,[H|A]).
+
+esc_str(C) when is_integer(C) -> esc_str([C],[]);
+esc_str(S) when is_list(S) -> esc_str(S,[]).
+esc_str([],Acc) -> lists:reverse(Acc);
+esc_str([$\t|R],Acc) -> esc_str(R,["\\t"|Acc]);
+esc_str([$\n|R],Acc) -> esc_str(R,["\\n"|Acc]);
+esc_str([$\r|R],Acc) -> esc_str(R,["\\r"|Acc]);
+esc_str([N|R],Acc) when (N < $ ) or (N > 254) ->
+  esc_str(R,[["\\x{",integer_to_list(N,16),"}"]|Acc]);
+esc_str([C|R],Acc) -> esc_str(R,[C|Acc]).
