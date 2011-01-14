@@ -25,8 +25,8 @@ eof           <- "eof" !normal_sym                    `{special,?noattr,eof}`;
 empty         <- "empty" !normal_sym / "''" / '""'  `{special,?noattr,empty}`;
 
 nonterm       <- !TRANS (token_sym / normal_sym)                        `?p2`;
-token_sym     <- [A-Z] [A-Z\\_-]*                 `{token,?scan([$',?N,$'])}`;
-normal_sym    <- [a-zA-Z0-9\\_-]+                `{normal,?scan([$',?N,$'])}`;
+token_sym     <- [A-Z0-9_-]+ !normal_sym          `{token,?scan([$',?N,$'])}`;
+normal_sym    <- [a-zA-Z0-9_-]+                  `{normal,?scan([$',?N,$'])}`;
 
 literal       <- singlequoted / doublequoted `{lit,?noattr,list_to_binary(?scan)}`;
 singlequoted  <- "'" not_squot* "'"                           `?fixlstr(?p2)`;

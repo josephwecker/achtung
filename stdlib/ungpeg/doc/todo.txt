@@ -3,8 +3,8 @@
     left-recursion algorithm.  (the latter, so that distinct grammars can be
     combined and it'll work correctly - that is, entry points to expressions
     that don't overlap with other entry points' instructions).
-[ ] Fix ungpeg_n so that it's ok with 'Blah' styled names
 
+[D] Fix ungpeg_n so that it's ok with 'Blah' styled names
 [D] Syn highlight for proposed parse-transform stuff
 [D] Change parser etc. so that new entry-point marker is ':'
 [D] Change parser etc. so that it allows optional rule delimiter ';'
