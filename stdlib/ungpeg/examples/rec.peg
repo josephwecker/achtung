@@ -1,0 +1,48 @@
+# input any simple arithmetic (no spaces)
+:expr   <- product / sum / value
+sum     <- expr (('+' / '-') expr)*
+product <- expr (('*' / '/') expr)*
+value   <- [0-9.]+ / '(' expr ')'
+
+# input  123-4929-2390-1
+:chain  <- chain '-' num / num
+num     <- [0-9]+
+
+
+# SHOULD ERROR AT UNGPEG PARSING
+:degenerate <- degenerate ':'
+:degenerate2 <- b
+b            <- c / degenerate2
+c            <- b
+
+# input 1234
+:freaky <- (freaky num freaky)?
+
+
+# input this.x[i].m()
+:javalike                 <- primary
+primary                   <- primaryNoNewArray
+primaryNoNewArray         <- classInstanceCreationExpr
+                           / methodInvocation
+                           / fieldAccess
+                           / arrayAccess
+                           / THIS
+classInstanceCreationExpr <- NEW classOrInterfaceType EMPTYPARENS
+                           / primary DOT NEW identifier EMPTYPARENS
+methodInvocation          <- (primary DOT)? methodName EMPTYPARENS
+fieldAccess               <- (primary/SUPER) DOT identifier
+arrayAccess               <- (primary/exprName)'['space expression']'space
+classOrInterfaceType      <- className / interfaceTypeName
+className                 <- ('C'/'D') space
+interfaceTypeName         <- ('I'/'J') space
+identifier                <- ('x'/'y') space / classOrInterfaceType
+methodName                <- ('m'/'n') space
+expressionName            <- identifier
+expression                <- ('i'/'j') space
+EMPTYPARENS               <- '(' space ')' space
+DOT                       <- '.' space
+NEW                       <- 'new' space
+SUPER                     <- 'super' space
+THIS                      <- 'this' space
+space                     <- [ \t]*
+
