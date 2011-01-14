@@ -1,0 +1,20 @@
+=== Reduced Form ===
+
+
+= Ordered Priority Sequence (ord) =
+ * Contains no ords (sucked inline)
+ * Contains no opts (all changed to inline term/empty)
+ * Contains nothing after any 'star' term (which will always succeed)
+ * Contains nothing after 'empty' (removed w/ warning)
+ * Contains at least two terms (if empty internal-error, if 1 child, replaces parent)
+ * Tags allowed on any/all children and on whole
+ * Transforms allowed on any/all children and on whole
+ * All inner terms reduced
+ * 
+
+= Predicated Ordered Priority Sequence (!/& ord) =
+
+
+
+= Sequence (seq) =
+ * Any andp predicates preceding an ord 

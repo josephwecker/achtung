@@ -87,6 +87,9 @@ GRAMMAR TRANSFORMS:
  #. Reduce all *?->*, +?->*, +->seq(1*)
  #. Apply attributes (notp, andp, opt)
  #. Separate out cons/agg functions
+ #. Remove any "empty" specials in sequences
+ #. Remove anything following "empty" in an ord (implies anything following an
+    opt as well)
 
 Need to be their own functions: cons/agg, entry-points, recurse-points
 All else can be turned into a single function
@@ -237,4 +240,15 @@ create_tok_
 
 ------------------- Final output ----------------------
 
+
+
+
+
+
+
+
+
+
+
+int <- '-'? (nz_digit digit+) / digit nz_digit <- [1-9] digit <- [0-9]
 

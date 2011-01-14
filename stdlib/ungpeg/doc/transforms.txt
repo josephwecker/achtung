@@ -91,6 +91,114 @@ a <- b ':' c
 b <- (!':' .)*
 c <- .*
 
+
+---------
+a <- b / c / d / e / f / g / h
+b <- ':1b' -> one()
+c <- ':2' 'c' -> two()
+d <- ':3d' -> three()
+e <- ':3e' -> four()
+f <- '5f' -> five()
+g <- '6g' -> six()
+h <- '7h' -> seven()
+
+a <- (b ; c ; (d ; e)) ; f ; g ; h
+
+a <- b / c / d / e / f / g / h
+b <- ':1b' -> one()
+c <- ':2' 'c' -> two()
+d <- ':3d' -> three()
+e <- ':3e' -> four()
+f <- '5f' -> five()
+g <- '6g' -> six()
+h <- '7h' -> seven()
+---
+a <- b / c / d / e / f / g / h
+inline and char-class it
+a <- [:][1][b]/[:][2][c]/[:][3][d]/[:][3][e]/[5][f]/[6][g]/[7][h]
+
+/ becomes ; e1
+
+
+a <- 'hi' / 'there' / [a-z]
+a <- [h][i] / [t][h][e][r][e] / [a-z]
+a <- [h][i];[t][h][e][r][e]/[a-z]
+BUT
+a <- 'hi' / [a-z] 'i' / 'there'
+a <- [h][i]/[a-z][i]/[t][h][e][r][e]
+
+1: m([h],s: m([i],s:S,f:3-m), <<< skip to 3-m on fail of 'i'
+         f: 2-m)
+2: m([a-z],s: m([i],s:S,f:...
+
+Idea: Find "distinguishing" term and fork off that condition instead
+
+But what about:
+
+a <- b / c / d
+b <- [0-9]+
+c <- ':' [a-zA-Z0-9]*
+d <- a*
+
+a <- [0-9][0-9]* / ':'[a-zA-Z0-9]* / realfirsts(a)a*
+a <- [0-9][0-9]* / ':'[a-zA-Z0-9]* / 
+
+*/? always succeeds,
+
+first_fixed (gets 
+  realfirst for calls,
+  or first charclass or special
+
+a <- ':' b / (c / d)+
+b <- ':' c
+c <- ':' d
+d <- ':' e
+e <- ':' a
+
+if first_fixed(rule) recurses to rule, error: non-terminating
+
+
+--- exlusive priority sequence: Result from first one that begins to match
+only. (doesn't try any more alternatives) ---
+b;c;d
+
+b;c;d = (&^u (b;c;d))
+where
+u ==> the shared prefix for b,c, and d
+&^e1 e2 ==> Predicate check for e1 and prepend to e2
+
+
+a <- &b c d
+if c >= b prepend b results to c
+
+BEFORE TRANSFORMATIONS TURN _ALL_ LITERALS INTO CHAR-CLASS SEQUENCES
+this will allow for a term-term comparison when looking for expressions that
+are subsets of other expressions.
+
+a <- b? c d
+b <- ':1b'
+c <- ':1c'
+d <- 'a'
+
+&':1'
+
+if seq(e1? e2) if e2 >= e1 and e1 pseudo-fails, sequence fails
+pseudo-fail: e1 failed even though e1? called it a (non consuming) success
+
+
+(e1 e2 e3 e4 e5)*
+
+
+
+
+if e1 =< e2, !(e1/e2)==!(e2/e1)==!(e1)
+
+=== Impossible
+&a b  where b does not begin with the equivalent to a
+!a b  where b does begin with the equivalent to a
+
+
+
 === factor_out_not
 !e1 !e2 = !(e1 / e2)  (because it doesn't consume)
 !e1 / !e2 = !(e1 / e2)
@@ -162,4 +270,48 @@ direct-left-recursion as multi?
 BIG:
 - determine if an ord can be rearranged safely and rearrange in order to enable
   other simpler optimizations.
+
+-------------
+ATTRIBUTES:
+notp
+andp
+star
+plus
+opt
+token
+{trans,    TransformExpression}
+{tag,      {Name,Qualifier}}
+{orig,     OriginalRuleName}
+{orig_tag, Name}
+
+transforms are applied from left to right (left-most is innermost)
+
+-------------
+ATTRIBUTE NORMALIZATION:
+(all) -> remove all orig & orig_tag (for now- unless needed later)
+(all) -> multiples removed (multiple notp's become 0 if even, 1 if odd)
+!and& -> remove & (no matter the order)
+!or& -> recursively remove all trans,tag from self
+token and no trans -> recursively remove all trans,tag from children
+? and ! and no tag or trans -> change into a no-op
+? and & and no tag or trans -> change into a no-op
+? and * -> remove ?
+? and + -> change to *
++ then * -> change to +
+* then + -> issue an error- can never succeed (child already ate everything)
+! and * and no tags/transfs-> change into a no-op (remove from parent if possible...)
+! and + -> remove +
+!or& and a seq -> remove all trailing children*, then if the last child is child+
+               change it to child (remove its plus)
+(all) -> Group together trans and tag (keeping correct order for trans)
+
+
+!(blah+)  = !(blah)
+!(blah blah*) = !(blah)
+
+!(blah+ another*)  = !(blah)
+
+!(blah another* a_third*
+
+
 
