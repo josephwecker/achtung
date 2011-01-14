@@ -283,6 +283,8 @@ token
 {tag,      {Name,Qualifier}}
 {orig,     OriginalRuleName}
 {orig_tag, Name}
+{entry,    Name}
+(recurse??)
 
 transforms are applied from left to right (left-most is innermost)
 

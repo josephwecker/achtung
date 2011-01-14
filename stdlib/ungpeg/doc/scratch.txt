@@ -52,7 +52,7 @@ function.
 
 
  (types of expression)
-rule -> existing rule
+call -> existing rule
 ord  -> ordered choice
 seq  -> sequence
 
@@ -244,9 +244,22 @@ create_tok_
 
 
 
+a <- a [-] num / num
+
+input:   -     -> fail
+input:   1     -> {'1'}   via e2
+input:   1-2   -> {'1-2'} via e1
+
+input:   1-2-3 -> {{'1-2'},'-3'}
 
 
+expr    <- product / sum / value
+sum     <- expr (('+' / '-') expr)*
+product <- expr (('*' / '/') expr)*
+value   <- [0-9.]+ / '(' expr ')'
 
+expr <- expr (('*' / '/') expr)* / expr (('+' / '-') expr)* / ([0-9.]+ / '(' expr ')')
+expr <- (expr ((('*' / '/') expr)* / (('+' / '-') expr)*)) / ([0-9.]+ / '(' expr ')')
 
 
 

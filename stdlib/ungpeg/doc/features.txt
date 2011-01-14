@@ -17,3 +17,10 @@
  - convention over configuration for parse and error transforms- simply looks
    for a fun with the same name as the rule (and checks to see if it handles a
    "fail" case as well)
+
+
+
+--------------------- PEG
+
+ - Tail recursion on all star expressions means no memory usage for
+   backtracking them.
