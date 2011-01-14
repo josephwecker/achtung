@@ -23,6 +23,7 @@ optimize([{rule,First,_,_}|_] = AST) ->
           fun(ExprIn)->tr_inline(ExprIn,TopLevelNames,Defs2) end) end),
   % 6. Rest of transformations
   MainExprs2 = all_transformations(MainExprs),
+  ast_map(fun first_fixed/1, MainExprs2),
 
   MainExprs2:to_list();
 
@@ -31,13 +32,22 @@ optimize(AST) -> error_logger:error_msg("AST doesn't look well:~n  ~p~n~n",[AST]
 all_transformations(Defs) ->
   lists:foldl(fun ast_map/2,
     Defs, [
-      fun tr_simple_lit_to_char/1,
-      fun tr_combine_char/1
+      %fun tr_simple_lit_to_char/1,
+      %fun tr_combine_char/1
+      fun tr_lits_to_chars/1,
+      fun tr_expand_chars/1,
+      fun tr_expand_plusses/1
+      %fun tr_condense_ords_seqs/1
     ]).
 
-% Some general utilities for mapping and folding the ast/expression
+% Some general utilities for mapping and folding the ast/expression.  We
+% normalize attributes after every ast_map.
 ast_map(Fun,Defs) ->
-  Defs:map(fun(_Name,Expr)-> expr_map(Expr, Fun) end).
+  normalize_attributes(Defs:map(fun(_Name,Expr)-> expr_map(Expr, Fun) end)).
+
+normalize_attributes(Defs) -> Defs.
+% TODO: implement
+  %Defs:map(fun(_Name,Expr) -> expr_map(Expr, fun norm_attr/1) end).
 
 expr_map(Expr, Fun) ->
   Expr2 = Fun(Expr),
@@ -164,8 +174,12 @@ get_tl_inner(Defs,{_,_,Exprs},Seen,Tops) when is_list(Exprs) ->
     Tops, Exprs);
 get_tl_inner(_,_,_,Tops) -> Tops.
 
-%--------------------------------------- TRANSFORMATIONS ---------------------
+%--------------------------------------- ATTRIBUTE NORMALIZATION -------------
+%norm_attr({Type,Attrs,Body}) ->
 
+
+
+%--------------------------------------- TRANSFORMATIONS ---------------------
 % Multi-level unalias
 tr_inline({call,CallAttrs,Name}=Call, TLNames, Defs) ->
   case TLNames:is_key(Name) of
@@ -176,20 +190,88 @@ tr_inline({call,CallAttrs,Name}=Call, TLNames, Defs) ->
   end;
 tr_inline(Expr, _TLNames, _Defs) -> Expr.
 
-% Turn literals that only have one char into character class (in case it can,
-% in turn, be combined)
-tr_simple_lit_to_char({lit,Attrs,<<Chr>>}) -> {char,Attrs,[Chr]};
-tr_simple_lit_to_char(Other) -> Other.
+%% Turn literals that only have one char into character class (in case it can,
+%% in turn, be combined)
+%% Before:  a <- 'a' 'bc'
+%% After:   a <- [a] 'bc'
+%tr_simple_lit_to_char({lit,Attrs,<<Chr>>}) -> {char,Attrs,[Chr]};
+%tr_simple_lit_to_char(Other) -> Other.
 
-% Combine ord-charclasses into charclass
-tr_combine_char({ord,Attr,OrdList}) -> {ord, Attr, tr_combine_char_inner(OrdList,[])};
-tr_combine_char(Other) -> Other.
-tr_combine_char_inner([],Acc) -> lists:reverse(Acc);
-tr_combine_char_inner([One],Acc) -> lists:reverse([One|Acc]);
-tr_combine_char_inner([{char,A1,Ranges1}|[{char,A2,Ranges2}|R]],Acc) when
-  ((A1 == []) or (A1 == [orig])) and ((A2 == []) or (A2 == [orig])) ->
-    tr_combine_char_inner([{char,A1++A2,lists:usort(Ranges1++Ranges2)}|R], Acc);
-tr_combine_char_inner([Other|R],Acc) -> tr_combine_char_inner(R,[Other|Acc]).
+%% Combine ord-charclasses into charclass. Captures no problem because we're in
+%% an ord, but if any are prefixed or suffixed this transform doesn't apply.
+%% Before:  a <- [a]/[b]/[c]
+%% After:   a <- [abc]
+%tr_combine_char({ord,Attr,OrdList})->{ord,Attr,tr_combine_char_inner(OrdList,[])};
+%tr_combine_char(Other) -> Other.
+%tr_combine_char_inner([],Acc) -> lists:reverse(Acc);
+%tr_combine_char_inner([One],Acc) -> lists:reverse([One|Acc]);
+%tr_combine_char_inner([{char,A1,Ranges1}|[{char,A2,Ranges2}|R]],Acc) ->
+%  case {A1,A2} of
+%    {[],[]} -> 
+%  ((A1 == []) or (A1 == [orig])) and ((A2 == []) or (A2 == [orig])) ->
+%    tr_combine_char_inner([{char,A1++A2,lists:usort(Ranges1++Ranges2)}|R], Acc);
+%tr_combine_char_inner([Other|R],Acc) -> tr_combine_char_inner(R,[Other|Acc]).
 
-% - combine seq-single-range-charclasses into literals
+% Sequential literals or 1-char charclasses combine
+% Before:  a <- 'hey' [\t] ':'
+% After:   a <- 'hey\t:'
+
+%tr_combine_lits({seq,Attr,EList})->{seq,Attr,tr_combine_lits_inner(EList,[])};
+
+tr_lits_to_chars({lit,A,<<Char>>}) ->{char,A,[Char]};
+tr_lits_to_chars({lit,A,Chars})->{seq,A,[{char,[],[C]}||C<-binary_to_list(Chars)]};
+tr_lits_to_chars(Other)->Other.
+
+tr_expand_chars({char,_,[_]}=E)-> E;
+tr_expand_chars({char,Attrs,Ranges})->{ord,Attrs,[{char,[],[R]}||R<-Ranges]};
+tr_expand_chars(Other)->Other.
+
+tr_expand_plusses({Type,Attrs,Body}=E)->
+  case lists:member(plus,Attrs) of
+    true -> {seq,lists:delete(plus,Attrs),[{Type,[],Body},{Type,[star],Body}]};
+    false -> E
+  end.
+
+%--------------------------------------- UTILITIES ---------------------------
+
+first_fixed({_,Attrs,_}=E) ->
+  case lists:member(star,Attrs) of
+    true -> none;
+    false ->
+      case lists:member(opt,Attrs) of
+        true -> none;
+        false -> first_fixed_i(E)
+      end
+  end.
+first_fixed_i({char,_,[R]}) -> R;
+first_fixed_i({ord,A,Exprs}) ->
+  R = common_prefix([first_fixed(E)||E<-Exprs]),
+  io:format("Common prefix for ~p: '''~s'''~n",
+    [{ord,A},lists:map(fun({C1,C2})->[$[,C1,$-,C2,$]];(C3)->C3 end, R)]),
+  R;
+first_fixed_i({seq,A,Exprs}) ->
+  R = common_prefix([lists:flatten([first_fixed(E)||E<-Exprs])]),
+  io:format("Common prefix for ~p: '''~s'''~n",
+    [{seq,A},lists:map(fun({C1,C2})->[$[,C1,$-,C2,$]];(C3)->C3 end, R)]),
+  R;
+first_fixed_i({special,_,S}) -> S;
+first_fixed_i(_) -> none.
+
+%% Given a list of lists, returns whatever prefix they all have in common.
+common_prefix(Lists) -> common_prefix(Lists,[]).
+common_prefix(Lists,Acc) ->
+  case lists:member([],Lists) of
+    true -> lists:reverse(Acc);
+    false ->
+      Firsts = [T||[T|_]<-Lists],
+      Rests = [R||[_|R]<-Lists],
+      case lists:usort(Firsts) of
+        [none] -> lists:reverse(Acc);
+        []     -> lists:reverse(Acc);
+        [Term] -> common_prefix(Rests, [Term|Acc]);
+        _      -> lists:reverse(Acc)
+      end
+  end.
+
+
 
