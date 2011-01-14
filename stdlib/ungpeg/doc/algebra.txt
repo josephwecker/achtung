@@ -1,9 +1,11 @@
 === Reduced Form ===
-
+ * Everything inlined except for recursive calls, entry-points, and accumulators
+ * All prefix (predicate) attributes and suffix attributes reduced (see below)
+ * No '+' accumulators- only '*' accumulators
 
 = Ordered Priority Sequence (ord) =
- * Contains no ords (sucked inline)
- * Contains no opts (all changed to inline term/empty)
+ * Contains no ords (sucked inline)  # TODO: what attributes on an inner ord would overrule this?
+ * Contains no opts (all changed to inline term/empty) # TODO: ditto
  * Contains nothing after any 'star' term (which will always succeed)
  * Contains nothing after 'empty' (removed w/ warning)
  * Contains at least two terms (if empty internal-error, if 1 child, replaces parent)
@@ -18,3 +20,6 @@
 
 = Sequence (seq) =
  * Any andp predicates preceding an ord 
+
+
+== Normalized Attributes ==

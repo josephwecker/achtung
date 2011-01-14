@@ -37,7 +37,7 @@ all_transformations(Defs) ->
       %fun tr_combine_char/1
       fun tr_lits_to_chars/1,
       fun tr_expand_chars/1,
-      fun tr_expand_plusses/1
+      fun tr_expand_plusses/1    %% Now in 2nd form (assuming inlining has taken place)
       %fun tr_condense_ords_seqs/1
     ]).
 
