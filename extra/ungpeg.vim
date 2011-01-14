@@ -19,16 +19,16 @@ syn match   erlpegDLitDelim       /\\\@!"/ contained
 syn match   erlpegSLitDelim       /\\\@!'/ contained
 
 
-syn match   erlpegToken           /\<[A-Z][a-zA-Z_:]*/ contains=erlpegTaggedRule
-syn match   erlpegRuleRef         /\<[a-z][a-zA-Z_:]*/ contains=erlpegTaggedRule
-syn match   erlpegOptToken        /\<[A-Z][a-zA-Z_:]*?/ contains=erlpegTaggedRule
-syn match   erlpegOptRuleRef      /\<[a-z][a-zA-Z_:]*?/ contains=erlpegTaggedRule
-syn match   erlpegTaggedRule      /:[a-zA-Z_]*/ contained
+syn match   erlpegToken           /\<[A-Z][a-zA-Z0-9_:]*/ contains=erlpegTaggedRule
+syn match   erlpegRuleRef         /\<[a-z][a-zA-Z0-9_:]*/ contains=erlpegTaggedRule
+syn match   erlpegOptToken        /\<[A-Z][a-zA-Z0-9_:]*?/ contains=erlpegTaggedRule
+syn match   erlpegOptRuleRef      /\<[a-z][a-zA-Z0-9_:]*?/ contains=erlpegTaggedRule
+syn match   erlpegTaggedRule      /:[a-zA-Z0-9_]*/ contained
 
 " Rule
-syn match   erlpegEntryRule       /\(^\|;\)\s*:[a-z][a-zA-Z_]*/ contains=erlpegEntryDelim
-syn match   erlpegNormRuleName    /\(^\|;\)\s*[a-z][a-zA-Z_]*/
-syn match   erlpegTokRuleName     /\(^\|;\)\s*[A-Z][a-zA-Z_]*/
+syn match   erlpegEntryRule       /\(^\|;\)\s*:[a-z][a-zA-Z0-9_]*/ contains=erlpegEntryDelim
+syn match   erlpegNormRuleName    /\(^\|;\)\s*[a-z][a-zA-Z0-9_]*/
+syn match   erlpegTokRuleName     /\(^\|;\)\s*[A-Z][a-zA-Z0-9_]*/
 syn match   erlpegAssign          /<-/
 
 syn match   erlpegEntryDelim      /:/ contained
