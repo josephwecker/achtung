@@ -18,7 +18,10 @@
    for a fun with the same name as the rule (and checks to see if it handles a
    "fail" case as well)
 
-
+ - Semantic predicates in addition to transformations (allow it to return its
+   own error).
+ - Current generic state available in all transformations and semantic
+   predicates.
 
 --------------------- PEG
 
