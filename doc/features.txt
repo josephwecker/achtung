@@ -25,6 +25,11 @@
 
 Maybe triple back-ticks or something breaks into erlang?
 
+
+keyword that corresponds to current function name- like 'this' or 'recurse' or
+something- makes recursion easier on long-named functions and makes it much,
+much easier on anonymous functions.
+
 Errors / Warnings
  - ability to tell which clause, if not the line-number, in runtime errors
  - Shows as many errors as possible in single pass
