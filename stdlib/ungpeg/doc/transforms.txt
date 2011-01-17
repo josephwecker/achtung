@@ -74,22 +74,379 @@ c <- '-2' / '-3' / '-5'
 d <- '-2' / '-3' / '-4'
 ---------- inline again
 a <- ('-2' / '-3' / '-4') / ('-2' / '-3' / '-5') / ('-2' / '-3' / '-4')
----------- ord-simplify (???)
-a <- ('-2' / '-3') / ('-4' / '-5')
+---------- ord-simplify
+reduce
+a <- '-2' / '-3' / '-4' / '-2' / '-3' / '-5' / '-2' / '-3' / '-4'
+remove dups
+a <- '-2' / '-3' / '-4' / '-5'
 
 
---------------------- lit_to_char
-e <- [2]
-f <- [3]
-g <- [4]
-h <- [5]
 
+------------------------------ REDISTRIBUTING
+rule rd1: (a b c) / (a b d) == a- b- (c/d) # The - means that consumed is prepended to
+                                 # next if the original expression has a
+				 # transform on it.  Might not be necessary due
+				 # to pre-tagging.
+				 # (num_consumed is same in
+				 # both by definition)
+rule rd2: (a b c) / (d b c) == (a/d)- b- c   iff num_consumed(a) == num_consumed(d)
+
+rule rd3: (a x c) / (a y c) == a- (x/y)- c   iff num_consumed(x) == num_consumed(y)
+
+rule rd4: x / y == x ; y   iff x and y do not have a common prefix
+
+
+(a b c d e f) / (a b x d y f)  # (if all have same num_consumed)
+(a b)- (c;x)- d- (e;y)- f
+
+
+Goal:  Turn as many ords into exords (exclusive ordered priority expressions -
+result is result of first expression that has a succeeding term).
+ 1. Inline and normalize
+ 2. Cut up literals and character classes into smallest chunks possible (except
+    maybe just pretend in the case of most character class ranges)
+ 3. Redistribute
+ 4. Reorder (see below) any exords that would lead to more redistributing
+ 5. Recurse to 3 until no gains can be made.
+
+
+Hypothesis: As each sub-expression (seq) gets more and more redistributed outward, it either:
+ - turns into an /succ
+ - reveals that the grammar is flawed (succ comes before other terms)
+ - turns into part of an exord
+(true when inners are terminals - proof below)
+(true when last term is any or any* or any+ - proof below)
+(just haven't worked out inner multis or predicates yet.)
+THUS NO BACKTRACKING
+
+------------------------------ REORDERING FOR REDISTRIBUTION
+* Character classes can always be reordered any way desired
+* Any expressions that don't consume the same first token can be redistributed
+  - so ; implies both exclusive matching _and_ ability to reorder.
+* Any seq in the ord reduced to nothing becomes 'succ'
+
+--- def
+e1 / any* == (e1 / any*) ; any*
+
+e1 / any+ == e1p (e1s / any*) ; any+
+
+
+e <- a / b / o
+a <- [a-c] rest_a
+b <- [c-f] rest_b
+o <- (something with different prefix)
+
+a <-- ([a];[b];[c]) rest_a
+b <-- ([c];[d];[e];[f]) rest_b
+
+e <-- ([c];[a];[b]) / ([c];[d];[e];[f]) / o
+
+e <-- ([c] (([a];[b]) rest_a/([d];[e];[f]) rest_b));o
+
+e <-- [c] ([a-b] rest_a ; [d-f] rest_b) ; o
+
+
+anything can get pulled out of 'any'
+a <- 'one' / 'once' / 'only' / any*
+a <-- 'on'- ('e'/'ce'/'ly'/any
+
+
+a <- 'ones' / 'one' / 'only' / any
+a <-- 'ones' / 'one' / 'only' / ([a]/[b]/[c]/...)
+a <-- 'ones' / 'one' / 'only' / ([a]/[b]/[c]/...)
+a <-- 'o'-('nes'/'ne'/'nly'/succ) / any  # technically (!'o' any) but doesn't matter
+a <-- 'o'-('n'-('es'/'e'/'ly')/succ)/any
+
+a <=- 'o' ('n' ('e' ('s'/succ);'ly')/succ);any
+# Note that something reducing to succ while it still has terms to the right
+# indicates that it was a prefix of something to the right- which is not
+# "proper" and should elicit an error.
+
+a <- 'ones' / 'one' / 'only' / any+
+a <-- 'ones' / 'one' / 'only' / (any any*)
+a <-- 'o' ('nes' / 'ne' / 'nly' / any*) / (any any*)
+...
+a <-- 'o' ('n' ('e' ('s' / succ) ; 'ly' ; any*) ; any*) ; any+
+a <=- 'o' ('n' ('e' ('s' / succ) ; 'l' ('y' ; any*) ; any*) ; any*) ; any+
+
+*** Perhaps pulled prefixes are handled by keeping a counter per
+original-tagged-choice.  (edit: not needed! see below- pulled prefixes seem to
+be handled by pre-tagging perfectly!)
+
+Tagging hypothesis: possible tags big @ beginning of expr and then shrinks and
+in the end exactly matches what was desired before transformations. (seems to
+work for ords but who knows about other forms...).
+
+a <- 1:'ones' / 2:'one' / 3:'only' / 4:any+
+a <=- 1:2:3:4:'o' (1:2:3:4:'n' (1:2:4:'e' (1:'s' / 2:succ) ; 3:4:'l' (3:'y' ; 4:any*) ; 4:any*) ; 4:any*) ; 4:any+
+
+iteration:
+<a,1,'o'> possible-tags: [1,2,3,4]
+<a,2,'n'> possible-tags: [1,2,3,4]
+<a,3,'e'> possible-tags: [1,2,4]
+<a,4,'r'> possible-tags: [4]
+
+------------------------------ PREDICATES
+
+e1 !e2 == !(e1 e2) e1   (from peg-popI04 - second one merely invokes e1 2x at the same spot)
+
+e1 / e2 == e1 / !e1 e2 == !e1 e2 / e1
+
+
+e <- a / b
+a <- something !DELIM rest_a
+b <- something DELIM rest_b
+ ==
+e <- c
+c <- something (!DELIM rest_a / DELIM rest_b)
+(via regrouping above)
+
+
+e / success == &e e
+(&e e)      == e?
+(!e .) e    == (&e e) / any
+
+
+e <- T (!T (a / b / any))* T
+e <=- T (T ; (a;b;any) (a;b;any)* T)
+
+str <- '"' (!'"' ('\\\\' / '\\"' / any))* '"'
+str </- '"' ('"' ; ('\\' ('\\' ; '"') ; any)* '"') # not right because inner consumes trailing '"' - should give always fails warning
+-----------
+
+<predicates> a --> Remove any predicates that are already handled within a
+e <- ![abc] [b]   # Always fails
+
+e <- !([a] [c]) [a] [b]
+e <-- [a] [b]   # [a] [b] already precludes the possibility of [a] [c]
+Soo.... it only makes sense when the predicate is either narrowing the scope of what's looked for, as in:
+e <- (![j] [a-z])*
+(in which case it's just shorthand) or when it is longer than the next term(s) over, as in:
+e1 <- (!e3 e2)*
+e2 <- 'asdf'
+e3 <- 'asdf-'
+(in which case there are two ways for e1 to fail- when e2 fails or when e3
+succeeds. If there is nothing waiting for the equivalent of e3 directly after
+the clause, it will always fail when e3 succeeds- because that's what's on the
+input.)
+OR when clauses need to be reorganized for some reason
+e1 <- e2/!e4 e3/e4
+e2 <- 'asdf'
+e3 <- 'asd:'
+e4 <- 'asd:+'
+(very analogous to reason #2- longer when the next term over- except it applies to any of the subsequent
+terms in the ord)
+
+Hypothesis:  all predicates at the head of ord terms can be removed by redistributing/regrouping terms
+
+So...
+*** (!a b)* a == (a^-/b)*  == (a^-/b)* c [when c is prefixed with a]
+*** (!a b)* c [where c is not prefixed with a] == (a^fail/b)*   # possibly worth a warning- seems like more of a semantic error...
+
+e1 <- (!a b)* a
+e1 <-- e2 a
+e2 <-- !a b e2 / empty
+
+e1 <-- e2
+e2 <-- a / b e2
+
+
+!a b c == (a^fail/b) c
+
+&a b c --> valid only if a is ... ???
+
+------
+
+MULTIS BRANCH OFF WITH ALL THE SUBSEQUENT ITEMS- NOT JUST THE MULTI BY ITSELF
+
+predicate:  branch into fail path and success path.
+
+-----
+
+r1     <- smalls bigs
+smalls <- (!'ab' 'a')*
+bigs   <- 'ab'*
+
+r1     <-- (!'ab' 'a')* 'ab'*
+
+r1     <-- ('a' !'b')* 'ab'*
+
+# Trick - only set up second rule to be called on first recurse- that way all
+# the transformations continue to be straightforward on initial one and any
+# number of actual loops can be constructed from one expression depending on
+# the context.
+r1     <-- 'a' !'b' r1 / 'ab' r2 / succ
+r2     <-- 'ab' r2 / succ
+
+r1     <-- 'a'-(!'b' r1 / 'b' r2) / succ
+
+r1     <=- bigs:smalls:'a' (bigs:'b' r2 ; r1) / succ
+r2     <=- bigs:'ab' r2 / succ
+
+*** TODO: prove   !(ab) a == a !b [already proven in peg-popI04 3.7]
 
 -------
 
-a <- b ':' c
-b <- (!':' .)*
-c <- .*
+r1 <- (!eof !'a' !'b' 'd') ('alpha'/'beta')
+r1 <-- ((!eof/!'a'/!'b') 'd') ('alpha';'beta')
+r1 <=- 'd' ('alpha';'beta')
+
+
+r1 <- (!'ab' 'a')* [a-f]+
+r1 <-- (!([a][b]) [a])* [a-f] [a-f]*
+r1 <-- ([a] ![b])* [a-f] [a-f]*
+-----
+
+!(ab) a == a !b
+
+!(abc) ab == ab !c
+
+!(abc) !(bcd) (ab/bc) == !(abc/bcd) (ab/bc) =[how?]= (ab !c;bc !d)
+!(abc) !(bcd) (ab/bc) == (!(abc)/!(bcd)) (ab/bc)
+
+*** (!at/!bt) (a/b)
+
+e1 <- (!at/!bt) (a/b)
+e1 <-- (!at/!bt) a / (!at/!bt) b    # Via choice/seq distributive rule
+e1 <-- !at !bt a / !at !bt b        # Via equiv-predicate rule
+e1 <-- !at a / !bt b                # Via redundant-predicate rule
+e1 <-- a !t / b !t                  # Via predicate-commutative rule
+e1 <-- (a/b) (!t/!t)                # Via choice/seq distributive
+e1 <-- (a;b) !t                     # Via excord-rule and redundant-choice rule
+
+*** RULE: redundant-predicate:
+          - Remove any not-predicate that is disjoint from next consumtion,
+          - Remove any and-predicate that is a prefix of next consumtion
+*** e.g.,   !'abc' !'bcd' 'ab' == !'abc' 'ab'
+            &'ab' !'bcd' 'abc' == 'abc'
+	    
+
+!'ab' 'a'?
+
+Predicate in a seq:
+ Given: predicate+ expr
+ - Expand predicates to its subexpressions recursively
+ - Remove redundant predicates
+ - If remaining predicates preclude possibility of expr, replace all with 'fail'
+ - Commute like-terms to the left and remaining predicates to the right
+ - Recurse until any remaining predicates are at the end of their sub-expression
+
+Predicate in an ord:
+ TODO: YOU ARE HERE
+
+What to do with them then:
+
+
+----
+# Super example...
+D <- &(A ![b]) [a]* B eof
+A <- [a] A [b] / empty
+B <- [b] B [c] / empty
+
+
+
+
+
+
+
+
+------------------------------ STAR
+hypothesis: each star term has set of possible beginning characters
+a <- 'ones' / 'one' / 'o'* / 'orange'
+a <-- 'o'('nes'/'ne'/'o'*/'range')
+a <=- 'o'('ne'('s'/succ);'o'*;'range')
+
+a <- 'a'+ [1] / 'a'+ [2]
+a <=- 'a'+ ([1] ; [2])
+
+
+
+# ([] brackets around [U],[J],[1], and [2] tokens removed)
+ea <- 1:(  (U/J+)+ 1  ) / 2(  U* 2  )
+      any number of U's + J's (but at least one of either) followed by 1.       zero or more U's followed by 2.
+input: 'aa2' (2)
+input: 'aa1' (1)
+input: 'ab1' (1)
+input: '2'   (2)
+-------------------------------------------------- try 1
+ea <-- 1:(U/J J*) 1:(U/J J*)* 1:1 / 2:U* 2:2
+ea <-- (U/J J*) (U/J J*)* 1 / U* 2
+ea <-- (U/J) J* (U/J J*)* 1 / U? U* 2
+ea <-- (U J* (U/J J*)* 1) / (J J* (U/J J*)* 1) / U* 2   (via rule rd2)
+       [U]                              [J]                             [a2]
+ea <-- (U J* (U/J J*)* 1) / (J J* (U/J J*)* 1) / 2 / U U* 2
+**** TODO: Prove and name:  U* J == J / U U* J   :unmulti
+ea <-- (U J* (U/J J*)* 1) / (U U* 2) / (J J* (U/J J*)* 1) / 2
+**** TODO: Prove you group ord-terms by first-consumed character (but same order within groups)
+ea <-- U (J* (U/J J*)* 1 / U* 2) ; J J* (U/J J*)* 1 ; 2
+                                                ; J-final ; 2-final
+ea <-- U {call-'eb'} ; J-final ; 2-final
+eb <-- J* (U;J J*)* 1  /  U* 2
+eb <-- J J* (U;J J*)* 1 / (U;J J*)* 1 / U U* 2 / 2 
+                         ^ expand   ^
+eb <-- J J* (U;J J*)* 1 / (U;J J*) (U;J J*)* 1 / 1 / U U* 2 / 2
+..... # I think I can get there- it's just taking forever because of all these *s
+-------------------------------------------------- try 2
+ea <- (U/J+)+ 1 / U* 2
+ea <-- (U/J)+ 1 / U* 2
+ea <-- (U/J) (U/J)* 1 / U U* 2 / 2
+ea <-- U (U/J)* 1 / J (U/J)* 1 / U U* 2 / 2
+ea <-- U-((U/J)* 1 / U* 2) ; J (U/J)* 1 ; 2
+         ^^^^^^     ^^
+          U* J (U/J)* 1 / U* 1 / U* 2
+	  U*-(1 /J (U/J)* 1 / 2)
+
+ea <=- U-(U*-(1 ; J(U/J)*1 ; 2)) ; J(U/J)*1 ; 2
+
+**** TODO: Prove that: (a/b)* rest == a* b (a/b)* rest / a* rest  (you either see 'b' or not)
+****       also, since (a/b) == (a;b)  you can choose which term you want to pull out
+****  What about (a/b/c)* ?
+**** :extract-from-multi-ord
+
+** (a/b)* rest
+** (a/b/c)* rest
+
+(a/b)* rest == a* rest / a* (a/b)* rest == b* rest / b* (a/b)* rest == a* rest / b* (a/b)* rest [though this isn't as useful]
+(a/b/c)* rest == a* rest / a* (a/b/c)* rest == 
+
+--- Is there an input value that narrows the path?
+  - if there is none, then a factor can be pulled out
+  - if there is, then that becomes the one to try to turn into an exord
+e <-  (a/b)* rest / b rest2
+e <-- a (a/b)* rest / b (a/b)* rest / b rest2
+e <-- a (a/b)* rest ; b-((a/b)* rest ; rest2)
+e <=- a (a/b)* rest ; b-((a;b) (a;b)* rest ; rest2 ; rest)
+
+e <-  (a/b/c)* rest / c rest2
+e <=- (a;b) (a/b/c)* rest ; rest ; c-((a;b;c) (a;b;c)* rest ; rest2 ; rest)
+...
+
+
+
+
+#. Pull first expressions off if the same (even if huge) (distributive)
+#. If first term in seq is an ord*
+#. If first term in seq is an e*, replace with lit-multi-rest/rest
+
+#. Group like-prefixes appropriately
+
+#. Flatten (single term ords and seqs flattened and all attributes normalized)
+
+****  TODO: Prove (a/b/c)+ == (a+/b/c)+ == (a/b+/c)+ == (a/b/c+)+   Only when well formed!! (no latter terms w/ earlier terms as a prefix)
+(a/b+)+
+(a+/b)+
+
+(dot / space+)+
+(dot or space to succeed, then any number of dots and spaces)
+
+(three / one+)+
+
+
+
+------------------------------ SPECIAL-CASE MACHINE INSTRUCTIONS 
+* Aggregate vs. prefix-aggregate vs. traverse
+* 
+
 
 
 ---------
@@ -124,12 +481,55 @@ a <- 'hi' / 'there' / [a-z]
 a <- [h][i] / [t][h][e][r][e] / [a-z]
 a <- [h][i];[t][h][e][r][e]/[a-z]
 BUT
-a <- 'hi' / [a-z] 'i' / 'there'
+a <- 'hi' / [a-z] 'i' / 'there'  # really:  a <- 'hi' / ([a-g]/[i-z]) 'i' / 'there'
 a <- [h][i]/[a-z][i]/[t][h][e][r][e]
 
 1: m([h],s: m([i],s:S,f:3-m), <<< skip to 3-m on fail of 'i'
          f: 2-m)
 2: m([a-z],s: m([i],s:S,f:...
+
+
+SO:
+a <- 'hi' / [a-z] 'i' / 'there'
+ ==
+a <- 'hi' ; [a-z] 'i' ; 'there'
+BUT
+a <- 'hi' / [a-z] 'j' / 'there'
+ ==
+a <- 'hi' ; [a-z] 'j' / 'there'
+-----------------
+
+a <- [a] [a] [a] [a] / [a] [a] [a] / [a-f]*
+a always succeeds
+a consumes 4, 3, 2, 1, or 0 'a's
+
+---------------------------------
+
+NORMALIZATION & OPTIMIZATION OF !X ... X  PATTERN
+
+a <- (!["] .) ["]
+ ==
+a <- 
+
+
+---------------------
+a <- b?
+b <- c+
+
+?+ == *
+
+a <- b / emp
+b <- c c*
+a <- c c* / emp
+
+(e1 e1*)? == e1*
+e1 e1* / emp == e1*
+^         ^
+force    unforce
+
+
+
+
 
 Idea: Find "distinguishing" term and fork off that condition instead
 
@@ -290,8 +690,9 @@ transforms are applied from left to right (left-most is innermost)
 
 -------------
 ATTRIBUTE NORMALIZATION:
-(all) -> remove all orig & orig_tag (for now- unless needed later)
-(all) -> multiples removed (multiple notp's become 0 if even, 1 if odd)
+AFT  (all) -> remove all orig & orig_tag (for now- unless needed later)
+DONE (all) -> multiples removed (multiple notp's become 0 if even, 1 if odd)
+DONE ! -> &! (& is no-consume- this way it will become & if !'s cancel out later)
 !and& -> remove & (no matter the order)
 !or& -> recursively remove all trans,tag from self
 token and no trans -> recursively remove all trans,tag from children
@@ -299,13 +700,18 @@ token and no trans -> recursively remove all trans,tag from children
 ? and & and no tag or trans -> change into a no-op
 ? and * -> remove ?
 ? and + -> change to *
-+ then * -> change to +
-* then + -> issue an error- can never succeed (child already ate everything)
+DONE + then * -> change to +
+DONE * then + -> issue an error- can never succeed (child already ate everything)
 ! and * and no tags/transfs-> change into a no-op (remove from parent if possible...)
 ! and + -> remove +
 !or& and a seq -> remove all trailing children*, then if the last child is child+
                change it to child (remove its plus)
 (all) -> Group together trans and tag (keeping correct order for trans)
+!/& both propagate a & to all children
+
+PREDICATES
+& == % (no-consume)
+
 
 
 !(blah+)  = !(blah)
