@@ -1,0 +1,7 @@
+string        <- (S? string_part)+
+string_part   <- simple_string / long_string
+simple_string <- '"' not_quot* '"'
+not_quot      <- !'"' ("\\" . / !"\\" .)
+long_string   <- "'''" not_triple_ap* "'''"
+not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)
+S             <- [ \t\n\r]+
