@@ -47,10 +47,10 @@ ast_map(Fun,Defs) ->
   normalize_attributes(Defs:map(fun(_Name,Expr)-> expr_map(Expr, Fun) end)).
 
 normalize_attributes(Defs) -> Defs.
-% TODO: implement
-  %Defs:map(fun(_Name,Expr) -> expr_map(Expr, fun norm_attr/1) end).
+  Defs:map(fun(_Name,Expr) -> expr_map(Expr, fun norm_attr/1) end).
 
 expr_map(Expr, Fun) ->
+  % TODO: flatten and remove []'s so that they can be expanded & shrunk
   Expr2 = Fun(Expr),
   case Expr2 of
     {ord,Attr,L} -> {ord,Attr,[expr_map(L2,Fun)||L2<-L]};
@@ -176,7 +176,23 @@ get_tl_inner(Defs,{_,_,Exprs},Seen,Tops) when is_list(Exprs) ->
 get_tl_inner(_,_,_,Tops) -> Tops.
 
 %--------------------------------------- ATTRIBUTE NORMALIZATION -------------
-%norm_attr({Type,Attrs,Body}) ->
+-record(attr, {
+    notp=false, andp=false,                   % Prefixes / predicates
+    star=false, plus=false, opt=false,        % Suffixes
+    token, trans, tag, orig, orig_tag, entry  % Parsing
+  }).
+norm_attr({Type,Attrs,Body}) ->
+  norm_attr_inner({Type,attr_normal_form(Attrs),Body}).
+attr_normal_form(A) -> attr_normal_form(A,#attr{}).
+anf([notp|R],A)->anf(R,A#attr{notp=not A#attr.notp, andp=true}); % Norm: !e1 == !&e1; !&(!&e1) == &e1
+anf([andp|R],A)->anf(R,A#attr{andp=true});
+anf([star|R],A#attr{plus=true})->anf(R,A#attr{plus=false,star=true});  % Plus is dropped because: (e1+)* == e1*
+anf([star|R],A)->anf(R,A#attr{star=true});
+anf([plus|R],A#attr{star=false})->anf(R,A#attr{plus=true});  % (e1*)+ will never succeed
+anf([plus|R],A)->throw("Expression never succeeds (child * eats everything so there's nothing left for +)");
+anf([opt |R],A#attr{star=true})->anf(R,A);
+anf([opt |R],A)->anf(R,A#attr{opt=true});
+anf([
 
 
 
@@ -247,12 +263,12 @@ first_fixed({_,Attrs,_}=E) ->
 first_fixed_i({char,_,[R]}) -> R;
 first_fixed_i({ord,A,Exprs}) ->
   R = common_prefix([first_fixed(E)||E<-Exprs]),
-  io:format("Common prefix for ~p: '''~s'''~n",
+  io:format("Common prefix for ~p: <~s>~n",
     [{ord,A},lists:map(fun({C1,C2})->[$[,C1,$-,C2,$]];(C3)->C3 end, R)]),
   R;
 first_fixed_i({seq,A,Exprs}) ->
   R = common_prefix([lists:flatten([first_fixed(E)||E<-Exprs])]),
-  io:format("Common prefix for ~p: '''~s'''~n",
+  io:format("Common prefix for ~p: <~s>~n",
     [{seq,A},lists:map(fun({C1,C2})->[$[,C1,$-,C2,$]];(C3)->C3 end, R)]),
   R;
 first_fixed_i({special,_,S}) -> S;
