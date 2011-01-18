@@ -12,6 +12,8 @@ A <- a A b / succ
 |f| the rest after failure
 
 
+
+
 r1 <- (!'ab' 'a')* [a-f]+
 r1 <- (|t| !'ab'
        |s| 'a')* [a-f]+
@@ -32,6 +34,23 @@ r1 <- ('a' !('aaaa'('b';'ac')))* [a-f]+
 r1 <- ('a' |!t| 'aaaa'('b';'ac'))
            |s| 'a' !('aaaa'('b';'ac')))* [a-f]+
 	   |f| fail
-'a'=> |!t|
+'a'=> |!t| 'aaa'('b';'ac')) & 'aaaa'('b';'ac')
+      |s| 'a' !t)* [a-f]+
+      |f| fail
+
+'a'=> |!t| 'aa'('b';'ac')) & 'aaa'('b';'ac')) & 'aaaa'('b';'ac')
+'a'=> |!t| 'a'('b';'ac')) & 'aa'('b';'ac')) & 'aaa'('b';'ac') & 'aaaa'('b';'ac')
+'a'=> |!t| 'b';'ac' & 'a'.. & 'aa'.. & 'aaa'.. & 'aaaa'..
+'a'=> |!t| 'c' & 'b';'ac' & 'a'.. & 'aa'.. & 'aaa'.. & 'aaaa'..
+
+-----------
+
+
+
+
+
+-----------
+Everything decomposed into steps that operate on a single input character
+
 
 
