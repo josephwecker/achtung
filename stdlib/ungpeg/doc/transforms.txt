@@ -323,31 +323,102 @@ e1 <-- (a;b) !t                     # Via excord-rule and redundant-choice rule
 
 !'ab' 'a'?
 
+(a/b/!c/d)
+
+ (!a/b/c) == &a (b/c)   NIX
+ (a/b/!c/d/e) == (a/b/ &c (d/e))  NIX
+
+ (a/b/&c/d/e) =  NIX
+ a/b/(!c (d/e))/succ # !c (d/e) -> d/e | d/e !c2 | fail
+   a / b / d / e / succ |  # If !c redundant with both d and e
+   a / b / d !c2 / e !c2 / succ | # If &c filters d and e
+   a / b / fail / succ = a / b / succ # If !c precludes both d and e
+
+ e1 <- ('a'/'b'/&'cd'/'cde'/'cdef') ---> ('a'/'b'/&'cd')
+ e1 <-- (a/b/<pred>/d/e) -> a/b/<pred> if pred prefixes d/e
+
+ e1 <-- 'a'/'b'/!(!'cd')/'cde'/'cdef'
+ e1 <-- 'a';'b';(!'cd'/'cde'/'cdef');succ
+ e1 <-- 'a';'b';@!#$
+
+ (a/b/&c/d) rest  # rest == succ if really nothing else there
+                  # is there ever really nothing else there?
+ (a/b/&c rest/d)
+
+entrypoint <- expr* ({succ|remaining} {eof})
+
+
+ I _think_ this is minimal for and enough to go to the next step
+
+***  
+ a/(b <pred>)/c
+
+ a ; b !d ; c
+ also a final form??
+
+
+
+
+
 Predicate in a seq:
  Given: predicate+ expr
- - Expand predicates to its subexpressions recursively
- - Remove redundant predicates
- - If remaining predicates preclude possibility of expr, replace all with 'fail'
- - Commute like-terms to the left and remaining predicates to the right
- - Recurse until any remaining predicates are at the end of their sub-expression
+ 1- Expand predicates to its subexpressions recursively
+ 2- Remove redundant predicates
+ 3- If remaining predicates preclude possibility of expr, replace all with 'fail'
+ 4- Commute like-terms to the left and remaining predicates to the right
+ 5- Recurse until any remaining predicates are at the end of their sub-expression
+ Because of these actions, predicate will always either move to the right, turn
+ the subexpression into fail, or disappear completely.
+
+ <preds> e1 --becomes--> fail | e1 | e1 <pred>
 
 Predicate in an ord:
- TODO: YOU ARE HERE
+ 1- Do transformation so that predicates only come at the very end of ord
+    choices. (see above for solution when choice is predicate-only)
 
 What to do with them then:
+ e1 = e2 <pred>
+ or
+ e1 = e2;(e3 <pred>)
 
+
+DO IT
 
 ----
 # Super example...
 D <- &(A ![b]) [a]* B eof
-A <- [a] A [b] / empty
+     1^        2^   3^
+A <- [a] A [b] / empty  # these aren't tail recursive, but that's what's required
 B <- [b] B [c] / empty
 
+^1 ensures that a's and b's are same length before consuming
+   fake run of a^n b^n that leaves the b's available for being consumed by b^n c^n
+   hence a^n b^n c^n
+^2 pull in the a's
+^3 ensures that b's and 'c's always same length
+
+wait... memoizing doesn't do squat for us here anyway... unless: (also see OPTIMIZE
+below)
+
+A <- [a] A rest / success   IS KNOWN to be a superset of [a]* rest
+
+D <- &(A ![b]) [a]* B eof
+A <- [a] A [b] / succ
+B <- [b] B [c] / succ
+
+D <-- &A [a]* B eof
+A <-- ([a] A [b] / succ) ![b]
+B <-- [b] B [c] / succ
 
 
-
-
-
+1. parallel [a]* and A <- [a] A [b] / empty
+2. 
+------
+*** OPTIMIZE A <- b A rest
+  - not tail recursive, normally,
+  - turn into:
+    - tail recursive A <- b A (with counter)
+    - run rest counter times.
 
 
 ------------------------------ STAR

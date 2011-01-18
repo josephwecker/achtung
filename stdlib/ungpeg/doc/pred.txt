@@ -1,0 +1,37 @@
+
+H <- G/blah
+G <- &A a* b*
+A <- a A b / succ
+
+
+
+
+
+|t| the test
+|s| the rest after success
+|f| the rest after failure
+
+
+r1 <- (!'ab' 'a')* [a-f]+
+r1 <- (|t| !'ab'
+       |s| 'a')* [a-f]+
+       |f| fail
+
+'a'=> |t| !'b'
+      |s| !'ab' 'a')* [a-f]+
+      |f| fail
+
+      |t| !'b' !'ab'
+      |s| 'a')* [a-f]+
+      |f| fail
+
+
+r1 <- (!'aaaaab' !'aaaaaac' 'a')* [a-f]+
+r1 <- (!('a' 'aaaa'('b';'ac')) 'a')* [a-f]+
+r1 <- ('a' !('aaaa'('b';'ac')))* [a-f]+
+r1 <- ('a' |!t| 'aaaa'('b';'ac'))
+           |s| 'a' !('aaaa'('b';'ac')))* [a-f]+
+	   |f| fail
+'a'=> |!t|
+
+
