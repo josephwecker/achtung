@@ -1,4 +1,4 @@
--module(ungpeg).
+-module(ungpeg_optimize).
 -export([file/1, parse/1, pretty_print/1, pretty_print_expr/1,
     pretty_print_expr/2]).
 
