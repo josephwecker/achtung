@@ -2,46 +2,171 @@ Ungpeg Parsing Expression Grammars
 ==================================
 Joseph Wecker <joseph.wecker@gmail.com>
 
-== PEG Normalization
 
-=== Definitions
-
-==== Expression Types
-
-call:: `some_rule` - A reference to another rule to be invoked
+== Definitions
+.Expressions
+****
+call:: `some_rule` - A reference to another rule to be invoked.
 seq:: `a b c` - Sequence. A space delimited list of sub-expressions, invoked
 sequentially, that fails if any of the sub-expressions fail.
 ord:: `a/b/c` - Ordered choice. A forward-slash delimited sequence of
 sub-expressions that are evaluated only until one succeeds. A prioritized
 choice sequence.
+char:: `[a-z_]` - Character class, matches one/any of the ranges/singles.
+lit:: `'abc'` - Sequence of characters to consume.
 exord:: `a;b;c` - Exclusive ordered choice. A specialized +ord+ where the first
 sub-expression to begin to succeed determines the overall result of the
 expression. Intended to be used only internally by the system.
-succ:: `succ` - Always succeeds consuming nothing- also known as the empty
+****
+
+.Special Expressions
+****
+succ:: `succ` - (Special) Always succeeds consuming nothing- also known as the empty
 string.
-any:: `. or any` - Matches and consumes the next available input
-eof:: `!. or eof` - Matches the end of all input
+fail:: `fail` - (Special) Always fails, consuming nothing.
+any:: `. or any` - (Special) Matches and consumes the next available input.
+eof:: `!. or eof` - (Special) Matches the end of all input.
+****
 
+.Misc Expressions
+****
 sub:: Shorthand for sub-expressions.
+nop:: Shorthand for an expression or sub-expression that can be safely removed.
+****
 
-==== Prefixes / Predicates
+.Attributes
+****
+Prefixes / Predicates::
+  notp::: `!e1` - Not predicate, fails if e1 succeeds, consumes nothing
+  andp::: `&e1` - And predicate, succeeds if e1 succeeds, consumes nothing
+Suffixes / Quantifiers::
+  star::: `e1*` - Kleene star, greedily consumes zero or more of +e1+, always
+  succeeds
+  plus::: `e1+` - Greedily consumes 1 or more of +e1+, failing if there are
+  none.
+  opt::: `e1?` - Consumes zero or 1 of +e1+, always succeeds.
+****
 
-notp:: `!e1` - Not predicate, fails if e1 succeeds, consumes nothing
-andp:: `&e1` - And predicate, succeeds if e1 succeeds, consumes nothing
 
-==== Suffixes
-
-star:: `e1*` - Kleene star, greedily consumes zero or more of +e1+, always
-succeeds
-plus:: `e1+` - Greedily consumes 1 or more of +e1+, failing if there are none.
-opt:: `e1?` - Consumes zero or 1 of +e1+, always succeeds
-
-
-=== Applicable to all
+== PEG: First Normal Form
+=== Applicable to all (all)
 
 . Every +call+ inlined except entry-points, recursive calls, and accumulators.
-. All prefixes (predicates) and suffixes operating on the same expression are
-  reduced (see below).
-. All `+` expressions normalized to `*` expressions.
-. 
+. Attributes on all expressions are normalized / reduced (see below)
+. All `+` expressions normalized to `*` expressions. (only after attributes
+  fully normalized).
+. No potential degenerate loops.
+
+=== Ordered Choice (ord)
+
+. Contains no +ord+ +sub+. (TODO: invalidated by certain +sub+ attributes).
+. Contains no +succ+ +sub+. (Everything after removed and +ord+ rewritten to
+  +ord?+).
+. Contains nothing after a +star+ +sub+ (which always succeeds).
+. Contains no +opt+ +sub+. (Rewritten as +sub/succ+ and reduced as per #2).
+. Contains at least two +subs+. (Single +sub+ replaces +nop+ +ord+, with
+  attributes combined).
+. Contains no duplicate or equivalent +subs+. (Leftmost is kept).
+. Contains no +sub2+ to the right of +sub1+ that have +sub1+ as a prefix.
+. All inner +subs+ are in reduced form.
+
+=== Sequences (seq)
+
+. Contains no +seq+ +sub+ except where attributes differentiate. (TODO).
+. Contains no +succ+ +subs+. (Removed because they are nops)
+. Contains at least two +subs+. (Single +sub+ replaces +nop+ +seq+, with
+  attributes combined).
+. All inner +subs+ are in reduced form.
+
+=== Attributes (attr)
+[NOTE]
+One should recursively apply the rule  combinations from innermost to
+outermost, stopping when all are processed or when an error is encountered.
+
+. `opt` Group
+.. `(e1?)?` => `e1?`
+.. `(e1?)*` => [red]#Error#: Degenerate loop at first char where `e1` fails (intended?: e1*)
+.. `(e1*)?` => `e1*`
+.. `(e1?)+` => [red]#Error#: Degenerate loop at first char where `e1` fails (intended?: e1+)
+.. `(e1+)?` => `e1*`
+.. `&(e1?)` => `succ`
+.. `(&e1)?` => `succ`
+.. `!(e1?)` => `fail`
+.. `(!e1)?` => `succ`
+.. `any?`   => Valid, no change
+.. `eof?`   => `succ`
+.. `succ?`  => `succ`
+.. `fail?`  => `succ`
+
+. `star` Group
+.. `(e1*)*` => [red]#Error#: Degenerate loop
+.. `(e1*)+` => `fail` (`e1*` never leaves anything for `+` to consume)
+.. `(e1+)*` => `e1*`
+.. `&(e1*)` => `succ`
+.. `(&e1)*` => [red]#Error#: Degenerate loop
+.. `!(e1*)` => `fail`
+.. `(!e1)*` => [red]#Error#: Degenerate loop when `e1` fails
+.. `any*`   => Valid, no change
+.. `eof*`   => [red]#Error#: Degenerate loop (`(!any)*`)
+.. `succ*`  => [red]#Error#: Degenerate loop
+.. `fail*`  => `fail`
+
+. `plus` Group
+.. `(e1+)+` => `fail` (never anything for the second to consume)
+.. `&(e1+)` => Valid, no change
+.. `(&e1)+` => [red]#Error#: Degenerate loop when `e1` succeeds
+.. `!(e1+)` => Valid, no change
+.. `(!e1)+` => [red]#Error#: Degenerate loop when `e1` fails
+.. `any+`   => Valid, no change
+.. `eof+`   => [red]#Error#: Degenerate loop
+.. `succ+`  => [red]#Error#: Degenerate loop
+.. `fail+`  => `fail`
+
+. `andp` Group
+.. `&(&e1)` => `&e1`
+.. `!(&e1)` => `!e1`
+.. `&(!e1)` => `!e1`
+.. `&any`   => Valid, no change
+.. `&eof`   => Valid, no change
+.. `&succ`  => `succ`
+.. `&fail`  => `fail`
+
+. `notp` Group
+.. `!(!e1)` => `&e1`
+.. `!any`   => `eof`
+.. `!eof`   => `any`
+.. `!succ`  => `fail`
+.. `!fail`  => `succ`
+
+=== Detecting Degenerate Loops
+==== Expression Classification
+.Definitions
+****
+0:: Success, nothing consumed
+1:: Success, something consumed
+f:: Failure, nothing consumed
+s:: 0 or 1 (success, sometimes something consumed)
+a:: s or f (any of the above)
+****
+
+
+. `succ`    -> 0
+. `any/char/lit` -> 1 | f
+. `call`    -> (whatever its expression reduces to)
+. `e1 e2`   -> 0 if `e1`->0 and `e2`->0
+. `e1 e2`   -> 1 if `e1`->1 and `e2`->s (or visa versa)
+. `e1 e2`   -> f if `e1`->f or (`e1`->s and `e2`->f)
+. `e1/e2`   -> s if `e1`->s
+. `e1/e2`   -> a if `e1`->f and `e2`->a
+. `e*`      -> 1 if `e` ->1
+. `e*`      -> 0 if `e` ->f
+. `!e`      -> f if `e` ->s
+. `!e`      -> 0 if `e` ->f
+. `e1/e2*`  -> s
+. `e1/e2?`  -> s
+. `e1/succ` -> s
+
+==== Algorithm
+The primary objective is to detect any concrete possibility of `e1`->0 in
+`e1*`.
 
