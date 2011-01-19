@@ -1,0 +1,9 @@
+ungpeg_n.peg -> [neotoma] -> ungpeg_n
+ungpeg.peg -> [ungpeg_n] -> [ungpeg_optimize] -> ungpeg
+
+(When ready for bootstrapping:                        )
+(ungpeg.peg -> [ungpeg] -> [ungpeg_optimize] -> ungpeg)
+
+ungpeg + ungpeg_optimize -> ungpeg_compile
+ungbar.peg -> [ungpeg_compile] -> ungbar_compile
+any.ung -> [ungbar_compile + ungpeg_compile] -> [erlang:compile] -> beam

@@ -2,14 +2,22 @@
 -export([file/1, parse/1, pretty_print/1, pretty_print_expr/1,
     pretty_print_expr/2]).
 
+-record(compile, {
+    options =[],
+    debugs  =[],
+    infos   =[],
+    warnings=[],
+    errors  =[]}).
 
 %--------------------------------------- TOPLEVEL ----------------------------
 file(FName) -> optimize(ungpeg_n:file(FName)).
-parse(Txt) when is_list(Txt) -> optimize(ungpeg_n:parse(Txt)).
+parse(Txt) when is_list(Txt) ->
+  FinalState = optimize(ungpeg_n:parse(Txt), #compile{}),
 
-optimize([]) ->
-  error_logger:error_msg("Empty grammar- parse it yourself.",[]);
-optimize([{rule,First,_,_}|_] = AST) ->
+
+optimize([], State) ->
+  error_logger:error_msg("Empty grammar- parse it yourself.", []);
+optimize([{rule,First,_,_}|_] = AST, State) ->
   % 1. Turn it into a dictionary
   {Defs, Entrances} = make_defs(AST, dict:new(), [First]),
   % 2. Parse the parse-transformation functions & tag parts
@@ -28,7 +36,7 @@ optimize([{rule,First,_,_}|_] = AST) ->
 
   MainExprs2:to_list();
 
-optimize(AST) -> error_logger:error_msg("AST doesn't look well:~n  ~p~n~n",[AST]).
+optimize(AST, _State) -> error_logger:error_msg("AST doesn't look well:~n  ~p~n~n",[AST]).
 
 all_transformations(Defs) ->
   lists:foldl(fun ast_map/2,

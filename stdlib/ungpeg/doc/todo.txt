@@ -1,9 +1,21 @@
+[ ] Left recursion
+[ ] Opt backtracking/memoizing elimination
+[ ] Multi backtracking/memoization elimination
+[ ] Predicate backtracking/memoization elimination
+[ ] Input line-numbers in parse tree
+
+--- Detailed
+[ ] Ungpeg warning/error/info/debug mechanisms (inc. flags & macros)
+[ ] Beginning of format_error function
+[ ] Redo specials as succ/fail
+[ ] Attribute and basic list normalization
 [ ] Pure inlined recursive at first- pull out additional entrypoints after all
     the transformations- or mark the call as recurse, to simplify
     left-recursion algorithm.  (the latter, so that distinct grammars can be
     combined and it'll work correctly - that is, entry points to expressions
     that don't overlap with other entry points' instructions).
 
+--- Finished
 [D] Fix ungpeg_n so that it's ok with 'Blah' styled names
 [D] Syn highlight for proposed parse-transform stuff
 [D] Change parser etc. so that new entry-point marker is ':'

@@ -33,54 +33,57 @@
 == Normalized Attributes ==
  (One may recursively apply the rule combinations from innermost to outermost,
  stopping when all are processed or when an error is encountered.)
- (Does * terminate when nothing is consumed or just on failure?)ε
+ (Does * terminate when nothing is consumed or just on failure?)
  ? * + & ! any eof succ fail
- Rule 1:  (e1?)? --> e1?
- Rule 2:  (e1?)* --> ERROR - degenerate loop at first character where e1 fails (intended?: e1*)
-                           - not allowed in formal PEG
- Rule 3:  (e1*)? --> e1*
- Rule 4:  (e1?)+ --> ERROR - degenerate loop at first character where e1 fails (intended?: e1+)
-                           - not allowed in formal PEG
- Rule 5:  (e1+)? --> e1*
- Rule 6:  &(e1?) --> succ - always succeeds without consuming input
- Rule 7:  (&e1)? --> succ - always succeeds without consuming input
- Rule 8:  !(eq?) --> fail - always fails without consuming input
- Rule 9:  (!eq)? --> succ - always succeeds without consuming input
- Rule 10: any?   --> (no change - always succeeds, consumes anything but eof)
- Rule 11: eof?   --> succ (same as rule 8)
- Rule 12: succ?  --> succ
- Rule 13: fail?  --> succ
+ AttRule 1:  (e1?)? --> e1?
+ AttRule 2:  (e1?)* --> ERROR - degenerate loop at first character where e1 fails (intended?: e1*)
+ AttRule 3:  (e1*)? --> e1*
+ AttRule 4:  (e1?)+ --> ERROR - degenerate loop at first character where e1 fails (intended?: e1+)
+ AttRule 5:  (e1+)? --> e1*
+ AttRule 6:  &(e1?) --> succ
+ AttRule 7:  (&e1)? --> succ
+ AttRule 8:  !(e1?) --> fail
+ AttRule 9:  (!e1)? --> succ
+ AttRule 10: any?   --> (no change - always succeeds, consumes anything but eof)
+ AttRule 11: eof?   --> succ
+ AttRule 12: succ?  --> succ
+ AttRule 13: fail?  --> succ
 
- Rule 14: (e1*)* --> e1*
- Rule 15: (e1*)+ --> fail - e1* never leaves anything for + to consume
- Rule 16: (e1+)* --> e1*
- Rule 17: &(e1*) --> succ
- Rule 18: (&e1)* --> ERROR - degenerate loop
-                           - not allowed in formal PEG
- Rule 19: !(e1*) --> fail
- Rule 20: (!e1)* --> ERROR - degenerate loop when e1 fails
-                           - not allowed in formal PEG
- Rule 21: any*   --> (no change - terminates at eof)
- Rule 22: eof*   --> ERROR - degenerate loop ((!any)*)
-                           - not allowed in formal PEG
- Rule 23: succ*  --> ERROR - degenerate loop
-                           - not allowed in formal PEG
- Rule 24: fail*  --> ERROR - degenerate loop
-                           - not allowed in formal PEG
- 
- Rule 24: 
- -  * ->+ --> warning - child ate everything
- -  *<- + --> *
- -  * ->! --> warning - always fails
- -  *<- ! --> warning - fail in child causes grammar to degenerate
- -  * ->& --> no-op expression - always succeeds
- -  *<- & --> warning - success in child causes grammar to degenerate
- -  any*  --> (no change)
- -  succ*  --> error - Grammar will degenerate
- -  eof*  --> warning - eof causes grammar to degenerate ((!any)*)
+ AttRule 14: (e1*)* --> e1*
+ AttRule 15: (e1*)+ --> fail - e1* never leaves anything for + to consume
+ AttRule 16: (e1+)* --> e1*
+ AttRule 17: &(e1*) --> succ
+ AttRule 18: (&e1)* --> ERROR - degenerate loop
+ AttRule 19: !(e1*) --> fail
+ AttRule 20: (!e1)* --> ERROR - degenerate loop when e1 fails
+ AttRule 21: any*   --> (no change - terminates at eof)
+ AttRule 22: eof*   --> ERROR - degenerate loop ((!any)*)
+ AttRule 23: succ*  --> ERROR - degenerate loop
+ AttRule 24: fail*  --> fail
 
- TODO: plusses and nots
- 16- + ->! --> 
+ AttRule 25: (e1+)+ --> fail - never anything for the second to consume
+ AttRule 26: &(e1+) --> (no change - valid)
+ AttRule 27: (&e1)+ --> ERROR - degenerate loop if e1 succeeds
+ AttRule 28: !(e1+) --> (no change - valid)
+ AttRule 29: (!e1)+ --> ERROR - degenerate loop if e1 fails
+ AttRule 30: any+   --> (no change - at least one before eof)
+ AttRule 31: eof+   --> ERROR - degenerate loop
+ AttRule 32: succ+  --> ERROR - degenerate loop
+ AttRule 33: fail+  --> fail
+
+ AttRule 34: &(&e1) --> &e1
+ AttRule 35: !(&e1) --> !e1
+ AttRule 36: &(!e1) --> !e1
+ AttRule 37: &any   --> (no change)
+ AttRule 38: &eof   --> (no change)
+ AttRule 39: &succ  --> succ
+ AttRule 40: &fail  --> fail
+
+ AttRule 41: !(!e1) --> &e1
+ AttRule 42: !any   --> eof
+ AttRule 43: !eof   --> any
+ AttRule 44: !succ  --> fail
+ AttRule 45: !fail  --> succ
 
 == Detect other degenerate loops ==
 (From peg-popI04-2)
