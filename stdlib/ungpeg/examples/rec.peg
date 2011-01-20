@@ -1,12 +1,41 @@
-# input any simple arithmetic (no spaces)
+primary <- expression / [a-z] expression / [a-z]
+expression <- '+' terms / '-' terms / terms
+terms <- term '+' term / term '-' term
+term <- factor / factor '*' term / factor '/' term
+factor <- primary / primary '^' factor
+
+
+primary <- ( [+] (term [+] term / term [-] term)
+           / [-] (term [+] term / term [-] term)
+           / (term [+] term / term [-] term)
+           )
+         / [a-z] ([+] (term [+] term / term [-] term) / [-] (term [+] term / term [-] term) / (term [+] term / term [-] term))
+         / [a-z]
+factor  <- primary / primary [^] factor
+term    <- factor / factor [*] term / factor [/] term
+
+#| input any simple arithmetic (no spaces)
+# 3+2/9
 :expr   <- product / sum / value
 sum     <- expr (('+' / '-') expr)*
 product <- expr (('*' / '/') expr)*
 value   <- [0-9.]+ / '(' expr ')'
 
+
+
+
+
 # input  123-4929-2390-1
 :chain  <- chain '-' num / num
 num     <- [0-9]+
+
+
+# input 1-2-3
+:simple_chain <- simple_chain '-' [0-9] / [0-9]
+
+# simple_chain '-' [0-9] ; [0-9]
+# simple_chain '-' [0-9] ; '-' [0-9] ; [0-9]
+
 
 
 # SHOULD ERROR AT UNGPEG PARSING
@@ -15,9 +44,20 @@ num     <- [0-9]+
 b            <- c / degenerate2
 c            <- b
 
+# Mutually left recursive
+
+:mlr_a <- mlr_b / '('
+mlr_b  <- mlr_c / mlr_a / ')'
+mlr_c  <- mlr_a / mlr_b / ':'
+
+# Becomes:
+# mlr_a <- mlr_b/[(]
+# mlr_b <- (mlr_a/mlr_b/[:]) / mlr_a / [)]
+#
+#
+
 # input 1234
 :freaky <- (freaky num freaky)?
-
 
 # input this.x[i].m()
 :javalike                 <- primary
@@ -37,7 +77,7 @@ className                 <- ('C'/'D') space
 interfaceTypeName         <- ('I'/'J') space
 identifier                <- ('x'/'y') space / classOrInterfaceType
 methodName                <- ('m'/'n') space
-expressionName            <- identifier
+exprName                  <- identifier
 expression                <- ('i'/'j') space
 EMPTYPARENS               <- '(' space ')' space
 DOT                       <- '.' space
@@ -45,4 +85,20 @@ NEW                       <- 'new' space
 SUPER                     <- 'super' space
 THIS                      <- 'this' space
 space                     <- [ \t]*
+
+
+primary <- (([n] [e] [w]) ([ ]/[\t])*)
+           (([C]/[D]) ([ ]/[\t])* / ([I]/[J]) ([ ]/[\t])*)
+           ([(] ([ ]/[\t])* [)] ([ ]/[\t])*)
+         / primary ([.] ([ ]/[\t])*) (([n] [e] [w]) ([ ]/[\t])*)
+           (([x]/[y]) ([ ]/[\t])* / (([C]/[D]) ([ ]/[\t])* / ([I]/[J]) ([ ]/[\t])*))
+           ([(] ([ ]/[\t])* [)] ([ ]/[\t])*)
+         / (primary ([.] ([ ]/[\t])*))? (([m]/[n]) ([ ]/[\t])*) ([(] ([ ]/[\t])* [)] ([ ]/[\t])*)
+         / (primary / ([s] [u] [p] [e] [r]) ([ ]/[\t])*) ([.] ([ ]/[\t])*) (([x]/[y]) ([ ]/[\t])*
+         / (([C]/[D]) ([ ]/[\t])* / ([I]/[J]) ([ ]/[\t])*))
+         / (primary
+            / (([x]/[y]) ([ ]/[\t])* / (([C]/[D]) ([ ]/[\t])* / ([I]/[J]) ([ ]/[\t])*)))
+           [[] ([ ]/[\t])* (([i]/[j]) ([ ]/[\t])*) []] ([ ]/[\t])*
+         / ([t] [h] [i] [s]) ([ ]/[\t])*
+|#
 

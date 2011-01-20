@@ -1,0 +1,20 @@
+ a <- 'b' a / 'b'
+ input: bbbb
+ (b (b (b (b) ) ) )
+
+ a <- a 'b' / 'b'
+ ( ( ( (b) b) b) b)
+
+Two options: stack up like packrat-parsers-can-support-left-recursion, or
+convert to right-recursion and be sure and group subs correctly.
+
+
+ a <- left: a right: 'b' / left: 'b'
+
+[code,erlang]
+------------
+'a'(Input,Index) -> 'a'(Input,Index,[]).
+
+'a'(Input,Index,Acc) ->
+  case <<_/bytes:Index,$b,_/bytes>> of
+    true -> 
