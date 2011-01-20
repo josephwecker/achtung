@@ -5,6 +5,7 @@
 [ ] Input line-numbers in parse tree
 
 --- Detailed
+[ ] Fix it so it correctly discovers all entrypoints again
 [ ] Ungpeg warning/error/info/debug mechanisms (inc. flags & macros)
 [ ] Beginning of format_error function
 [ ] Redo specials as succ/fail
