@@ -1,0 +1,10 @@
+% left_assoc <- left_assoc [-] [0-9] / [0-9]      ~;
+%
+%
+
+parsed <- left_assoc2 / right_assoc ~;
+right_assoc <- n:[0-9] (o:'*' right_assoc)* ~;
+
+% left_assoc <- left_assoc [-] [0-9] / [0-9]      ~;
+left_assoc2 <- n:[0-9] (o:'-' n:[0-9])+       ~;
+

@@ -15,8 +15,8 @@ Every left-recursive sequence after inlining makes the following
 transformation:
 
 a <- a rest1 / a rest2 / s1 / s2 / a rest3
-a <= s1 / s2 a2
-a2<= (rest1 / rest2 / rest3) a2
+a <= (s1 / s2) a2
+a2<= (rest1 / rest2 / rest3) a / succ
 
 s1 and s2 are assigned all tag that are already assigned to rest1, rest2, and
 rest3 - so that they collapse properly when one of the rest* expressions is
