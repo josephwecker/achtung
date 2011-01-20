@@ -10,14 +10,14 @@
     errors  =[]}).
 
 %--------------------------------------- TOPLEVEL ----------------------------
-file(FName) -> optimize(ungpeg_n:file(FName)).
+file(FName) -> optimize(ungpeg_n:file(FName), #compile{}).
 parse(Txt) when is_list(Txt) ->
   FinalState = optimize(ungpeg_n:parse(Txt), #compile{}),
+  FinalState.
 
-
-optimize([], State) ->
+optimize([], _State) ->
   error_logger:error_msg("Empty grammar- parse it yourself.", []);
-optimize([{rule,First,_,_}|_] = AST, State) ->
+optimize([{rule,First,_,_}|_] = AST, _State) ->
   % 1. Turn it into a dictionary
   {Defs, Entrances} = make_defs(AST, dict:new(), [First]),
   % 2. Parse the parse-transformation functions & tag parts
@@ -55,7 +55,7 @@ ast_map(Fun,Defs) ->
   normalize_attributes(Defs:map(fun(_Name,Expr)-> expr_map(Expr, Fun) end)).
 
 normalize_attributes(Defs) -> Defs.
-  Defs:map(fun(_Name,Expr) -> expr_map(Expr, fun norm_attr/1) end).
+  %Defs:map(fun(_Name,Expr) -> expr_map(Expr, fun norm_attr/1) end).
 
 expr_map(Expr, Fun) ->
   % TODO: flatten and remove []'s so that they can be expanded & shrunk
@@ -184,23 +184,24 @@ get_tl_inner(Defs,{_,_,Exprs},Seen,Tops) when is_list(Exprs) ->
 get_tl_inner(_,_,_,Tops) -> Tops.
 
 %--------------------------------------- ATTRIBUTE NORMALIZATION -------------
--record(attr, {
-    notp=false, andp=false,                   % Prefixes / predicates
-    star=false, plus=false, opt=false,        % Suffixes
-    token, trans, tag, orig, orig_tag, entry  % Parsing
-  }).
-norm_attr({Type,Attrs,Body}) ->
-  norm_attr_inner({Type,attr_normal_form(Attrs),Body}).
-attr_normal_form(A) -> attr_normal_form(A,#attr{}).
-anf([notp|R],A)->anf(R,A#attr{notp=not A#attr.notp, andp=true}); % Norm: !e1 == !&e1; !&(!&e1) == &e1
-anf([andp|R],A)->anf(R,A#attr{andp=true});
-anf([star|R],A#attr{plus=true})->anf(R,A#attr{plus=false,star=true});  % Plus is dropped because: (e1+)* == e1*
-anf([star|R],A)->anf(R,A#attr{star=true});
-anf([plus|R],A#attr{star=false})->anf(R,A#attr{plus=true});  % (e1*)+ will never succeed
-anf([plus|R],A)->throw("Expression never succeeds (child * eats everything so there's nothing left for +)");
-anf([opt |R],A#attr{star=true})->anf(R,A);
-anf([opt |R],A)->anf(R,A#attr{opt=true});
-anf([
+%-record(attr, {
+%    notp=false, andp=false,                   % Prefixes / predicates
+%    star=false, plus=false, opt=false,        % Suffixes
+%    token, trans, tag, orig, orig_tag, entry  % Parsing
+%  }).
+%norm_attr({Type,Attrs,Body}) ->
+%  norm_attr_inner({Type,attr_normal_form(Attrs),Body}).
+%attr_normal_form(A) -> attr_normal_form(A,#attr{}).
+%anf([notp|R],A)->anf(R,A#attr{notp=not A#attr.notp, andp=true}); % Norm: !e1 == !&e1; !&(!&e1) == &e1
+%anf([andp|R],A)->anf(R,A#attr{andp=true});
+%anf([star|R],A#attr{plus=true})->anf(R,A#attr{plus=false,star=true});  % Plus is dropped because: (e1+)* == e1*
+%anf([star|R],A)->anf(R,A#attr{star=true});
+%anf([plus|R],A#attr{star=false})->anf(R,A#attr{plus=true});  % (e1*)+ will never succeed
+%anf([plus|R],A)->throw("Expression never succeeds (child * eats everything so there's nothing left for +)");
+%anf([opt |R],A#attr{star=true})->anf(R,A);
+%anf([opt |R],A)->anf(R,A#attr{opt=true});
+%anf([
+%norm_attr(Expr) -> Expr.
 
 
 
