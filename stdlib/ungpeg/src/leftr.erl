@@ -1,16 +1,41 @@
 -module(leftr).
 -compile(export_all).
-% Original
-% 1: expr <- expr [/] num / num
-% 2: num  <- [0-9]+
+% Expr    ← Product / Sum / Value
+% Product ← Expr (([*] / [/]) Expr)*
+% Sum     ← Expr (([+] / [-]) Expr)*
+% Value   ← [0-9] / [(] Expr [)]
+%
+% Expr    ← Product / Sum / Value
+% Product ← Expr Pr_1
+% Sum     ← Expr Su_1
+% Value   ← [0-9] / [(] Expr [)]
+% Pr_1    ← ([*]/[/]) Expr / succ
+% Su_1    ← ([+]/[-]) Expr / succ
+%
+% Only Expr marked as recursive
+%
 
-% First Normal
-% expr  <- expr [/] num / num
-% num   <-- [0-9] num_2
-% num_2[orig:num] <-- [0-9] num_2 / succ
 
 
-% left-recursion detected, run fail version
+
+
+
+'Expr'(Inp,Pos,S) ->
+  % Look on stack
+  % if nothing: new entry at current position value: first
+  %             and evaluate normal version.
+  % if curr-pos=first: change val: recurse,
+  %         evaluate the fail version which ends in 'special_expr'
+  %         
+  %         'special_expr' accumulates slightly differently...
+  %             
+  % (if old position: remove and new entry at curr pos: first
+  %             and evaluate as usual.)
+  
+
+
+
+
 
 -record(pstate, {
     memo

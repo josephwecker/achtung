@@ -1,0 +1,68 @@
+#|expression <- ('+'/'-')? terms
+primary    <- expression / [a-z] expression / [a-z]
+terms      <- term ('+'/'-') term
+term       <- factor ('*' term / '/' term)?
+factor     <- primary / primary '^' factor
+
+
+simple <- simple_in '-' [0-9] / [0-9]
+simple_seed <- [0-9]
+
+simple_in <-- seed '-' [0-9] simple / succ
+
+
+1. memoize {detected=false} -> evaluate
+2. same position: {detected=true} -> false
+3. new position: grow seed
+|#
+
+expr    <- exponent / product / sum / value
+product <- expr pr_1
+sum     <- expr su_1
+exponent<- value ex_1
+value   <- [0-9] / [(] expr [)]
+pr_1    <- ([*]/[/]) expr pr_1 / empty
+su_1    <- ([+]/[-]) expr su_1 / empty
+ex_1    <- [^] expr ex_1
+
+expr <- ([0-9] / [(] expr [)]) ex_1
+      / expr pr_1
+      / expr su_1
+      / [0-9]
+      / [(] expr [)]
+#|-----------------------------
+x <- a
+# Good if:
+#  - a is empty
+#  - a starts with a terminal
+#  - a starts with non-nullable nonterminal y with x < y
+#  - a starts with a nullable terminal y with x < y if x <- a was good.
+# 'x' is good as soon as all of its prioritized choices are good
+#
+x <- (g) y (a)
+# Improvable if:
+#  x > y, g is nullable, and each z in g has x < z
+#
+# *** We will replace y with its body
+#
+#
+# Almost Good if:
+x <- x a1 / x a2 / ... / b1 / b2 / ...
+#  - where every b[n] is good a[n] is not nullable (that would indicate a
+#  cycle)
+#
+#
+
+IS
+x <- a / x b / c / x d
+==
+x <- x b / x d / a / c
+?
+Yes: 
+#
+|# 
+
+
+
+
+

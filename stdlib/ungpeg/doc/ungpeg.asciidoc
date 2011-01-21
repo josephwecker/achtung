@@ -84,6 +84,7 @@ Suffixes / Quantifiers::
   +ord?+).
 . Contains nothing after a +star+ term (which always succeeds).
 . Contains no +opt+ terms. (Rewritten as +term/succ+ and reduced as per #2).
+. Contains no +fail+ terms. (Safely removed as nops).
 . Contains at least two +terms+. (Single +term+ replaces +nop+ +ord+, with
   attributes combined).
 . Contains no duplicate or equivalent +terms+. (Leftmost is kept).
