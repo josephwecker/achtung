@@ -1,0 +1,121 @@
+- Direct
+- Nested Direct
+- Indirect
+- Hidden Indirect
+
+
+Expr    <- Product / Sum / Value
+Product <- Expr (([*] / [/]) Expr)*
+Sum     <- Expr (([+] / [-]) Expr)*
+Value   <- [0-9] / [(] Expr [)]
+
+
+# Normal Form
+Expr    <- Product / Sum / Value
+Product <- Expr Pr_1
+Sum     <- Expr Su_1
+Value   <- [0-9] / [(] Expr [)]
+Pr_1    <- ([*]/[/]) Expr / succ
+Su_1    <- ([+]/[-]) Expr / succ
+
+# (Only Expr marked as recursive)
+
+# Fail Form (Expr) (only corners?)
+---
+ExprFail<- (Product / Sum / Value) / ExprSpecial
+Product <- fail Pr_1
+Sum     <- fail Su_1
+Value   <- [0-9] / [(] Expr [)]
+Pr_1    <- ([*]/[/]) fail / succ
+Su_1    <- ([+]/[-]) fail / succ
+---
+ExprFail<- (Product / Sum / Value) / ExprSpecial
+Product <- fail Pr_1
+Sum     <- fail Su_1
+Value   <- [0-9] / [(] Expr [)]
+Pr_1    <- ([*]/[/]) Expr / succ
+Su_1    <- ([+]/[-]) Expr / succ
+
+
+
+a <- b / c / [*]
+b <- [:] b c / [^]
+c <- c [&] / [0-9] b / [a-z]
+
+------------
+
+expr <- expr expr [;] / expr [:] / [0-9]
+input: 1:2:;3;
+input: 4:5:;6:;
+input: 8:9:0;
+input: 789;
+fail:  7;
+
+
+Left Recursion detected:
+ - jump to special form of expression that has a final ( / expr_aggregate)
+ - any calls to expr in current position get fail
+ - any calls to expr in further position are treated autonomously.
+
+expr_aggregate -
+ - wraps it in an {expr, Val} tuple for pattern matching on choices
+ - rerun special form- pattern matched against val
+
+expr <- expr (expr [;] / [:]) / [0-9]
+input: 1:2:;3;
+{expr, 1, '1', 1st} ->
+    - memo={expr,NewID,1,first}
+    - first term in ord: call expr
+{expr, 1, '1', 1st} ->
+    - memo={expr,ID,1,lr,fail}
+    - expr_special <- (expr (expr [;] / [:]) / [0-9] / expr_end) expr_aggregate
+    - call expr_special
+{expr_special, 1, '1', 1st}
+    - call expr
+{expr, 1, '1', 1st}
+    - memo already lr- return fail
+{expr_special, 1, '1', 2nd}
+    - match - acc='1'
+    - call expr_aggregate
+{expr_aggregate, 2, ':', 1st}
+    - agg={expr, '1'}
+    - memo={expr,ID,2,lr,{expr,'1'}}
+    - call expr_special
+{expr_special, 2, ':', 1st}
+    - call expr
+{expr, 2, ':', 1st}
+    - 
+
+
+
+
+Expr    <- Product / Sum / Value
+Product <- Expr (([*] / [/]) Expr)*
+Sum     <- Expr (([+] / [-]) Expr)*
+Value   <- [0-9] / [(] Expr [)]
+
+
+0+7/1
+Expr    <= fail
+Expr_sp <- (Product / Sum / Value / Expr_end) Expr_agg
+Expr    <= {expr, '0'}
+Expr_sp <- (Product / Sum / Value / Expr_end) Expr_agg
+          > Sum,  {expr,'0'}, '[+]', call(Expr,3)
+    Expr     <= fail (remove all prev. memos)
+    Expr_sp2 <- ...
+    Expr     <= '7'
+          > Expr <= {expr, {expr,'0'},'+',{expr,'7'}} --> into memo at curr P
+	  > (others removed)
+Expr_sp <- ...
+
+
+
+
+Preproduced fail expression
+  n? E  -->  (n E / fail)
+  x* E  -->  (x+ E / fail)
+
+
+memoless form - Expr when no entry
+memoed form - Expr when non-fail entry
+

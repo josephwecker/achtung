@@ -3,34 +3,49 @@
 % Expr    ← Product / Sum / Value
 % Product ← Expr (([*] / [/]) Expr)*
 % Sum     ← Expr (([+] / [-]) Expr)*
-% Value   ← [0-9] / [(] Expr [)]
+% Value   ← [0-9]* / [(] Expr [)]
 %
-% Expr    ← Product / Sum / Value
-% Product ← Expr Pr_1
-% Sum     ← Expr Su_1
-% Value   ← [0-9] / [(] Expr [)]
-% Pr_1    ← ([*]/[/]) Expr / succ
-% Su_1    ← ([+]/[-]) Expr / succ
+% Expr    <- Product / Sum / Value
+% Product <- Expr Pr_1
+% Sum     <- Expr Su_1
+% Value   <- Va_1 / [(] Expr [)]
+% Pr_1    <- ([*]/[/]) Expr Pr_1 / succ
+% Su_1    <- ([+]/[-]) Expr Su_1 / succ
+% Va_1    <- [0-9] Va_1 / succ
 %
-% Only Expr marked as recursive
+% Expr_sp <- (Product / Sum / Value / Expr_end) Expr_agg
 %
+% Only Expr marked as recursive so only it has memo lookup etc.
+% 
 
 
 
+% Va_1    <- [0-9] Va_1 / succ
+'Va_1'({Bin,Idx},{Line,Col}=Pos,S,A) ->
+  case Bin of
+    <<_:Idx/bytes,C,_/bytes>> when (C >= $0) and (C =< $9) -> 'Va_1'({Bin,Idx+byte_size(C)},{Line,Col+1},S,[C|A]);
+    _ -> {succ, {Bin, Idx}, Pos, S, lists:reverse(A)}
+  end.
+
+% Su_1    <- ([+];[-]) Expr / succ
+'Su_1'({Bin,Idx},{Line,Col}=Pos,S,A) ->
+  case Bin of
+    <<_:Idx/bytes,$+,_/bytes>> -> 'Su_1'({Bin,Idx+1},{Line,Col+1},S,[$+|A]);
+    <<_:Idx/bytes,$-,_/bytes>> -> 'Su_1'({Bin,Idx+1},{Line,Col+1},S,[$-|A])
 
 
 
 'Expr'(Inp,Pos,S) ->
   % Look on stack
-  % if nothing: new entry at current position value: first
-  %             and evaluate normal version.
-  % if curr-pos=first: change val: recurse,
-  %         evaluate the fail version which ends in 'special_expr'
-  %         
-  %         'special_expr' accumulates slightly differently...
+  % (If old position: val: first, remove it.)
+  % If nothing:
+  %     - New entry at current position value: first
+  %     - Evaluate normally
+  % If curr-pos & val=first: 
+  %     - Change val to: recurse,
+  %     - Evaluate the fail version which ends in 'special_expr'
+  % 
   %             
-  % (if old position: remove and new entry at curr pos: first
-  %             and evaluate as usual.)
   
 
 
