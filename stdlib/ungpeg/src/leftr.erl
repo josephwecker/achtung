@@ -79,11 +79,14 @@ parse(Txt) ->
   end.
 
 'Expr_end'({Bin,I,PL,PC,M,A}) ->
+  io:format("Got an expression~n",[]),
   {succ,{Bin,I,PL,PC,M,A}}.
 
 'Expr_agg'({Bin,I,PL,PC,M,A}) ->
   case ets:lookup(M,'Expr') of
-    [{_,I,lr,_}] -> {succ,{Bin,I,PL,PC,M,A}};
+    [{_,I,lr,_}] ->
+      io:format("Got an expression: ~p ~n",[lists:reverse(A)]),
+      {succ,{Bin,I,PL,PC,M,A}};
     _ ->
       ets:insert(M,{'Expr',I,lr,A}),
       'Expr_sp'({Bin,I,PL,PC,M,A})
@@ -108,13 +111,16 @@ parse(Txt) ->
 'Value'({Bin,I,PL,PC,Etc,A},IA) ->
   case Bin of
     <<_:I/bytes,C,_/bytes>> when (C >= $0) and (C =< $9) ->
+      io:format("Got ~s in 'Value'~n",[[C]]),
       'Va_1'({Bin,I+1,PL,PC+1,Etc,A},[C|IA]);
     <<_:I/bytes,$(,_/bytes>> ->
+      io:format("Got \"(\" in 'Value'~n",[]),
       case 'Expr'({Bin,I+1,PL,PC+1,Etc,[$(|A]}) of
         fail -> fail;
         {succ, {Bin2,I2,PL2,PC2,Etc2,A2}} ->
           case Bin2 of
             <<_:I2/bytes,$),_/bytes>> ->
+              io:format("Got \")\" in 'Value'~n",[]),
               {succ, {Bin2,I2+1,PL2,PC2+1,Etc2,[$)|A2]}};
             _ -> fail
           end
@@ -126,16 +132,21 @@ parse(Txt) ->
 'Va_1'({Bin,I,PL,PC,Etc,A},IA) ->
   case Bin of
     <<_:I/bytes,C,_/bytes>> when (C >= $0) and (C =< $9) ->
+      io:format("Got ~s in 'Value' ('Va_1')~n",[[C]]),
       'Va_1'({Bin,I+1,PL,PC+1,Etc,A},[C|IA]);
     _ -> {succ, {Bin,I,PL,PC,Etc,[lists:reverse(IA)|A]}}
   end.
 
 'Su_1'(St) -> 'Su_1'(St,[]).
-'Su_1'({Bin,I,PL,PC,Etc,A}=St,IA) ->
+'Su_1'({Bin,I,PL,PC,Etc,A},IA) ->
   case
     case Bin of
-      <<_:I/bytes,$+,_/bytes>> -> {succ, {Bin,I+1,PL,PC+1,Etc,A},[$+|IA]};
-      <<_:I/bytes,$-,_/bytes>> -> {succ, {Bin,I+1,PL,PC+1,Etc,A},[$-|IA]};
+      <<_:I/bytes,$+,_/bytes>> ->
+        io:format("Got \"+\" in 'Sum' ('Su_1')~n",[]),
+        {succ, {Bin,I+1,PL,PC+1,Etc,A},[$+|IA]};
+      <<_:I/bytes,$-,_/bytes>> ->
+        io:format("Got \"-\" in 'Sum' ('Su_1')~n",[]),
+        {succ, {Bin,I+1,PL,PC+1,Etc,A},[$-|IA]};
       _ -> fail
     end
     of
@@ -151,8 +162,12 @@ parse(Txt) ->
 'Pr_1'({Bin,I,PL,PC,Etc,A}=St) ->
   case
     case Bin of
-      <<_:I/bytes,$*,_/bytes>> -> {succ, {Bin,I+1,PL,PC+1,Etc,[$*,A]}};
-      <<_:I/bytes,$/,_/bytes>> -> {succ, {Bin,I+1,PL,PC+1,Etc,[$/,A]}};
+      <<_:I/bytes,$*,_/bytes>> ->
+        io:format("Got \"*\" in 'Product' ('Pr_1')~n",[]),
+        {succ, {Bin,I+1,PL,PC+1,Etc,[$*,A]}};
+      <<_:I/bytes,$/,_/bytes>> ->
+        io:format("Got \"/\" in 'Product' ('Pr_1')~n",[]),
+        {succ, {Bin,I+1,PL,PC+1,Etc,[$/,A]}};
       _ -> fail
     end
     of
