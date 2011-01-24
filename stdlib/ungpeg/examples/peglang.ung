@@ -1,0 +1,14 @@
+# Value <- [0-9]+ ; [(] Expr [)]
+#
+# Value    <-- [0-9] Value-i1 ; [(] Expr [)]
+# Value-i1 <-- [0-9] Value-i1 ; succ
+#
+# Value
+# {'Value',
+#   {xord, [{seq,[{char,[0-9]}, {star_call,'Value-i1'}]},
+#           {seq,[{char,[(]}, {call,'Expr'}, {char,[)]}]}]}}
+# {'Value-i1',
+#   {ord,  [{seq,[{char,[0-9]}, {star_call,'Value-i1'}]},
+#           {special, succ}]}
+
+
