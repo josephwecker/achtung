@@ -20,8 +20,23 @@ to_erlang(ModuleName, Dir, AST) ->
 erlang_code(AST) -> erlang_code(AST, []).
 erlang_code([], Acc) -> lists:reverse(Acc);
 erlang_code([{EntryPoint, E}|R], Acc) ->
-  Out1 = fmt("~s(St,Final)->ok.", [str(EntryPoint)]),
+  Out1 = fmt("~s(St,Final)->~p.~n", [str(EntryPoint),inner_expr(E)]),
   erlang_code(R,[Out1|Acc]).
+
+% TODO:
+%  - ord
+%  - seq
+%  - xord
+%  - char
+%  - call
+%
+inner_expr({ord,Attr,Exprs}) -> ok.
+  % inner: seq / xord / char / call
+  % case Bin of InpMatch1 -> ordExpr1; InpMatch2 -> ordExpr2 ...
+  % case 
+  %
+
+inner_expr(E) ->
 
 
 fmt(Txt) -> io_lib:format(Txt,[]).

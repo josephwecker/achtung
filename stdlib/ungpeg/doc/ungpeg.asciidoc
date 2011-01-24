@@ -75,7 +75,7 @@ Suffixes / Quantifiers::
 . Attributes on all expressions are normalized / reduced (see below)
 . All `+` expressions normalized to `*` expressions. (only after attributes
   fully normalized).
-. No potential degenerate loops.
+. No potential degenerate loops - or warnings emitted if applicable.
 
 === Ordered Choice (ord)
 
@@ -200,5 +200,17 @@ rules are put into place).
 . No `lit` expressions - only sequences of (small) `char` ranges.
 . Every `char` range with multiple ranges is instead an `ord` of each
   range/char.
+. `star` expressions pulled into their own tail-recursive rules.
 . Only recursive rules (including what used to be `star` expressions) are not
   inlined.
+
+== Appendix D: PEG Optimized Form
+(All transformations have finished)
+. (If possible) no `ord` expressions- only `xord` expressions in their place.
+. All potentially left-recursive rules are marked for compiler generator.
+. Within every `xord` - sequences of `char` recombined into `lit` form where
+  possible.
+. Predicates reference new (optimized) paths - predicates do not reference
+  any rules referenced by any non-predicate rules.
+. Predicates do not attempt to consume more of the input once success or
+  failure is certain.
