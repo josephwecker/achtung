@@ -194,3 +194,11 @@ The primary objective is to detect any concrete possibility of `e1`->0 in
 recursive rule recursing without consuming any input (after left-recursion
 rules are put into place).
 
+
+== Appendix C: PEG Second Normal Form
+(In preparation for all transformations)
+. No `lit` expressions - only sequences of (small) `char` ranges.
+. Every `char` range with multiple ranges is instead an `ord` of each
+  range/char.
+. Only recursive rules (including what used to be `star` expressions) are not
+  inlined.
