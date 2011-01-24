@@ -4,11 +4,12 @@
 - Hidden Indirect
 
 
-Expr    <- Product / Sum / Value
-Product <- Expr (([*] / [/]) Expr)*
-Sum     <- Expr (([+] / [-]) Expr)*
-Value   <- [0-9] / [(] Expr [)]
+Expr<-Product/Sum/Value  Product<-Expr(([*]/[/])Expr)*  Sum<-Expr(([+]/[-])Expr)*  Value<-[0-9]/[(]Expr[)]
 
+Expr <- Expr(([*]/[/])Expr)*/Expr(([+]/[-])Expr)*/([0-9][0-9]*/[(]Expr[)])
+
+Expr <- Expr(star1;star2)/[0-9]star3;[(]Expr[)]
+Expr <-
 
 # Normal Form
 Expr    <- Product / Sum / Value

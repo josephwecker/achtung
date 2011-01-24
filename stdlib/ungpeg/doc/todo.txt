@@ -1,10 +1,8 @@
-[ ] Left recursion
-    - http://pages.cpsc.ucalgary.ca/~robin/class/411/LL1.3.html
-    - www.d.umn.edu/~hudson/5641/l11m.pdf
 [ ] Opt backtracking/memoizing elimination
 [ ] Multi backtracking/memoization elimination
 [ ] Predicate backtracking/memoization elimination
-[ ] Input line-numbers in parse tree
+[ ] Parse transforms and aggregation
+[ ] Left recursion
 
 --- Detailed
 [ ] Fix it so it correctly discovers all entrypoints again
@@ -20,6 +18,10 @@
 [ ] Figure out panic-mode (skip ahead) error recovery
 
 --- Finished
+[D] Input line-numbers in parse tree
+[D] Left recursion algorithm decided on etc.
+    - http://pages.cpsc.ucalgary.ca/~robin/class/411/LL1.3.html
+    - www.d.umn.edu/~hudson/5641/l11m.pdf
 [D] Fix ungpeg_n so that it's ok with 'Blah' styled names
 [D] Syn highlight for proposed parse-transform stuff
 [D] Change parser etc. so that new entry-point marker is ':'
