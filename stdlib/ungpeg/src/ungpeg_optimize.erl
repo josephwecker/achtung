@@ -272,13 +272,13 @@ first_fixed({_,Attrs,_}=E) ->
 first_fixed_i({char,_,[R]}) -> R;
 first_fixed_i({ord,A,Exprs}) ->
   R = common_prefix([first_fixed(E)||E<-Exprs]),
-  io:format("Common prefix for ~p: <~s>~n",
-    [{ord,A},lists:map(fun({C1,C2})->[$[,C1,$-,C2,$]];(C3)->C3 end, R)]),
+  %io:format("Common prefix for ~p: <~s>~n",
+  %  [{ord,A},lists:map(fun({C1,C2})->[$[,C1,$-,C2,$]];(C3)->C3 end, R)]),
   R;
 first_fixed_i({seq,A,Exprs}) ->
   R = common_prefix([lists:flatten([first_fixed(E)||E<-Exprs])]),
-  io:format("Common prefix for ~p: <~s>~n",
-    [{seq,A},lists:map(fun({C1,C2})->[$[,C1,$-,C2,$]];(C3)->C3 end, R)]),
+  %io:format("Common prefix for ~p: <~s>~n",
+  %  [{seq,A},lists:map(fun({C1,C2})->[$[,C1,$-,C2,$]];(C3)->C3 end, R)]),
   R;
 first_fixed_i({special,_,S}) -> S;
 first_fixed_i(_) -> none.
