@@ -1,0 +1,17 @@
+#!/bin/bash
+mkdir -p ebin
+
+echo Neotoma on priv/ungpeg_n.peg
+erl -noinput -eval 'neotoma:file("priv/ungpeg_n.peg").' -run init stop
+
+echo Compiling ungpeg_n
+erlc -o ebin priv/ungpeg_n.erl
+
+echo Compiling ungpeg_optimize
+erlc -o ebin src/ungpeg_optimize.erl
+
+echo Compiling ungpeg_write_compiler
+erlc -o ebin src/ungpeg_write_compiler.erl
+
+echo Compiling ungpeg
+erlc -o ebin src/ungpeg.erl
