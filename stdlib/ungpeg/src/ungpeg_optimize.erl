@@ -32,7 +32,7 @@ optimize([{rule,First,_,_}|_] = AST, _State) ->
           fun(ExprIn)->tr_inline(ExprIn,TopLevelNames,Defs2) end) end),
   % 6. Rest of transformations
   MainExprs2 = all_transformations(MainExprs),
-  ast_map(fun first_fixed/1, MainExprs2),
+  %ast_map(fun first_fixed/1, MainExprs2),
 
   MainExprs2:to_list();
 
@@ -260,28 +260,28 @@ tr_expand_plusses({Type,Attrs,Body}=E)->
 
 %--------------------------------------- UTILITIES ---------------------------
 
-first_fixed({_,Attrs,_}=E) ->
-  case lists:member(star,Attrs) of
-    true -> none;
-    false ->
-      case lists:member(opt,Attrs) of
-        true -> none;
-        false -> first_fixed_i(E)
-      end
-  end.
-first_fixed_i({char,_,[R]}) -> R;
-first_fixed_i({ord,A,Exprs}) ->
-  R = common_prefix([first_fixed(E)||E<-Exprs]),
+%first_fixed({_,Attrs,_}=E) ->
+%  case lists:member(star,Attrs) of
+%    true -> none;
+%    false ->
+%      case lists:member(opt,Attrs) of
+%        true -> none;
+%        false -> first_fixed_i(E)
+%      end
+%  end.
+%first_fixed_i({char,_,[R]}) -> R;
+%first_fixed_i({ord,A,Exprs}) ->
+%  R = common_prefix([first_fixed(E)||E<-Exprs]),
   %io:format("Common prefix for ~p: <~s>~n",
   %  [{ord,A},lists:map(fun({C1,C2})->[$[,C1,$-,C2,$]];(C3)->C3 end, R)]),
-  R;
-first_fixed_i({seq,A,Exprs}) ->
-  R = common_prefix([lists:flatten([first_fixed(E)||E<-Exprs])]),
+%  R;
+%first_fixed_i({seq,A,Exprs}) ->
+%  R = common_prefix([lists:flatten([first_fixed(E)||E<-Exprs])]),
   %io:format("Common prefix for ~p: <~s>~n",
   %  [{seq,A},lists:map(fun({C1,C2})->[$[,C1,$-,C2,$]];(C3)->C3 end, R)]),
-  R;
-first_fixed_i({special,_,S}) -> S;
-first_fixed_i(_) -> none.
+%  R;
+%first_fixed_i({special,_,S}) -> S;
+%first_fixed_i(_) -> none.
 
 %% Given a list of lists, returns whatever prefix they all have in common.
 common_prefix(Lists) -> common_prefix(Lists,[]).
