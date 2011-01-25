@@ -23,7 +23,7 @@ rest3 - so that they collapse properly when one of the rest* expressions is
 invoked.
 
 
-== Appendix A: Definitions
+== Definitions
 .Expressions
 ****
 call:: `some_rule` - A reference to another rule to be invoked.
@@ -68,7 +68,7 @@ Suffixes / Quantifiers::
 ****
 
 
-== Appendix B: PEG First Normal Form
+== PEG First Normal Form
 === Applicable to all (all)
 
 . Every +call+ inlined except entry-points, recursive calls, and accumulators.
@@ -195,7 +195,7 @@ recursive rule recursing without consuming any input (after left-recursion
 rules are put into place).
 
 
-== Appendix C: PEG Second Normal Form
+== PEG Second Normal Form
 (In preparation for all transformations)
 . No `lit` expressions - only sequences of (small) `char` ranges.
 . Every `char` range with multiple ranges is instead an `ord` of each
@@ -204,7 +204,7 @@ rules are put into place).
 . Only recursive rules (including what used to be `star` expressions) are not
   inlined.
 
-== Appendix D: PEG Optimized Form
+== PEG Optimized Form
 (All transformations have finished)
 . (If possible) no `ord` expressions- only `xord` expressions in their place.
 . All potentially left-recursive rules are marked for compiler generator.
@@ -214,3 +214,20 @@ rules are put into place).
   any rules referenced by any non-predicate rules.
 . Predicates do not attempt to consume more of the input once success or
   failure is certain.
+
+== XORD creation
+. `R <- ([x]//[y]) R / succ` can be rewritten as `R <- ([x]//[y]) R // succ` -
+  TODO: figure out how it is discoverable (in this case first term succeeds or
+  fails, and second one always succeeds, so only first one is determinant...)
+
+== AST Attributes
+* notp, andp
+* star, plus, opt
+* token
+* trans: transformation expression
+* tag: name with qualifier
+* orig: original rule name
+* orig_tag: original (unqualified) tag
+* entry: name (designated entry point)
+* i: index within original peg (line and column)
+
