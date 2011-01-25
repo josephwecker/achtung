@@ -284,20 +284,20 @@ tr_expand_plusses({Type,Attrs,Body}=E)->
 %first_fixed_i(_) -> none.
 
 %% Given a list of lists, returns whatever prefix they all have in common.
-common_prefix(Lists) -> common_prefix(Lists,[]).
-common_prefix(Lists,Acc) ->
-  case lists:member([],Lists) of
-    true -> lists:reverse(Acc);
-    false ->
-      Firsts = [T||[T|_]<-Lists],
-      Rests = [R||[_|R]<-Lists],
-      case lists:usort(Firsts) of
-        [none] -> lists:reverse(Acc);
-        []     -> lists:reverse(Acc);
-        [Term] -> common_prefix(Rests, [Term|Acc]);
-        _      -> lists:reverse(Acc)
-      end
-  end.
+%common_prefix(Lists) -> common_prefix(Lists,[]).
+%common_prefix(Lists,Acc) ->
+%  case lists:member([],Lists) of
+%    true -> lists:reverse(Acc);
+%    false ->
+%      Firsts = [T||[T|_]<-Lists],
+%      Rests = [R||[_|R]<-Lists],
+%      case lists:usort(Firsts) of
+%        [none] -> lists:reverse(Acc);
+%        []     -> lists:reverse(Acc);
+%        [Term] -> common_prefix(Rests, [Term|Acc]);
+%        _      -> lists:reverse(Acc)
+%      end
+%  end.
 
 
 pretty_print(RuleList) -> pretty_print(RuleList, []).
