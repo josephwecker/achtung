@@ -36,7 +36,7 @@ inner_expr({ord,Attr,Exprs}) -> ok.
   % case 
   %
 
-inner_expr(E) ->
+%inner_expr(E) ->
 
 
 fmt(Txt) -> io_lib:format(Txt,[]).
