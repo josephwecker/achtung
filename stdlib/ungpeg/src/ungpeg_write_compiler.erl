@@ -47,7 +47,7 @@ inner_expr({char,Attrs,Range}) ->
 %  - orig (if token) to give it a token name
 inner_expr({char,Attrs,[{Begin,End}]}, Succ, Fail, PDrop, C) ->
   SRet = case PDrop or val(Attrs,token) of
-    true  -> lists:flatten(["'",str(val(Attrs,orig)),"'"]);
+    true  -> f("~p",val(Attrs,orig));
     false -> f("[Ch~b|Acc~b]",[C#c.ch,C#c.acc])
   end,
   Size = case byte_size(<<Begin/utf8>>) == byte_size(<<End/utf8>>) of
@@ -66,23 +66,28 @@ inner_expr({char,Attrs,[{Begin,End}]}, Succ, Fail, PDrop, C) ->
   case CanNL of
     false -> "";
     true ->
-      f("{CLine~b,CCol~b}=case Ch~b of "
-        "$\\n -> {Line~b+1,1}; "
-        "_ -> {Line~b,Col~b+1} end, ",
-        [C#c.line,C#c.col,C#c.ch,C#c.line,C#c.line,C#c.col])
+      f("{CLine~b,CCol~b}=case Ch~b of", [C#c.line, C#c.col, C#c.ch]) ++
+      f("$\\n -> {Line~b+1,1};", C#c.line) ++
+      f("_ -> {Line~b,Col~b+1} end,", [C#c.line, C#c.col])
   end ++
   case Succ of
-    succ -> f("{s,{Bin,Idx~b+~s,~s,~s,Misc~b},~s}; ",
+    succ -> f("{s,{Bin,Idx~b+~s,~s,~s,Misc~b},~s};",
         [C#c.idx,Size,SLine,SCol,C#c.msc,SRet])
   end ++
-  "_ -> fail " ++
-  %case Fail of
-  %  {f, nyi} ") ++
-  f("end ").
+  "_ -> " ++
+  case Fail of
+    fail -> f("{f, nyi}");
+    Other -> f("uuhhh")
+  end ++
+  f("end").
 
 
-f(Txt) -> io_lib:format(Txt,[]).
-f(Txt,Dat) -> io_lib:format(Txt,Dat).
+f(Txt) -> " " ++ io_lib:format(Txt,[]) ++ " ".
+f(Txt,Dat) when not is_list(Dat) -> f(Txt,[Dat]);
+f(Txt,Dat) ->
+  " " ++ io_lib:format(Txt,
+    [case D of D1 when is_list(D1)->lists:flatten(D1);O->O end||D<-Dat]) ++
+  " ".
 
 str(A) when is_atom(A) -> atom_to_list(A);
 str(L) when is_list(L) -> L;
