@@ -28,7 +28,7 @@ erlang_code([{EntryPoint, E}|R], Acc) ->
 % TODO: ord, seq, xord, char, call, lit
 %       all with and without finals, tokens, predicates, etc. etc.
 inner_expr({char,Attrs,Range}) ->
-  inner_expr({char,Attrs,Range}, final, final, false, #c{}).
+  inner_expr({char,Attrs,Range}, succ, fail, false, #c{}).
 %inner_expr({seq,Attrs,Exprs}) ->
 %  Drop = val(Attrs,token),
 %  do_seq_expr(
@@ -41,10 +41,13 @@ inner_expr({char,Attrs,Range}) ->
 %  - opt
 %  - in_predicate
 
-% inner_expr(Expr, fail_action, succ_action, DropResult (don't accumulate), ID-tags)
-inner_expr({char,Attrs,[{Begin,End}]}, final, final, PDrop, C) ->
+% inner_expr(Expr, succ_action, fail_action, DropResult (don't accumulate), ID-tags)
+% Relevant attributes at this point:
+%  - token although parent token makes it irrelevant if it's there)
+%  - orig (if token) to give it a token name
+inner_expr({char,Attrs,[{Begin,End}]}, Succ, Fail, PDrop, C) ->
   SRet = case PDrop or val(Attrs,token) of
-    true  -> val(Attrs,orig_name);
+    true  -> lists:flatten(["'",str(val(Attrs,orig)),"'"]);
     false -> f("[Ch~b|Acc~b]",[C#c.ch,C#c.acc])
   end,
   Size = case byte_size(<<Begin/utf8>>) == byte_size(<<End/utf8>>) of
@@ -68,9 +71,13 @@ inner_expr({char,Attrs,[{Begin,End}]}, final, final, PDrop, C) ->
         "_ -> {Line~b,Col~b+1} end, ",
         [C#c.line,C#c.col,C#c.ch,C#c.line,C#c.line,C#c.col])
   end ++
-  f("{s,{Bin,Idx~b+~s,~s,~s,Misc~b},~s}; ",
-    [C#c.idx,Size,SLine,SCol,C#c.msc,SRet]) ++
-  f("_ -> {f, nyi} ") ++
+  case Succ of
+    succ -> f("{s,{Bin,Idx~b+~s,~s,~s,Misc~b},~s}; ",
+        [C#c.idx,Size,SLine,SCol,C#c.msc,SRet])
+  end ++
+  "_ -> fail " ++
+  %case Fail of
+  %  {f, nyi} ") ++
   f("end ").
 
 
