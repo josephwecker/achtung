@@ -11,11 +11,12 @@ to_erlang(ModuleName, Dir, AST) ->
   Code = [
     f("-module(~s).\n",[str(ModuleName)]),
     f("-export([~s]).\n",[string:join(EntryFunNames,",")]),
+    f("-compile(nowarn_unused_vars).\n"),
     erlang_code(AST)
   ],
   F = Dir ++ str(ModuleName) ++ ".erl",
   file:write_file(F, Code),
-  erl_tidy:file(F, [{backups,false},{dir,Dir}]),
+  erl_tidy:file(F, [{backups,false},{dir,Dir},{paper,90},{ribbon,85}]),
   F.
 
 erlang_code(AST) -> erlang_code(AST, []).
