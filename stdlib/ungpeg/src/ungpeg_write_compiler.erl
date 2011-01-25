@@ -3,7 +3,7 @@
 -module(ungpeg_write_compiler).
 -compile(export_all).
 
--record(c,{idx=0,line=0,col=0,ch=0,msc=0,acc=0}).
+-record(c,{idx=0,line=0,col=0,ch=0,misc=0,acc=0}).
 
 % TODO: detect modulename from AST and default Dir to ./
 to_erlang(ModuleName, Dir, AST) ->
@@ -22,14 +22,14 @@ to_erlang(ModuleName, Dir, AST) ->
 erlang_code(AST) -> erlang_code(AST, []).
 erlang_code([], Acc) -> lists:reverse(Acc);
 erlang_code([{EntryPoint, E}|R], Acc) ->
-  Out1 = f("~p({Bin,Idx0,Line0,Col0,Misc0,Acc0})->~s.~n", [EntryPoint,inner_expr(E)]),
+  Out1 = f("~p({Bin,Idx0,Line0,Col0,Misc0,Acc0})->~s.~n", [EntryPoint,top_expr(E)]),
   erlang_code(R,[Out1|Acc]).
 
 % TODO: ord, seq, xord, char, call, lit
 %       all with and without finals, tokens, predicates, etc. etc.
-inner_expr({char,Attrs,Range}) ->
+top_expr({char,Attrs,Range}) ->
   inner_expr({char,Attrs,Range}, succ, fail, false, #c{}).
-%inner_expr({seq,Attrs,Exprs}) ->
+%top_expr({seq,Attrs,Exprs}) ->
 %  Drop = val(Attrs,token),
 %  do_seq_expr(
   % case t1 of succ -> case t2 ...
@@ -46,6 +46,7 @@ inner_expr({char,Attrs,Range}) ->
 %  - token although parent token makes it irrelevant if it's there)
 %  - orig (if token) to give it a token name
 inner_expr({char,Attrs,[{Begin,End}]}, Succ, Fail, PDrop, C) ->
+  IsOpt = val(Attrs,opt),
   SRet = case PDrop or val(Attrs,token) of
     true  -> f("~p",val(Attrs,orig));
     false -> f("[Ch~b|Acc~b]",[C#c.ch,C#c.acc])
@@ -72,12 +73,19 @@ inner_expr({char,Attrs,[{Begin,End}]}, Succ, Fail, PDrop, C) ->
   end ++
   case Succ of
     succ -> f("{s,{Bin,Idx~b+~s,~s,~s,Misc~b},~s};",
-        [C#c.idx,Size,SLine,SCol,C#c.msc,SRet])
+        [C#c.idx,Size,SLine,SCol,C#c.misc,SRet])
   end ++
   "_ -> " ++
-  case Fail of
-    fail -> f("{f, nyi}");
-    Other -> f("uuhhh")
+  case {Fail, IsOpt} of
+    {succ, _} ->
+      f("{s,{Bin,Idx~b,Line~b,Col~b,Misc~b},Acc~b}",
+        [C#c.idx,C#c.line,C#c.col,C#c.misc,C#c.acc]);
+    {fail, true} ->
+      f("{s,{Bin,Idx~b,Line~b,Col~b,Misc~b},Acc~b}",
+        [C#c.idx,C#c.line,C#c.col,C#c.misc,C#c.acc]);
+    {fail, false} ->
+      f("{f,failed}");
+    Other -> f("nyi")
   end ++
   f("end").
 
