@@ -5,6 +5,7 @@
 [ ] Left recursion
 
 --- Detailed
+[ ] Detect bad character ranges (ranges in the wrong order)
 [ ] Fix it so it correctly discovers all entrypoints again
 [ ] Ungpeg warning/error/info/debug mechanisms (inc. flags & macros)
 [ ] Beginning of format_error function
@@ -18,6 +19,8 @@
 [ ] Figure out panic-mode (skip ahead) error recovery
 
 --- Finished
+[D] Fix unicode / wide character consumption / comparing & byte_size in
+    compiler writer.
 [D] Input line-numbers in parse tree
 [D] Left recursion algorithm decided on etc.
     - http://pages.cpsc.ucalgary.ca/~robin/class/411/LL1.3.html
