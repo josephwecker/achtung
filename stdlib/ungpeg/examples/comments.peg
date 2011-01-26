@@ -1,0 +1,10 @@
+comment_lang  <- S* 'hi!' S*
+S             <- (SPACE / NL)+          # At least one whiteSPACE/newline
+NL            <- COMMENT? NEWLINE       # End of a line
+
+# Rest don't need to be used directly
+NEWLINE       <- "\n" / "\r\n" / "\r"
+SPACE         <- [ \t] / ML_COMMENT
+COMMENT       <- "#" (!NEWLINE .)* &NEWLINE
+ML_INNER      <- ML_COMMENT / (!"#|" !"|#" .)+
+ML_COMMENT    <- "#|" ML_INNER* "|#"
