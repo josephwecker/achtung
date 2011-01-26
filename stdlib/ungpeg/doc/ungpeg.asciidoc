@@ -98,6 +98,7 @@ Suffixes / Quantifiers::
 . Contains no +fail+ terms. (A seq with a fail term is itself a fail term).
 . Contains at least two +terms+. (Single +term+ replaces +nop+ +seq+, with
   attributes combined).
+. Contains no two identical +star+ terms in a row (safely remove second)
 . All inner +terms+ are in reduced form.
 
 === Attributes (attr)
@@ -208,8 +209,9 @@ rules are put into place).
 (All transformations have finished)
 . (If possible) no `ord` expressions- only `xord` expressions in their place.
 . All potentially left-recursive rules are marked for compiler generator.
-. Within every `xord` - sequences of `char` recombined into `lit` form where
-  possible.
+. Sequences of `char` recombined into `lit` form where possible. (NOTE: the
+  transformation function may need to break it back up- but it'll still make
+  matching faster...)
 . Predicates reference new (optimized) paths - predicates do not reference
   any rules referenced by any non-predicate rules.
 . Predicates do not attempt to consume more of the input once success or
