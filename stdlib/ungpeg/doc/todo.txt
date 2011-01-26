@@ -5,6 +5,7 @@
 [ ] Left recursion
 
 --- Detailed
+[ ] Alternate token versions of specials (esp EOF etc.)
 [ ] Some way to get rid of redundant bs_test_unit calls in opcodes?
 [ ] Detect bad character ranges (ranges in the wrong order)
 [ ] Fix it so it correctly discovers all entrypoints again
