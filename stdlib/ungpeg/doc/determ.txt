@@ -1,0 +1,66 @@
+S <- (' '/'\t'/'\n'/'\r')*
+
+S: ' '  -> S
+   '\t' -> S
+   '\n' -> S
+   '\r' -> S
+   _    -> succ
+
+
+
+number    <- int frac? exp?                                ->      (num $1 $2)
+int       <- d:'-'? (d:nz_digit d:digit+) / d:digit        ->               $d
+frac      <- '.' digit+                                    ->        (frac $2)
+exp       <- e digit+                                      ->        (e $e $2)
+e         <- [eE] ('+' / '-')?                             ->               $2
+nz_digit  <- [1-9]
+digit     <- [0-9]
+
+number <- 1-number:(d-int:[-]? (d-int:[1-9] d-int:([0-9] [0-9]*)) / d-int:[0-9])
+          2-number:([.] 2-frac:([0-9] [0-9]*))?
+	  (e-exp:(([e]/[E]) 2-e:([+]/[-])?) 2-exp:([0-9] [0-9]*))?
+
+number <- ([-]? [1-9] [0-9] [0-9]* / [0-9])
+          ([.] [0-9] [0-9]*)?
+	  (([e]/[E]) ([+]/[-])? [0-9] [0-9]*)?
+
+number <- ( ([-] [1-9] [0-9] [0-9]*) /
+            ([1-9] [0-9] [0-9]*) /
+	    [0-9]
+	  )
+	  ([.] ...)
+	  ([e] ...)
+	  ([E] ...)
+	  (_ -> succ)
+
+
+number  | [-]         |-> [1-9] [0-9] [0-9]* number2
+        | [1-9] [0-9] |-> [0-9]* number2
+        | [0-9]       |-> number2
+	| _           |-> fail
+
+number2 | [.]         |-> [0-9] [0-9]* number3
+        | _           |+-> number3               # passthrough- number3 has two sigs
+
+number3 | [eE] [+]    |-> [0-9] [0-9]* succ
+        | [eE] [-]    |-> [0-9] [0-9]* succ
+        | [eE] [0-9]  |-> [0-9]* succ
+        | _           |-> succ
+
+star1   | [0-9]       |-> star1
+([0-9]*)| _           |-> succ
+
+
+# Technically you can pull 4 bytes out at once and jump that far into the
+# stream, but in reality there are so many choices by then that the decision
+# logic and program size would undo any benefits...
+[-]   [1-9] [0-9] [0-9] -> [0-9]*
+[-]   [1-9] [0-9] [.]   -> ...
+[-]   [1-9] [0-9] [eE]  -> ...
+[-]   [1-9] [0-9] _     -> succ
+[1-9] [0-9] [0-9] [0-9] -> [0-9]*
+[1-9] [0-9] [0-9] _     -> succ
+[1-9] [0-9] _     _     -> succ
+...
+# So the rule is: Pull the least amount possible that allows you to branch.(?)
+

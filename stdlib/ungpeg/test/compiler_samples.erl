@@ -2,6 +2,23 @@
 -compile(export_all).
 
 
+
+
+% Determinants
+% Collapse
+
+% determinative_form
+%   determinant -> following_action
+%                    - collapse
+%                    - transform
+%                    - success
+%                    - failure
+
+
+
+
+
+
 % 1. Last expression in a seq shouldn't need to rewrite its succ/fail returns -
 % just use its result directly.
 % 2. Any expression in an xord shouldn't need its returns rewritten.
@@ -9,6 +26,10 @@
 % 
 
 % Original:   NL <- ([\r] special_nl // [\n]) NL / succ
+% [\r] -> special_nl NL
+% [\n] -> NL
+% _    -> succ
+
 'NL'({Bin,Idx,Line,Col,Misc,TmpAcc}) ->
   % - Token, so no accumulation - static result
   % - Was star expression - always succeeds
@@ -52,6 +73,14 @@
 
 % Original:   S <-  (' ' / '\t' / '\n' / '\r')*
 % Normalized: S <=- ([ ]//[\t]//[\n]//[\r]) S // succ
+
+% [ ] -> S
+% [\t]-> S
+% [\n]-> S
+% [\r]-> S
+% _ -> succ
+
+
 'S_input'() ->
   {'S',{xord,[{i,{1,8}},star,{orig,'S'},token],
       [{seq,[],
@@ -76,4 +105,9 @@
     <<_:Idx/bytes, Next, _/bytes>>
 
     
+%----------------------------------------------------------
+
+
+%
+
 
