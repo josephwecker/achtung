@@ -68,7 +68,7 @@ hi link erlpegNum                 Underlined
 hi link erlpegOctNum              Underlined
 hi link erlpegEntryRule           Label
 hi link erlpegNormRuleName        Identifier
-hi link erlpegTokRuleName         Comment
+hi link erlpegTokRuleName         Debug
 hi link erlpegEntryPoint          Typedef
 hi link erlpegEntryDelim          Delimiter
 hi link erlpegAssign              Delimiter
@@ -77,7 +77,7 @@ hi link erlpegSeqSep              Structure
 hi link erlpegGroup               Delimiter
 hi link erlpegPrefix              PreProc
 hi link erlpegSuffix              Repeat
-hi link erlpegToken               Comment
+hi link erlpegToken               SpecialComment
 hi link erlpegRuleRef             Function
 hi link erlpegOptRuleRef          SpecialComment
 hi link erlpegOptToken            Comment
