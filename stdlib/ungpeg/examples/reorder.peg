@@ -1,0 +1,5 @@
+grammar    <- rule* eof
+rule       <- symbol LEFTARROW expression
+expression <- (symbol !LEFTARROW)*
+symbol     <- [A-Z]
+LEFTARROW  <- '<-'
