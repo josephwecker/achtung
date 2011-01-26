@@ -255,6 +255,7 @@ abaaaabaaabab
 'b'  : e2[1,2,1] match, (collapse as start), call e2
 ...
 
+******
 SO:
 e <- (a b (a !b)*)*
 
@@ -262,11 +263,72 @@ e <=- a b f / succ
 f <=- a (b f / f) / succ
 
 ******
+
+******
 Hypothesis: predicates --> qualifier, reorder, or dead-code simplification (only)
 
+---
 Tricky:
+# Tricky because the predicate phrase doesn't seem to match up exactly with the
+# next term.
+
+e <-  &([a] b) [a] c
+b <-  [1] / [2] / [3]
+c <-  [0-9]
+
+qualifier
+
+e <- [a] &([1-3]) [0-9]
+
+e <- [a] [1-3]
+
+(obviously a useless expression _unless_: )
+e <-  &([a] b) [a] c  -> $c
+b <-  special:([1] / [2] / [3])
+c <-  [0-9]
 
 
+---
+Trickier:
+# Much tricker- requires new form because of the non-tail-recursive
+# accumulation phase in 'y' and 'z' ('y' in particular).
+# (BTW, this matches  a^n b^n c^n )
+# Hopefully it ends up being a qualifier- but in this case it's qualifying on a
+# meta-level- the quantity.
+
+x <-  &y [a]* z
+y <-  [a] y [b] / succ
+z <-  [b] z [c] / succ
+
+x <-- &y w z
+y <-- [a] y [b] / succ
+z <-- [b] z [c] / succ
+w <-- [a] w / succ
+
+x <-- &y w z
+y <-- [a] self [b] / succ
+z <-- [b] self [c] / succ
+w <-- [a] self / succ
+
+x <-- &y w
+y <-- [a] self [b] / succ
+w <-- [a] self / z
+z <-- [b] self [c] / succ
+
+---
+Trickier Yet:
+# (Like above but has the extra qualifier to make sure 'b' doesn't overflow its
+# bounds [strictly not necessary?] - anyway, it's the non cfg example from the
+# original peg paper)
+
+x <-  &(y ![b]) [a]* z eof
+y <-  [a] y [b] / succ
+z <-  [b] z [c] / succ
+
+x <-- &(y ![b]) w z eof
+y <-- [a] y [b] / succ
+z <-- [b] z [c] / succ
+w <-- [a] w / succ
 
 ******
 New form: {tag} = collapse accumulator into specified tag
