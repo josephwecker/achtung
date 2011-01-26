@@ -1,12 +1,18 @@
+--------------------------------------------
+
 S <- (' '/'\t'/'\n'/'\r')*
+S <-- star1
+star1 <-- ([ ]/[\t]/[\n]/[\r]) star1 / succ
+# TODO: Need a rule/transform to make sure star1 swaps into place of S
 
-S: ' '  -> S
-   '\t' -> S
-   '\n' -> S
-   '\r' -> S
-   _    -> succ
+S | [ ]  |-> S
+  | [\t] |-> S
+  | [\n] |-> S
+  | [\r] |-> S
+  | _    |-> succ
 
 
+--------------------------------------------
 
 number    <- int frac? exp?                                ->      (num $1 $2)
 int       <- d:'-'? (d:nz_digit d:digit+) / d:digit        ->               $d
@@ -34,22 +40,29 @@ number <- ( ([-] [1-9] [0-9] [0-9]*) /
 	  (_ -> succ)
 
 
-number  | [-]         |-> [1-9] [0-9] [0-9]* number2
-        | [1-9] [0-9] |-> [0-9]* number2
-        | [0-9]       |-> number2
+== non-labeled & no transforms/collapse ==
+
+number  | [-]         |-> [1-9] [0-9] star1 number2
+        | [1-9] [0-9] |-> star1 number2             # Overlap so second one necessary
+        | [0-9]       |-> number2                   # Overlap with previous
 	| _           |-> fail
 
-number2 | [.]         |-> [0-9] [0-9]* number3
-        | _           |+-> number3               # passthrough- number3 has two sigs
+number2 | [.]         |-> [0-9] star1 number3
+        | _           |-> number3
 
-number3 | [eE] [+]    |-> [0-9] [0-9]* succ
-        | [eE] [-]    |-> [0-9] [0-9]* succ
-        | [eE] [0-9]  |-> [0-9]* succ
+number3 | [eE] [+]    |-> [0-9] star1 succ
+        | [eE] [-]    |-> [0-9] star1 succ
+        | [eE] [0-9]  |-> star1 succ
         | _           |-> succ
 
 star1   | [0-9]       |-> star1
 ([0-9]*)| _           |-> succ
 
+# TODO: possibly automatically abstract out common runs if there are enough of
+# them / they are big enough to warrant it. (e.g., 'star1 succ')
+
+# TODO: actually, star1 is guaranteed to succeed, so star1 succ is redundant-
+# except collapse and transformations may affect it.
 
 # Technically you can pull 4 bytes out at once and jump that far into the
 # stream, but in reality there are so many choices by then that the decision
@@ -63,4 +76,53 @@ star1   | [0-9]       |-> star1
 [1-9] [0-9] _     _     -> succ
 ...
 # So the rule is: Pull the least amount possible that allows you to branch.(?)
+
+--------------------------------------------
+
+comment_lang  <- S* 'hi!' S*
+S             <- (SPACE / NL)+
+NL            <- COMMENT? NEWLINE
+NEWLINE       <- "\n" / "\r\n" / "\r"
+SPACE         <- [ \t] / ML_COMMENT
+COMMENT       <- "#" (!NEWLINE .)* &NEWLINE
+ML_INNER      <- ML_COMMENT / (!"#|" !"|#" .)+
+ML_COMMENT    <- "#|" ML_INNER* "|#"
+
+comment_lang <-- star1 'hi!' star1
+ML_COMMENT   <-- '#|' (ML_COMMENT / (!('#|'/'|#') any) (!('#|'/'|#') any)*)* '|#'
+star1        <-- ([ ] / [\t] / ML_COMMENT / ([#] (!([\n]/'\r\n'/[\r]) any)* &([\n]/'\r\n'/[\r]))? ([\n]/'\r\n'/[\r])) star1 / succ
+
+
+comment_lang| _    |-> star1 'hi!' star1
+star1       | [
+
+
+--------------------------------------------
+
+e1 <- t1 t2 t3
+e2 <- t1 / t2 / t3
+e3 <- t1? t2 / t3  == t1 t2 / t2 / t3
+
+t1 <- [a]
+t2 <- 'bcd'
+t3 <- [e]
+
+
+t1? t2 / t3
+(t1 / succ) t2 / t3
+
+
+!!!***********     e1? rest == e1 rest / rest   !!  Much better than (e1 / succ) rest
+
+e1 e2 e3? e4 e5 == e1 e2 (e3 e4 e5 / e4 e5)
+
+e1 e2 expr? expr e4 == e1 e2 (expr expr e4 / expr e4) == e1 e2 expr (expr e4 / e4)
+(also == )  e1 e2 expr expr? e4
+
+
+expr?      ---> expr / succ      <--- only if it's the last term in an ord
+expr? rest ---> expr rest / rest <--- anywhere else
+
+
+e1/e2?/e3  --> already not allowed-  e3 never succeeds
 
