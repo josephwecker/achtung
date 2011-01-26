@@ -45,6 +45,10 @@ top_expr({char,Attrs,Range}) ->
 % Relevant attributes at this point:
 %  - token although parent token makes it irrelevant if it's there)
 %  - orig (if token) to give it a token name
+%
+% ord(chr/chr/chr) and chr[r1r2r3] are the same and are both simplified into a
+% single case statement
+
 inner_expr({char,Attrs,[{Begin,End}]}, Succ, Fail, PDrop, C) ->
   IsOpt = val(Attrs,opt),
   SRet = case PDrop or val(Attrs,token) of
