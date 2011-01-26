@@ -4,6 +4,7 @@ S <- (' '/'\t'/'\n'/'\r')*
 S <-- star1
 star1 <-- ([ ]/[\t]/[\n]/[\r]) star1 / succ
 # TODO: Need a rule/transform to make sure star1 swaps into place of S
+#  done: see NOTE ON STAR REDUCTION IN PLACE below
 
 S | [ ]  |-> S
   | [\t] |-> S
@@ -99,20 +100,42 @@ star1       | [
 
 --------------------------------------------
 
+e <- f1 f2 f3
+
+f1 <- e1 / e2 / e3
+f2 <- e1 e2 e3
+f3 <- e1? e2 e3 #== e1 e2 e3 / e2 e3
+
 e1 <- t1 t2 t3
 e2 <- t1 / t2 / t3
-e3 <- t1? t2 / t3  == t1 t2 / t2 / t3
+e3 <- t1? t2 / t3 #== t1 t2 / t2 / t3
 
 t1 <- [a]
 t2 <- 'bcd'
 t3 <- [e]
 
+e <- ( [a] 'bcd' [e] / [a] / 'bcd' / [e] / [a]? 'bcd' / [e] )
+     ( ([a] 'bcd' [e]) ([a] / 'bcd' / [e]) ([a]? 'bcd' / [e])   )
+     ( ([a] 'bcd' [e])? ([a] / 'bcd' / [e]) ([a]? 'bcd' / [e])  )
 
-t1? t2 / t3
-(t1 / succ) t2 / t3
+
+e <-- ( [a] 'bcd' [e] / [a] / 'bcd' / [e] / [a] 'bcd' / 'bcd' / [e] )
+e <-- ( [a] 'bcd' [e] / [a] / 'bcd' / [e] )
+e <-- ( [a] ('bcd' [e] / succ) / 'bcd' / [e] )
+
+d(t1) = [a]
+d(t2) = 'bcd'
+d(t3) = [e]
+
+d(e1) = d(t1) = [a]
+d(e2) = d(t1)/d(t2)/d(t3) = [a]/'bcd'/[e]
+d(e3) = d(t1)/d(t2)/d(t3) = [a]/'bcd'/[e]
+
+d(f1) = d(e1)/
 
 
 !!!***********     e1? rest == e1 rest / rest   !!  Much better than (e1 / succ) rest
+              (it seems) because it gives us a static determinant
 
 e1 e2 e3? e4 e5 == e1 e2 (e3 e4 e5 / e4 e5)
 
@@ -125,4 +148,180 @@ expr? rest ---> expr rest / rest <--- anywhere else
 
 
 e1/e2?/e3  --> already not allowed-  e3 never succeeds
+
+
+*******  Worth it to do the same with star expressions?
+
+e1 e2* e3 == e1 (e2 e2* e3 / e3)
+e1 e2* e3 == e1 (&e2a e2* e3 / e3)
+
+
+******
+Predicates - can reduce to 'QUALIFIER' as long as every possibility is a static
+terminal or has variable length less than 5 bytes...
+
+!([a]/[b]/[c])         == Q([^abc])
+!([a] [b] [c] [d] [e]) == Q(^'abcde')
+!([a] [b]? [c] [d])    == Q(^
+
+
+e <- !'abcde' 'abcd'
+
+e <-- 'abcd' ![e]
+
+case ... of
+  <<_:Idx/bytes, 97,98,99,100,C, _/bytes>> when C =/= 101 -> ...
+  ...
+end
+# very weak form of backtracking if it fails (will look up those bytes again).
+# Possibly acceptable.
+
+BUT
+
+e <- !'abcde' 'abcd' / 'abcdefg'
+
+REORDERER
+
+e <-- 'abcdefg' / 'abcd'
+e <=- 'abcd' ('efg' / succ)
+
+grammar    <- rule* eof
+rule       <- symbol LEFTARROW expression
+expression <- (symbol !LEFTARROW)*
+symbol     <- [a-z]
+LEFTARROW  <- '<-'
+---
+grammar <- ([a-z]'<-' ([a-z]!'<-')*)*  eof
+
+e <-  (a b*)*
+e <-- a b* e / succ
+e <-- a b b* e / a e / succ
+
+e <-- a (b b* e / e) / succ
+e <-- (a b b* / a)*
+
+grammar <- ([a-z]'<-' [a-z]!'<-' ([a-z]!'<-')* / [a-z]'<-')* eof
+grammar <--([a-z]'<-' ([a-z]!'<-' ([a-z]!'<-')* / [a-z]'<-'))* eof
+                      ^                         ^          ^
+grammar <--([a-z]'<-' ([a-z]'<-' / [a-z] ([a-z]!'<-')*)
+
+
+e <-  (ab (a!b)*)*
+e <-- (ab a!b (a!b)* / ab)*
+e <-- (ab (a!b (a!b)* / succ))*
+e <-- (ab (a!b (a!b)* / (ab (a!b (a!b)* / succ))))*
+e <-- (ab (a!b (a!b)* / ab (a!b (a!b)* / succ)))*
+e <-- (ab (  a!b (a!b)*
+           / ab (a!b (a!b)* / succ)))*
+
+e <=- (ab ( ab (a!b (a!b)* / succ) / a (a!b)*))*
+grr
+
+
+e <- (a b (a !b)*)*
+(OR) e <-  stuff:(start:ab body:(a!b)*)*
+
+e <-- ab e2 e / succ
+e2<-- a!b e2 / succ
+
+e <-- ab e2 e / succ
+e2<-- a!b e2 / e     # Pull in tail from context
+                     # don't need / succ because e always succeeds
+e <-- ab e2 e / succ
+e2<-- a!b e2 / (ab e2 e / succ)
+
+# e2 now has full e, so e2 e is now redundant
+e <-- ab e2 / succ
+e2<-- a!b e2 / (ab e2 / succ)
+
+e <-- ab e2 / succ
+e2<-- a!b e2 / ab e2 / succ  # next is reorder first to terms
+
+e <-- ab e2 / succ
+e2<-- ab e2 / a e2 / succ
+(OR) e2 <-- start:ab e2 / body:a e2 / succ
+
+e <-- ab e2 / succ
+e2<-- a (b e2 / e2) / succ
+(OR) e2 <-- start:body:a (b {start} e2 / {body} e2) / succ
+
+abaaaabaaabab
+^    ^   ^ ^
+'ab' : e[1,1] match, call e2 (collapse as start)
+'a'  : e2[1,1] match, call e2[1,2]  (collapse as body)
+'a'  : e2[1,2] -> e2[1,1], match, call e2[1,2]  (collapse former as body)
+'a'  : e2[1,2] -> e2[1,1], match, call e2[1,2]  (collapse former as body)
+'a'  : e2[1,2] -> e2[1,1], match, call e2[1,2]  (collapse former as body)
+'b'  : e2[1,2,1] match, (collapse as start), call e2
+...
+
+SO:
+e <- (a b (a !b)*)*
+
+e <=- a b f / succ
+f <=- a (b f / f) / succ
+
+******
+Hypothesis: predicates --> qualifier, reorder, or dead-code simplification (only)
+
+Tricky:
+
+
+
+******
+New form: {tag} = collapse accumulator into specified tag
+          {tag*} = collapse accumulator and add to tag's accumulator
+	  {/transformer/} = execute transformation (but only if it is used
+	    later on in another one)
+(internal form, that is- not for use in the wild)
+tag* -> for star and plus expressions or when multiple things tagged manually (?)
+
+Or maybe:
+ on collapse:  already one in there?  add another- now it's a list (or maybe
+               always treat it as a list but then singularize it @ transform time)
+ on transform: clear out all data that's used in the transform
+               (unless it's referenced higher up?)
+
+e <- tag1:e2 -> trsf1
+e <-- tag1:e2 {tag1} {/trsf1/}
+
+******
+I'm thinking that auto-transforms for building an AST might be feasable after
+all- especially if the children ones aren't executed unless they're used...
+
+e <- a b         #(implied) -> {e,Pos,$_}
+a <- 'abc'       #(implied) -> {a,Pos,$_}
+b <- 'bcd'       #(implied) -> {b,Pos,$_}
+input: 'abcbcd'
+{e, {1,1}, {{a, {1,1}, 'abc'}, {b, {1,1}, 'bcd'}}}
+
+BUT -
+e <- a b -> {here_you_go, $1}
+a <- 'abc'       #(implied) -> {a,Pos,$_}
+b <- 'bcd'       #(implied) drop
+input: 'abcbcd'
+{here_you_go, {a, {1,1}, 'abc'}}
+
+e <- A b         #(implied) -> {e,Pos,$_}
+A <- 'abc'       #(implied) drop because it's a token
+b <- 'bcd'       #(implied) -> {b,Pos,$_}
+input: 'abcbcd'
+{e, {1,1}, {b,{1,4},'bcd'}}
+
+******
+Thought: $_ as tuple but %_ as list? (or something)
+
+****** NOTE ON STAR REDUCTION IN PLACE
+e <-  something* rest
+e <-- something e / rest
+(including the case when "rest" is 'succ')
+
+******
+to prove: lookahead on terminal does not affect constant space / linear time complexity
+
+******
+NOTE: Possibly simplifies things (for users' understanding) if predicates are
+completely invisible to transformation expressions. (problem might be when
+they're counting the terms...)
+
 
