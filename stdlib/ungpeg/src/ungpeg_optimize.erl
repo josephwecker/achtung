@@ -341,7 +341,7 @@ pp_prefs(Attr)                 -> pp_prefs(Attr,[]).
 pp_prefs([],Acc)               -> lists:reverse(Acc);
 pp_prefs([notp|R],Acc)         -> pp_prefs(R,[$!|Acc]);
 pp_prefs([andp|R],Acc)         -> pp_prefs(R,[$&|Acc]);
-pp_prefs([{orig_tag,T}|R],Acc) -> pp_prefs(R,[[atom_to_list(T)|":"]|Acc]);
+pp_prefs([{tag,{T,N}}|R],Acc)  -> pp_prefs(R,[[to_list(T),$-,to_list(N),":"]|Acc]);
 pp_prefs([_|R],Acc)            -> pp_prefs(R,Acc).
 pp_suffs(Attr)                 -> pp_suffs(Attr,[]).
 pp_suffs([],Acc)               -> lists:reverse(Acc);
@@ -375,3 +375,8 @@ esc_str([$\r|R],Acc) -> esc_str(R,["\\r"|Acc]);
 esc_str([N|R],Acc) when (N < $ ) or (N > 254) ->
   esc_str(R,[["\\x{",integer_to_list(N,16),"}"]|Acc]);
 esc_str([C|R],Acc) -> esc_str(R,[C|Acc]).
+
+
+to_list(L) when is_list(L) -> L;
+to_list(A) when is_atom(A) -> atom_to_list(A);
+to_list(N) when is_integer(N) -> integer_to_list(N).
