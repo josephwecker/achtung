@@ -523,15 +523,171 @@ w <=- [0-9] {dig-w} ~[-] [0-9]* {dig-x} {|x|} {|w|}
 
 
 * When inlining- inlined body always comes _before_ the current transform
-* Possibly easier to think of it in the AST as it is currently- that way
-  everything is ready to be plunked in at just the right spot. Nah- makes
-  commuting etc. too complicated.
 
+* Warning if tags aren't used
+* Labels used "upstream"?
+
+* Transform function also cleans out anything remaining in accumulator (?)
 
 e <- a -> T
 e <- a|T
 
 e <- a b c -> T
 e <-- a b c|T
+
+
+
+e <- a b / c b -> $2 (illegal)
+
+e <- a T:b / V:c b -> $T
+e <-- ~a T:b / V:c ~b -> $T
+BUT
+e <- a T:b / V:c b -> $_
+e <-- a b / c b -> $_
+
+----
+OVERLAPPING REFERENCES WHEN FACTORING TO XORDS
+
+e <-  T:(ab) U:(cd) V:(ef) g / abc T:(def) -> $T $U $V
+e <-- ab-{T} cd-{U} ef-{V} g-{~} {|e|}
+    / abc-{~} def-{T} {|e|}
+e <-- ab-{?T1} c-{?~1} d-{?U1} ef-{?V1}-{?T2} 
+       (g-{T1}-{U1}-{V1}-{~} succ-{|e|} / succ-{~1}-{T2}-{|e|})
+
+* When a function can only be commuted from one side, make a new 'tentative'
+  marker, which, at runtime, will mark the size of the accumulator at that
+  moment. At the same time, an 'execute' marker is added to the tail of
+  functions on the head of the clause the expression was commuted from (but
+  before the transformation function if it's there). If it ever hits an
+  'execute' marker it will pull that much off the front of the accumulator,
+  assign it, remove the tentative variable, and decrement that amount from any
+  remaining tentatives.
+  EDIT: Attach 'execute' marker to an 'nop' (succ for seq's) that's at the head
+  of the term where the tentative's term was extracted, and skip those nops
+  when looking at subsequent terms to factor out. (see example below)
+
+* It seems helpful currently to attach the final transformation function to
+  dangling succ clauses. (or maybe nop at the head can take over...)
+
+* When checking for duplicate terms in an ord (and, probably, most
+  normalization rules), ignore functions
+
+AFTER XORD TRANSFORMATIONS (?):
+* {~} gets attached to _all_ terms where appropriate. (so, for example, above's
+  `abc-{~}` should actually be `a-{~} b-{~} c-{~}`)
+* A {~} on an expression propagates to all its children (creating a call to a
+  new non-accumulate versions of rules if necessary). Probably a very similar
+  algorithm to predicate propagation.
+* Now the final parser can avoid making unnecessary accumulations in the first
+  place- so the {~} becomes more of a "don't accumulate on this term" prefix
+  instead of a "throw-away" suffix except when it has turned into a
+  "tentative"/"execute" pair.
+
+
+BEST EXAMPLE
+- Shows overlapping
+- Shows non-accumulation
+- Keeps non-accumulation in such a way that afterward they can be optimized
+  just like predicate terms.
+
+e <-  T:(ab) U:(cd) V:(ef) g / abc T:(def) -> $T $U $V
+
+e <--  ab-{T} cd-{U} ef-{V} g-{~} succ-{|e|}
+    / a-{~} b-{~} c-{~} def-{T} succ-{|e|}
+
+e <-- a-{?~1} (b-{T} cd-{U} ef-{V} g-{~} succ-{|e|}
+              / nop-{~1} b-{~} c-{~} def-{T} succ-{|e|})
+
+e <-- a-{?~1} b-{?T1|?~2} (nop-{T1} cd-{U} ef-{V} g-{~} succ-{|e|}
+                          / nop-{~1} nop-{~2} c-{~} def-{T} succ-{|e|})
+
+# But now {~2} subsumes {~1} because they're next to each other (on the right),
+# so ~1 (both the tentative and the execute) can be removed.
+
+e <-- a b-{?T1|?~2} (nop-{T1} cd-{U} ef-{V} g-{~} succ-{|e|}
+                    / nop-{~2} c-{~} def-{T} succ-{|e|})
+
+e <-- a b-{?T1} c-{?~3} (nop-{T1} d-{U} ef-{V} g-{~} succ-{|e|}
+                        / nop-{~3} d e f-{T} succ-{|e|})
+
+e <-- a b-{?T1} c-{?~3} d-{?U1} (nop-{T1} nop-{U1} ef-{V} g-{~} succ-{|e|}
+                               / nop-{~3} e f-{T} succ-{|e|})
+
+e <-- a b-{?T1} c-{?~3} d-{?U1} e (nop-{T1} nop-{U1} f-{V} g-{~} succ-{|e|}
+                               / nop-{~3} f-{T} succ-{|e|})
+
+e <-- a b-{?T1} c-{?~3} d-{?U1} e f-{?V1|?T2}
+      (
+        nop-{T1} nop-{U1} nop-{V1} g-{~} succ-{|e|} //
+        nop-{~3} nop-{T2} succ-{|e|}
+      )
+
+# Finally we need to accumulate all of the nop operations into the head of the
+# first non-nop term in each xord-term. (I'm sure there's a better way- but in
+# any case, this is the final result:)
+
+e <-- a b-{?T1} c-{?~3} d-{?U1} e f-{?V1|?T2}
+      ( g-{T1}-{U1}-{V1}-{~} succ-{|e|} // succ-{~3}-{T2}-{|e|} )
+
+--------------
+Backtracking occurs when:
+- ord instead of xord (including implied ord on star expressions)
+- predicates because they don't consume anything
+
+Data storage occurs when: ...
+  (differentiate between "accumulating" data used in transforms- which doesn't
+  count toward complexity, and data accumulated strictly to enable parsing /
+  accepting of correct language)
+
+Weak backtracking (data extracted more than once but linearly in a way that
+doesn't increase complexity)
+
+e <- (ab)* a
+a <- #| Big monsterous time consuming expression |#
+
+input: (equiv of a) (equiv of a)
+
+# OLD WAY (WRONG WAY):
+e <-  head (a b)* a tail
+e <=- head s1 a tail
+s1<=- a b s1 / succ
+
+# RIGHT WAY:
+e <-  head (a b)* a tail
+e <=- head s1
+s1<=- a b s1 / a tail
+OR
+e <-  (a b)* a tail
+e <=- a b e / a tail
+
+* Star expressions turn into recursive ords- but instead of the second term
+  being succ, it is the tail of whatever came after the star expression in the
+  context where it was first described. (Because this allows us to factor
+  things out and turn it into an xord)
+* When expression starts with a star expression, rewrite to recursive
+  _in-place_.
+* (Way to do essentially the same thing with left-recursion?)
+
+----------------
+TAGS / REFERENCES ON RECURSION, PLUS, & STAR EXPRESSIONS
+
+e   -> T:f+ [@] V:f+ <- $T $V
+f   -> [a-z] [0-9]
+
+e  --> f-{e-T} f*-{e-T} [@]-{~} f-{e-V} f*-{e-V} succ-{|e|}
+f  --> [a-z] [0-9]
+
+e  --> f-{e-T} s1
+s1 --> f-{e-T} s1 / [@]-{~} f-{e-V} f*-{e-V} succ-{|e|}
+f  --> [a-z] [0-9]
+
+e  --> f-{e-T} s1
+s1 --> f-{e-T} s1 // [@]-{~} f-{e-V} s2
+s2 --> f-{e-V} s1 // succ-{|e|}
+f  --> [a-z] [0-9]
+
+e  -=> [a-z] [0-9]-{e-T} s1
+s1 -=> [a-z] [0-9]-{e-T} s1 // [@]-{~} [a-z] [0-9]-{e-V} s2
+s2 -=> [a-z] [0-9]-{e-V} s2 // succ-{|($T $V)|}
 
 

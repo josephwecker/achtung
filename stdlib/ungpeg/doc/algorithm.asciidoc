@@ -6,28 +6,47 @@ Joseph Wecker <joseph.wecker@gmail.com>
 :encoding: utf-8
 :lang: en
 
-= Step 1 - Validate t()'s, inline t()'s and c()'s
+== Step 1 - Transform and Collapse Function Placement
 
-. Create generic `t()` (transformation function) if none present
-. Verify positions for positional arguments
-. Verify labels/rule-names for named arguments
+. Create generic `t()` (transformation function) if none present.
+. Verify positions for positional arguments. (Display and quit on error).
+. Verify labels/rule-names for named arguments. (Display and quit on error).
+. Issue warnings for any transformation functions on token rules.
+. Issue warnings for any references to tokens
+. Issue warnings for any references to predicates
 . Attach `c()` (collapse functions) to the final terms of all tagged terms
-  (including whole body term for `$_`)
-. Attach `t()` to all 'tail' terms (recursively as follows):
-.. If body is atomic, attach `t()` to that term.
-.. If body is a `seq`, attach `t()` to final terms of final term in `seq`.
-.. If body is an `opt`, attach `t()` to final terms of every 
+  (including whole body term for `$_`).
+. Attach `t()` to the `body's` final term(s).
+. Attach `~` prefixes to terms recursively as follows:
+.. If the term is a token call and not directly labeled or referenced.
+.. If the term has a predicate prefix and is not directly labeled or
+   referenced.
+.. If neither the (non-token) term nor any of its parents are referenced.
 
-.Final Term(s)
+.Find Final Term(s)
 ****
-Given:: Expression `e` (initially the `body`)
+'Given': Expression `e` (initially the `body`)
 
-. If `e` is atomic, `e` is a final term.
+. If `e` is atomic (including a `call`), `e` is a final term.
 . If `e` is a `seq`, find final term(s) of last `term` in the `seq`.
+. If `e` is an `ord` (or `xord`), find final term(s) for every `term`.
 ****
 
+== Step 2 - Inlining and Unaliasing
 
-= Step 2 - Transform to Normal 1
+== Step 3 - Transform to Normal 1
 
-. All `lits` turned into `seq(char)`
-. All `
+. All `plus` expressions transformed into `seq(e,e*)` expressions. Any attached
+  functions get attached to the second term. Other attributes stay on `seq`.
+. All `lits` turned into `seq(char)` - any attached functions get reattached to
+  the final `char` in the `seq`. Other attributes stay on `seq`.
+. All `chars` with more than one range are turned into `xords` with each range
+  as a `char` term. Any attached functions get attached to each new `char`
+  term. Other attributes stay on `xord`.
+
+
+
+
+== (FUTURE) (SCRAPS)
+
+. Remember to do `{~}` optimization 

@@ -5,6 +5,8 @@
 [ ] Left recursion
 
 --- Detailed
+[ ] In transformation area of grammar, implied tuples when no brackets (e.g.,
+    `a <- 'ab' 'cd' -> $1 $2`)
 [ ] Redo specials as succ/fail
 [ ] Alternate token versions of specials (esp EOF etc.)
 [ ] Detect bad character ranges (ranges in the wrong order)
