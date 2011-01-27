@@ -10,6 +10,8 @@
    # Str = p-/"(!"(\\\\/\\"/.))*"/- # String with escapes
    # Par = p-/\((!\)(./%1))*\)/- # Matched parenthasese
 
+   - pegexps - finally a way to do !'blah' ...
+
  - parameterized rules (like a preprocessor to abstract certain patterns- use
    for example to have one string-matcher that is given single-quotes or
    double-quotes.

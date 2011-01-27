@@ -114,12 +114,10 @@ star1        <-- ( [ \t]
                    / ([#] [^\n\r]* &([\n\r]))? ([\n]/'\r\n'/[\r])
 		 ) star1 / succ
 
-
 !('#|'/'|#') any
 # weak backtracking - two bytes compared before only one consumed - can't think
 # of any other way to do it though at the moment...
 
-YOU ARE HERE
 
 ----------------------------------- Removing redundant predicate terms
 z <- !( abc / ab / a )
@@ -254,31 +252,6 @@ LEFTARROW  <- '<-'
 ---
 grammar <- ([a-z]'<-' ([a-z]!'<-')*)*  eof
 
-e <-  (a b*)*
-e <-- a b* e / succ
-e <-- a b b* e / a e / succ
-
-e <-- a (b b* e / e) / succ
-e <-- (a b b* / a)*
-
-grammar <- ([a-z]'<-' [a-z]!'<-' ([a-z]!'<-')* / [a-z]'<-')* eof
-grammar <--([a-z]'<-' ([a-z]!'<-' ([a-z]!'<-')* / [a-z]'<-'))* eof
-                      ^                         ^          ^
-grammar <--([a-z]'<-' ([a-z]'<-' / [a-z] ([a-z]!'<-')*)
-
-
-e <-  (ab (a!b)*)*
-e <-- (ab a!b (a!b)* / ab)*
-e <-- (ab (a!b (a!b)* / succ))*
-e <-- (ab (a!b (a!b)* / (ab (a!b (a!b)* / succ))))*
-e <-- (ab (a!b (a!b)* / ab (a!b (a!b)* / succ)))*
-e <-- (ab (  a!b (a!b)*
-           / ab (a!b (a!b)* / succ)))*
-
-e <=- (ab ( ab (a!b (a!b)* / succ) / a (a!b)*))*
-grr
-
-
 e <- (a b (a !b)*)*
 (OR) e <-  stuff:(start:ab body:(a!b)*)*
 
@@ -323,10 +296,22 @@ e <- (a b (a !b)*)*
 e <=- a b f / succ
 f <=- a (b f / f) / succ
 
-******
+
+grammar    <- rule* eof
+rule       <- symbol LEFTARROW expression
+expression <- (symbol !LEFTARROW)*
+symbol     <- [a-z]
+LEFTARROW  <- '<-'
+
+grammar <-- ([a-z]'<-' ([a-z] !'<-')*)*  eof
+
+grammar <=- [a-z] '<-' g2 / eof
+g2      <=- [a-z] ('<-' g2 // g2) / succ
+
+
 
 ******
-Hypothesis: predicates --> qualifier, reorder, or dead-code simplification (only)
+Hypothesis: predicates --> atomic qualifier, reorder, or dead-code simplification (only)
 
 ---
 Tricky:
@@ -391,11 +376,34 @@ y <-- [a] y [b] / succ
 z <-- [b] z [c] / succ
 w <-- [a] w / succ
 
+---------
+Also tricky:
+
+z <- !'ababababa1' !'ababababa2' 'ababababa'
+or even
+z <- !'ababababa1' !'ababababa2' any
+
+always seems to require weak backtracking
+
+BUT - these are only valid if they can be boiled down to reordering actions
+(i.e.- that's the only real use anyone would have for them).
+
+
 ******
-New form: {tag} = collapse accumulator into specified tag
-          {tag*} = collapse accumulator and add to tag's accumulator
-	  {/transformer/} = execute transformation (but only if it is used
-	    later on in another one)
+New form: {tag}           = [internal] Collapse accumulator into specified tag
+	  {tag*}          = ? [internal] Collapse accumulator and add to tag's
+	                    accumulator
+	  {|transformer|} = [internal] execute transformation (but only if it
+			    is used later on in another one) (either the
+			    expression or rule name inside)
+	  ~ prefix        = [internal] do not aggregate
+	  //              = [internal] xord separator
+	  `external`      = replaced at runtime with return value of general
+	                    expression inside - which is given the state object
+			    and the current accumulator (or acc stack- whatever
+			    it turns out to be)...
+          {<<}            = [internal] left-recursion check mechanism
+
 (internal form, that is- not for use in the wild)
 tag* -> for star and plus expressions or when multiple things tagged manually (?)
 
@@ -407,6 +415,11 @@ Or maybe:
 
 e <- tag1:e2 -> trsf1
 e <-- tag1:e2 {tag1} {/trsf1/}
+
+-----
+tags for: position, labels, rules
+
+
 
 ******
 I'm thinking that auto-transforms for building an AST might be feasable after
@@ -431,6 +444,8 @@ b <- 'bcd'       #(implied) -> {b,Pos,$_}
 input: 'abcbcd'
 {e, {1,1}, {b,{1,4},'bcd'}}
 
+Except, maybe simple literals shouldn't be ast-wrapped like that...
+
 ******
 Thought: $_ as tuple but %_ as list? (or something)
 
@@ -450,7 +465,7 @@ they're counting the terms...)
 
 -----------------------------------------------------
 
-number    <- int frac? exp?                                ->      (num $1 $2)
+number    <- int frac? exp?                                ->   (num $1 $2 $3)
 int       <- d:'-'? (d:nz_digit d:digit+) / d:digit        ->               $d
 frac      <- '.' digit+                                    ->        (frac $2)
 exp       <- e digit+                                      ->        (e $e $2)
@@ -459,6 +474,64 @@ nz_digit  <- [1-9]
 digit     <- [0-9]
 
 
+number    <- 1_number:int {1_number} 2_number:frac? {2_number}
+             3_number:exp? {3_number} {>(num $1_number $2_number $3_number)<}
+int       <- (d_int:'-'? (d_int:nz_digit d_int:digit+) / d_int:digit)
+             {d_int} {>$d_int<}
+frac      <- '.' 2_frac:digit+ {2_frac} {>(frac $2_frac)<}
+exp       <- e_exp:e {e_exp} 2_exp:digit+ {2_exp} {>(e $e_exp $2_exp)<}
+e         <- [eE] 2_e:('+'/'-')? {2_e} {>$2_e<}
+nz_digit  <- __nz_digit:[1-9] {__nz_digit} {>$__nz_digit<}
+digit     <- __digit:[0-9] {__nz_digit} {>$__digit<}
 
+
+
+
+z <-  a:(c d e) / b:(c d) / c:c -> ($a $b $c)
+z <-- (c d e {z_a} / c d {z_b} / c {z_c}) {>($z_a $z_b $z_c)<}
+z <-- (c (d e {z_a} / d {z_b} / {z_c})) {>($z_a $z_b $z_c)<}
+z <-- (c (d (e {z_a} / {z_b}) / {z_c})) {>($z_a $z_b $z_c)<}
+
+z <-  t:a+ b u:a* -> ($t $u)
+z <-- a+ {z_t} ~b {>$z_t<}
+z <-- a a* {z_t} {>$z_t<}
+z <--
+
+z <-  t:'ones' / u:'one' / v:'only' / w:any+ -> ($t $u $v $w)
+z <-- ('ones' {z_t} / 'one' {z_u} / 'only' {z_v} / any any* {z_w}) {|($t $u $v $w)|}
+z <-- ('on' ('es' {z_t} / 'e' {z_u} / 'ly' {z_v} / any* {z_w}) / any any* {z_w}) {|z|}
+[z <- 'on' ('es' / 'e' / 'ly' / any*) / any+ ]
+[z <- 'on' ('e' ('s' // succ) // 'ly' // any*) // any+ ]
+z <-- ('on' ('e' ('s' {z_t} // {z_u}) // 'ly' {z_v} // any* {z_w}) // any any* {z_w}) {|z|}
+
+z <=- ('on' ('e' ('s' {z_t} // {z_u}) // 'ly' {z_v} // y {z_w}) // any y {z_w}) {|z|}
+y <=- any y / succ
+
+
+z <- (a:[y]/b:[x]/c:[w])+ -> ($a $b $c)
+input: yxwwwwyxxyxywwyxyx
+output: {[yyyyyy], [xxxxxx], [wwwwww]}
+
+
+
+w <- dig x     -> $dig
+x <- '-' dig*  -> $dig
+dig <- [0-9]
+
+w <-- dig-w:[0-9] ([-] dig-x:[0-9]*)
+w <=- [0-9] {dig-w} ~[-] [0-9]* {dig-x} {|x|} {|w|}
+
+
+* When inlining- inlined body always comes _before_ the current transform
+* Possibly easier to think of it in the AST as it is currently- that way
+  everything is ready to be plunked in at just the right spot. Nah- makes
+  commuting etc. too complicated.
+
+
+e <- a -> T
+e <- a|T
+
+e <- a b c -> T
+e <-- a b c|T
 
 

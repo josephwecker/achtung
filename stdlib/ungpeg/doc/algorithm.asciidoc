@@ -1,0 +1,33 @@
+Ungpeg Algorithm
+================
+Joseph Wecker <joseph.wecker@gmail.com>
+:icons:
+:toc:
+:encoding: utf-8
+:lang: en
+
+= Step 1 - Validate t()'s, inline t()'s and c()'s
+
+. Create generic `t()` (transformation function) if none present
+. Verify positions for positional arguments
+. Verify labels/rule-names for named arguments
+. Attach `c()` (collapse functions) to the final terms of all tagged terms
+  (including whole body term for `$_`)
+. Attach `t()` to all 'tail' terms (recursively as follows):
+.. If body is atomic, attach `t()` to that term.
+.. If body is a `seq`, attach `t()` to final terms of final term in `seq`.
+.. If body is an `opt`, attach `t()` to final terms of every 
+
+.Final Term(s)
+****
+Given:: Expression `e` (initially the `body`)
+
+. If `e` is atomic, `e` is a final term.
+. If `e` is a `seq`, find final term(s) of last `term` in the `seq`.
+****
+
+
+= Step 2 - Transform to Normal 1
+
+. All `lits` turned into `seq(char)`
+. All `

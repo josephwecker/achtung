@@ -14,9 +14,9 @@ Joseph Wecker <joseph.wecker@gmail.com>
 Every left-recursive sequence after inlining makes the following
 transformation:
 
-a <- a rest1 / a rest2 / s1 / s2 / a rest3
-a <= (s1 / s2) a2
-a2<= (rest1 / rest2 / rest3) a / succ
+  a <- a rest1 / a rest2 / s1 / s2 / a rest3
+  a <= (s1 / s2) a2
+  a2<= (rest1 / rest2 / rest3) a / succ
 
 s1 and s2 are assigned all tag that are already assigned to rest1, rest2, and
 rest3 - so that they collapse properly when one of the rest* expressions is
@@ -32,11 +32,11 @@ sequentially, that fails if any of the sub-expressions fail.
 ord:: `a/b/c` - Ordered choice. A forward-slash delimited sequence of
 sub-expressions that are evaluated only until one succeeds. A prioritized
 choice sequence.
+xord:: `a//b//c` - Exclusive ordered choice. A specialized +ord+ where the
+first sub-expression to begin to succeed determines the overall result of the
+expression. Intended to be used only internally by the system.
 char:: `[a-z_]` - Character class, matches one/any of the ranges/singles.
 lit:: `'abc'` - Sequence of characters to consume.
-exord:: `a;b;c` - Exclusive ordered choice. A specialized +ord+ where the first
-sub-expression to begin to succeed determines the overall result of the
-expression. Intended to be used only internally by the system.
 ****
 
 .Special Expressions
@@ -50,8 +50,13 @@ eof:: `!. or eof` - (Special) Matches the end of all input.
 
 .Misc Expressions
 ****
-term:: Shorthand for sub-expressions.
+e:: Shorthand for expression.
+term:: Shorthand for sub-expressions (equivalent to `e` in reality).
 nop:: Shorthand for an expression or sub-expression that can be safely removed.
+body:: The "main" or toplevel `term` for a rule.
+t():: Transformation function that user supplies to process partial results
+c():: Collapse function - internally generated expression that takes everything
+off the current accumulator and assigns it into specified tag buckets.
 ****
 
 .Attributes
@@ -198,6 +203,7 @@ rules are put into place).
 
 == PEG Second Normal Form
 (In preparation for all transformations)
+
 . No `lit` expressions - only sequences of (small) `char` ranges.
 . Every `char` range with multiple ranges is instead an `ord` of each
   range/char.
@@ -207,6 +213,7 @@ rules are put into place).
 
 == PEG Optimized Form
 (All transformations have finished)
+
 . (If possible) no `ord` expressions- only `xord` expressions in their place.
 . All potentially left-recursive rules are marked for compiler generator.
 . Sequences of `char` recombined into `lit` form where possible. (NOTE: the

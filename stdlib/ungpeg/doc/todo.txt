@@ -5,21 +5,28 @@
 [ ] Left recursion
 
 --- Detailed
-[ ] Definitely want that "self" call special (and maybe even a term_self)
+[ ] Redo specials as succ/fail
 [ ] Alternate token versions of specials (esp EOF etc.)
-[ ] Some way to get rid of redundant bs_test_unit calls in opcodes?
 [ ] Detect bad character ranges (ranges in the wrong order)
 [ ] Fix it so it correctly discovers all entrypoints again
 [ ] Ungpeg warning/error/info/debug mechanisms (inc. flags & macros)
 [ ] Beginning of format_error function
-[ ] Redo specials as succ/fail
 [ ] Attribute and basic list normalization
 [ ] Pure inlined recursive at first- pull out additional entrypoints after all
     the transformations- or mark the call as recurse, to simplify
     left-recursion algorithm.  (the latter, so that distinct grammars can be
     combined and it'll work correctly - that is, entry points to expressions
     that don't overlap with other entry points' instructions).
-[ ] Figure out panic-mode (skip ahead) error recovery
+
+--- Future / Undecided
+[?] "self" call special (and maybe even a term_self)
+[ ] Some way to get rid of redundant bs_test_unit calls in opcodes?
+[?] Let expr_map[fold] go deep- keep it's own "seen calls" dict and always
+    follow a call the first time.
+[?] (Based on new expr_map) - find tags deeply - make sure they get marked
+    with correct tag though (based on the rule where it gets used, not on the
+    rule where it is found) etc.
+[?] Figure out panic-mode (skip ahead) error recovery
 
 --- Finished
 [D] Fix unicode / wide character consumption / comparing & byte_size in

@@ -148,7 +148,7 @@ e <-- [c] ([a-b] rest_a ; [d-f] rest_b) ; o
 
 anything can get pulled out of 'any'
 a <- 'one' / 'once' / 'only' / any*
-a <-- 'on'- ('e'/'ce'/'ly'/any
+a <-- 'on' ('e'/'ce'/'ly'/any*) / any*
 
 
 a <- 'ones' / 'one' / 'only' / any
@@ -167,6 +167,7 @@ a <-- 'ones' / 'one' / 'only' / (any any*)
 a <-- 'o' ('nes' / 'ne' / 'nly' / any*) / (any any*)
 ...
 a <-- 'o' ('n' ('e' ('s' / succ) ; 'ly' ; any*) ; any*) ; any+
+
 a <=- 'o' ('n' ('e' ('s' / succ) ; 'l' ('y' ; any*) ; any*) ; any*) ; any+
 
 *** Perhaps pulled prefixes are handled by keeping a counter per
