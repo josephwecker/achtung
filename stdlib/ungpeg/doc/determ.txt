@@ -91,11 +91,72 @@ ML_COMMENT    <- "#|" ML_INNER* "|#"
 
 comment_lang <-- star1 'hi!' star1
 ML_COMMENT   <-- '#|' (ML_COMMENT / (!('#|'/'|#') any) (!('#|'/'|#') any)*)* '|#'
-star1        <-- ([ ] / [\t] / ML_COMMENT / ([#] (!([\n]/'\r\n'/[\r]) any)* &([\n]/'\r\n'/[\r]))? ([\n]/'\r\n'/[\r])) star1 / succ
+star1        <-- (   [ ]
+                   / [\t]
+		   / ML_COMMENT
+                   / ([#] (!([\n]/'\r\n'/[\r]) any)* &([\n]/'\r\n'/[\r]))? ([\n]/'\r\n'/[\r])
+		 ) star1 / succ
+
+!([\n]/'\r\n'/[\r]) ---- '\r\n' is redundant- but how? (see answers below)
+!([\n\r])
+
+comment_lang <-- star1 'hi!' star1
+ML_COMMENT   <-- '#|' (ML_COMMENT / (!('#|'/'|#') any) (!('#|'/'|#') any)*)* '|#'
+star1        <-- ( [ \t]
+		   / ML_COMMENT
+                   / ([#] (![\n\r] any)* &([\n\r]))? ([\n]/'\r\n'/[\r])
+		 ) star1 / succ
+
+comment_lang <-- star1 'hi!' star1
+ML_COMMENT   <-- '#|' (ML_COMMENT / (!('#|'/'|#') any) (!('#|'/'|#') any)*)* '|#'
+star1        <-- ( [ \t]
+		   / ML_COMMENT
+                   / ([#] [^\n\r]* &([\n\r]))? ([\n]/'\r\n'/[\r])
+		 ) star1 / succ
 
 
-comment_lang| _    |-> star1 'hi!' star1
-star1       | [
+!('#|'/'|#') any
+# weak backtracking - two bytes compared before only one consumed - can't think
+# of any other way to do it though at the moment...
+
+YOU ARE HERE
+
+----------------------------------- Removing redundant predicate terms
+z <- !( abc / ab / a )
+z <-- !( a (bc / b / succ))
+z <-- !( a (b (c / succ) / succ))
+z <-- !( a (b c?)?)
+z <-- !a (see two proofs below)
+
+proof 1
+********!!!!!  Predicate normalization: all trailing 's' ('1' or '0')
+expressions treated as if they were 'succ' ('0') - which means they can be
+removed completely (since succ at end of seq is implied)
+
+!(a b?) == !a (because b? always succeeds)
+!(a b*) == !a
+!(a b? c) == !(a b? c) (because second term isn't trailing)
+
+proof 2
+*********!!!! A predicated ord is commutative
+z <- !(a/b/c)
+z <- !a !b !c
+all three predicates get applied from the same position - regardless of order
+in original ord.
+therefore:
+!(a/b/c) == !(b/c/a) == ...
+
+
+(Asside)
+(the following doesn't reduce further, that I can tell)
+!(a / b c? d)
+!(a / b c d / b d)
+
+************ Therefore, in a trailing ord in a predicate, any expression that
+is has any other expression as a prefix (or equal) can/should be removed.
+proof:
+They are commutative so you can always commute the smaller expression to the
+left of the larger one, in which case the larger one is never reachable.
 
 
 --------------------------------------------
@@ -385,5 +446,19 @@ to prove: lookahead on terminal does not affect constant space / linear time com
 NOTE: Possibly simplifies things (for users' understanding) if predicates are
 completely invisible to transformation expressions. (problem might be when
 they're counting the terms...)
+
+
+-----------------------------------------------------
+
+number    <- int frac? exp?                                ->      (num $1 $2)
+int       <- d:'-'? (d:nz_digit d:digit+) / d:digit        ->               $d
+frac      <- '.' digit+                                    ->        (frac $2)
+exp       <- e digit+                                      ->        (e $e $2)
+e         <- [eE] ('+' / '-')?                             ->               $2
+nz_digit  <- [1-9]
+digit     <- [0-9]
+
+
+
 
 
