@@ -29,7 +29,7 @@ syn match   erlpegTaggedRule      /:[a-zA-Z0-9_]*/ contained
 syn match   erlpegEntryRule       /\(^\|;\)\s*:[a-z][a-zA-Z0-9_]*/ contains=erlpegEntryDelim
 syn match   erlpegNormRuleName    /\(^\|;\)\s*[a-z][a-zA-Z0-9_]*/
 syn match   erlpegTokRuleName     /\(^\|;\)\s*[A-Z][a-zA-Z0-9_]*/
-syn match   erlpegAssign          /<-/
+syn match   erlpegAssign          /<\(-\|=\)\+/
 
 syn match   erlpegEntryDelim      /:/ contained
 syn match   erlpegOrdSep          /\//
@@ -38,6 +38,9 @@ syn match   erlpegGroup           /[()]/
 syn match   erlpegPrefix          /[!&]/
 syn match   erlpegSuffix          /[\*+]/
 syn match   erlpegOptSuffix       /?/
+
+syn match   erlpegCollapseFun     /-{[^}]*}/ "contains=erlpegTransAtom
+syn match   erlpegTransFun        /-{|[^|]*|}/ "contains=erlpegTransAtom
 
 " Special rules
 syn match erlpegEmpty   +\<\empty\>\|''\|""\|&\s*(\s*any\s*/\s*eof)\|&\s*(\s*eof\s*/\s*any)+
@@ -53,7 +56,7 @@ syn match erlpegRangeSpec1 /\[/ contained
 syn match erlpegRangeSpec2 /\]/ contained
 
 syn match erlpegTransform /->.*/ contains=erlpegTransMacro,erlpegTransPosMacro,erlpegTransAtom,erlpegTransDelim
-syn match erlpegTransAtom  /[a-zA-Z_]*/ contained
+syn match erlpegTransAtom  /[a-zA-Z_][a-zA-Z0-9_]*/ contained
 syn match erlpegTransMacro /\$[A-Za-z_]\+/ contained
 syn match erlpegTransPosMacro /\$[1-9][0-9]*/ contained
 syn match erlpegTransDelim    /->/ contained
@@ -98,5 +101,7 @@ hi link erlpegTransMacro          Macro
 hi link erlpegTransPosMacro       Include
 hi link erlpegTransAtom           Constant
 hi link erlpegTransDelim          Exception
+hi link erlpegTransFun            Typedef
+hi link erlpegCollapseFun         StorageClass
 
 let b:current_syntax = "erlpeg"
