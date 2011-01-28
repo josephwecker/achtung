@@ -639,8 +639,8 @@ Data storage occurs when: ...
   count toward complexity, and data accumulated strictly to enable parsing /
   accepting of correct language)
 
-Weak backtracking (data extracted more than once but linearly in a way that
-doesn't increase complexity)
+#Weak backtracking (data extracted more than once but linearly in a way that
+#doesn't increase complexity)
 
 e <- (ab)* a
 a <- #| Big monsterous time consuming expression |#
@@ -671,24 +671,24 @@ e <=- a b e / a tail
 ----------------
 TAGS / REFERENCES ON RECURSION, PLUS, & STAR EXPRESSIONS
 
-e   -> T:f+ [@] V:f+ <- $T $V
-f   -> [a-z] [0-9]
+e  <- T:f+ [@] V:f+ -> $T $V
+f  <- [a-z] [0-9]
 
-e  --> f-{e-T} f*-{e-T} [@]-{~} f-{e-V} f*-{e-V} succ-{|e|}
-f  --> [a-z] [0-9]
+e  <-- f-{e-T} f*-{e-T} [@]-{~} f-{e-V} f*-{e-V} succ-{|e|}
+f  <-- [a-z] [0-9]
 
-e  --> f-{e-T} s1
-s1 --> f-{e-T} s1 / [@]-{~} f-{e-V} f*-{e-V} succ-{|e|}
-f  --> [a-z] [0-9]
+e  <-- f-{e-T} s1
+s1 <-- f-{e-T} s1 / [@]-{~} f-{e-V} f*-{e-V} succ-{|e|}
+f  <-- [a-z] [0-9]
 
-e  --> f-{e-T} s1
-s1 --> f-{e-T} s1 // [@]-{~} f-{e-V} s2
-s2 --> f-{e-V} s1 // succ-{|e|}
-f  --> [a-z] [0-9]
+e  <-- f-{e-T} s1
+s1 <-- f-{e-T} s1 // [@]-{~} f-{e-V} s2
+s2 <-- f-{e-V} s1 // succ-{|e|}
+f  <-- [a-z] [0-9]
 
-e  -=> [a-z] [0-9]-{e-T} s1
-s1 -=> [a-z] [0-9]-{e-T} s1 // [@]-{~} [a-z] [0-9]-{e-V} s2
-s2 -=> [a-z] [0-9]-{e-V} s2 // succ-{|($T $V)|}
+e  <=- [a-z] [0-9] -{e-T} s1
+s1 <=- [a-z] [0-9] -{e-T} s1 // [@]-{~} [a-z] [0-9] -{e-V} s2
+s2 <=- [a-z] [0-9] -{e-V} s2 // succ-{|($T $V)|}
 
 ----------------
 Will it be possible to do proper factoring / reductions when inlining is

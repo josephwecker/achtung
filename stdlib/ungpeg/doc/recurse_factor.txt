@@ -1,0 +1,56 @@
+#|
+- Does "inline-once" work effectively for all factoring?
+- Left recursion can work correctly?
+- General inlinining useless?
+
+
+Factoring:
+ - star -> recursive ord
+ - ord -> xord
+
+
+-------
+
+
+:a<-  b / c
+b <-  (t u v) [g] -> $1
+c <-  'abc' 'def' -> $2
+t <-  'ab'
+u <-  'cd'
+v <-  'ef'
+:z<-  c c
+
+:a<-- b-{a_c}-{a__}-{|$a__|} / c-{a_c}-{a__}-{|$a__|}
+b <-- t u v-{b_1} [g]-{|$b_1|}
+c <-- [a]-{~} [b]-{~} [c]-{~} [d] [e] [f]-{c_2}-{|$c_2|}
+t <-- [a] [b]-{t__}-{|$t__|}
+u <-- [c] [d]-{u__}-{|$u__|}
+v <-- [e] [f]-{v__}-{|$v__|}
+:z<-- c c-{z__}-{|$z__|}
+
+# Are both sides of A's ord determinants? NO
+# Can't just start pulling stuff off of c because it's used elsewhere...
+
+
+--------
+|#
+a <- T:(b / c) b c
+b <- 'abcd' b / 'xyz'
+c <- 'abc' c / b
+# Normal inlining can't reduce this any further
+
+# IDEA: Recursively pull in terms of T, BUT, at every iteration (breadth
+#       first):
+#  - Expand all calls by one level
+#  - Remove redundant or 
+#    (if seen before ON THAT SIDE - it's left recursive, don't remove but don't expand)
+#    (if seen to the left, drop/ignore)
+#    (if seen to the right, remove it from the right (or all it's children))
+
+a <-- ('abcd' b / 'xyz' / 'abc' c / b) 
+      ('abcd' b / 'xyz')
+      ('abc' c / b)
+b <-- 'abcd' b / 'xyz'
+c <-- 'abc' c / b
+
+a <-- ('abcd' b / 'abc' c / 'xyz' / b)

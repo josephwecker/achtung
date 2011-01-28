@@ -1,0 +1,5 @@
+expr    <- SP sum SP
+product <- value SP (('*' / '/') SP value)*
+sum     <- product SP (('+' / '-') SP product)*
+value   <- [0-9]+ / '(' expr ')'
+SP      <- [ ]*
