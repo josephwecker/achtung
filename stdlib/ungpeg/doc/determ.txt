@@ -690,4 +690,8 @@ e  -=> [a-z] [0-9]-{e-T} s1
 s1 -=> [a-z] [0-9]-{e-T} s1 // [@]-{~} [a-z] [0-9]-{e-V} s2
 s2 -=> [a-z] [0-9]-{e-V} s2 // succ-{|($T $V)|}
 
+----------------
+Will it be possible to do proper factoring / reductions when inlining is
+impossible because of recursion? And if I figure out a way to do it, does it
+make general inlining irrelevant?
 

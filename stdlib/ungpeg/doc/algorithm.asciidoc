@@ -8,10 +8,13 @@ Joseph Wecker <joseph.wecker@gmail.com>
 
 == Step 1 - Transform and Collapse Function Placement
 
-. Create generic `t()` (transformation function) if none present.
+. Create generic `t()` (transformation function) for all rules that don't
+  already have one.
+.. Just a plain `$_` for normal non-token rules
+.. An atom with the token name for token rules
+.. Issue warnings for any transformation functions on token rules.
 . Verify positions for positional arguments. (Display and quit on error).
 . Verify labels/rule-names for named arguments. (Display and quit on error).
-. Issue warnings for any transformation functions on token rules.
 . Issue warnings for any references to tokens
 . Issue warnings for any references to predicates
 . Attach `c()` (collapse functions) to the final terms of all tagged terms
@@ -22,6 +25,14 @@ Joseph Wecker <joseph.wecker@gmail.com>
 .. If the term has a predicate prefix and is not directly labeled or
    referenced.
 .. If neither the (non-token) term nor any of its parents are referenced.
+.. Propagate `~` to all children of a `~` expression.
+.. If the term is a call, mark it and also save the referenced rule name in a
+   table (used in the next step).
+. If a rule is called with and without `~`- create a copy of the rule (with a
+  new unique name) and replace all `~` calls to the original rule with `~`
+  calls to the copy of the rule. (This way the `~` can be safely propagated
+  into the function after inlining). Explicit entrypoints count as being called
+  without `~`.
 
 .Find Final Term(s)
 ****
@@ -49,4 +60,5 @@ Joseph Wecker <joseph.wecker@gmail.com>
 
 == (FUTURE) (SCRAPS)
 
-. Remember to do `{~}` optimization 
+. Remember to do `{~}` propagation to children after inlining
+. Remember to do `{~}` optimization
