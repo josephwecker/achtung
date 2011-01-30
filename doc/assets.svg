@@ -42,7 +42,7 @@
      inkscape:window-height="752"
      inkscape:window-x="0"
      inkscape:window-y="0"
-     inkscape:window-maximized="1" />
+     inkscape:window-maximized="0" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -82,29 +82,43 @@
        id="text3604"
        y="348.48581"
        x="174.69092"
-       style="font-size:63.50737762px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#6f6f6f;fill-opacity:1;stroke:none;font-family:Optima;-inkscape-font-specification:Optima"
+       style="font-size:63.50737762px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr;text-anchor:start;fill:#6f6f6f;fill-opacity:1;stroke:none;font-family:Optima;-inkscape-font-specification:Optima"
        xml:space="preserve"><tspan
          sodipodi:role="line"
-         id="tspan3610"
-         x="174.69092"
-         y="348.48581">Bar</tspan></text>
+         id="tspan2830">bar</tspan></text>
     <rect
        y="309.67636"
-       x="215.38498"
+       x="191.38498"
        height="3.5673249"
-       width="51.91555"
+       width="75.91555"
        id="rect3612"
        style="opacity:0.93999999;fill:#eaeaea;fill-opacity:1;stroke:none" />
     <text
+       sodipodi:linespacing="125%"
+       id="text2834"
+       y="499.48581"
+       x="53.480316"
+       style="font-size:63.50737762px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr;text-anchor:start;fill:#535353;fill-opacity:1;stroke:none;font-family:Optima;-inkscape-font-specification:Optima"
+       xml:space="preserve"><tspan
+         sodipodi:role="line"
+         id="tspan2844">Acht</tspan></text>
+    <text
        xml:space="preserve"
-       style="font-size:17.45098114px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Optima;-inkscape-font-specification:Optima"
-       x="179.02942"
-       y="367.4053"
-       id="text4158"
+       style="font-size:63.50737762px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#6f6f6f;fill-opacity:1;stroke:none;font-family:Optima;-inkscape-font-specification:Optima"
+       x="182.69092"
+       y="499.48581"
+       id="text2838"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
-         id="tspan4160"
-         x="179.02942"
-         y="367.4053">Erlang(...ish)</tspan></text>
+         id="tspan2846"
+         x="182.69092"
+         y="499.48581">ung</tspan></text>
+    <rect
+       style="opacity:0.93999999;fill:#eaeaea;fill-opacity:1;stroke:none"
+       id="rect2842"
+       width="95.91555"
+       height="3.5673249"
+       x="187.38498"
+       y="460.67636" />
   </g>
 </svg>
