@@ -1,4 +1,3 @@
-#|
 - Does "inline-once" work effectively for all factoring?
 - Left recursion can work correctly?
 - General inlinining useless?
@@ -13,7 +12,7 @@ Factoring:
 
 
 :a<-  b / c
-b <-  (t u v) [g] -> $1
+b <-  (t u v) [g] -> $1
 c <-  'abc' 'def' -> $2
 t <-  'ab'
 u <-  'cd'
@@ -33,7 +32,6 @@ v <-- [e] [f]-{v__}-{|$v__|}
 
 
 --------
-|#
 a <- T:(b / c) b c
 b <- 'abcd' b / 'xyz'
 c <- 'abc' c / b
@@ -47,10 +45,155 @@ c <- 'abc' c / b
 #    (if seen to the left, drop/ignore)
 #    (if seen to the right, remove it from the right (or all it's children))
 
-a <-- ('abcd' b / 'xyz' / 'abc' c / b) 
-      ('abcd' b / 'xyz')
-      ('abc' c / b)
+a <-- ('abcd' b / 'xyz' / b^ / 'abc' c / b / c^) b c  # b^ and c^ are removable because they are duplicates of earlier terms
 b <-- 'abcd' b / 'xyz'
 c <-- 'abc' c / b
 
-a <-- ('abcd' b / 'abc' c / 'xyz' / b)
+a <-- ('abcd' b / 'xyz' / b^ / 'abc' c / c^) b c  # Second b removed
+b <-- 'abcd' b / 'xyz'
+c <-- 'abc' c / b
+
+# * Expand all new inners that need to be expanded (and mark the original as
+# removable) (but still a legal and equivalent language if they remain)
+# * Normalize whole expression except don't remove 'removable' ones yet
+# * Iterate until there is nothing to expand anymore  (TODO: flesh this out a bunch more)
+#   - OR (?): keep going until you have determinants / xord
+# * Remove removables
+# * Do factoring
+
+
+primary    <- expression / [a-z] expression / [a-z]
+expression <- '+' terms / '-' terms / terms
+terms      <- term ('+'/'-') term
+term       <- factor '*' term / factor '/' term / factor 
+factor     <- primary '^' factor / primary 
+
+primary    <- expression / [a-z] (expression ║ɛ) # Unfinished: First still undetermined
+expression <- ('+' terms ║'-' terms) / terms        # Unfinished: Last still undetermined
+terms      <- term ('+'║'-') term                    # Done
+term       <- factor ('*' term ║'/' term ║ɛ)   # Done
+factor     <- primary ('^' factor ║ɛ)            # Done
+
+# Inline expression
+primary    <- '+' terms / '-' terms / terms / expression^ / [a-z] (expression ║ɛ)
+              ------------------------------
+expression <- ('+' terms ║'-' terms) / terms
+terms      <- term ('+'║'-') term
+term       <- factor ('*' term ║'/' term ║ɛ)
+factor     <- primary ('^' factor ║ɛ)
+
+primary    <- '+' terms
+            / '-' terms
+            / term ('+'║'-') term # Inline terms
+            / terms^
+            / expression^
+            / [a-z] (expression ║ɛ)
+expression <- ('+' terms ║'-' terms) / terms
+terms      <- term ('+'║'-') term
+term       <- factor ('*' term ║'/' term ║ɛ)
+factor     <- primary ('^' factor ║ɛ)
+
+
+primary    <- '+' terms
+            / '-' terms
+            / factor ('*' term ║'/' term ║ɛ) ('+'║'-') term  # Inline term (just the head one)
+            / (term ('+'║'-') term)^
+            / terms^
+            / expression^
+            / [a-z] (expression ║ɛ)
+expression <- ('+' terms ║'-' terms) / terms
+terms      <- term ('+'║'-') term
+term       <- factor ('*' term ║'/' term ║ɛ)
+factor     <- primary ('^' factor ║ɛ)
+
+primary    <- '+' terms
+            / '-' terms
+            / primary ('^' factor ║ɛ) ('*' term ║'/' term ║ɛ) ('+'║'-') term # Inline factor
+            / (factor ('*' term ║'/' term ║ɛ) ('+'║'-') term)^
+            / (term ('+'║'-') term)^
+            / terms^
+            / expression^
+            / [a-z] (expression ║ɛ)
+expression <- ('+' terms ║'-' terms) / terms
+terms      <- term ('+'║'-') term
+term       <- factor ('*' term ║'/' term ║ɛ)
+factor     <- primary ('^' factor ║ɛ)
+
+primary    <- '+' terms
+            / '-' terms
+            / primary ('^' factor ║ɛ) ('*' term ║'/' term ║ɛ) ('+'║'-') term # Inline factor
+            / (factor ('*' term ║'/' term ║ɛ) ('+'║'-') term)^
+            / (term ('+'║'-') term)^
+            / terms^
+            / expression^
+            / [a-z] (expression ║ɛ)
+expression <- ('+' terms ║'-' terms) / terms
+terms      <- term ('+'║'-') term
+term       <- factor ('*' term ║'/' term ║ɛ)
+factor     <- primary ('^' factor ║ɛ)
+
+# Here the algorithm sees that it's left recursive, which is determinative automatically (?- not yet proven)
+
+# Remove removable terms
+primary    ← '+' terms
+            / '-' terms
+            / primary ('^' factor ║ɛ) ('*' term ║'/' term ║ɛ) ('+'║'-') term # Inline factor
+            / [a-z] (expression ║ɛ)
+expression ← ('+' terms ║'-' terms) / terms
+terms      ← term ('+'║'-') term
+term       ← factor ('*' term ║'/' term ║ɛ)
+factor     ← primary ('^' factor ║ɛ)
+# Not necessarily a determinant if first term...:
+#  - Is an x/ord ending in ɛ (which can happen manually or because:)
+#    - It is/was an `opt`
+#    - It is/was a `star`
+# In those cases it might be the next term in the sequence that can offer up a
+# determinant. Thankfully, this is all taken into account in how we unfold opts
+# and stars.
+
+primary    ← '+' terms
+            ║'-' terms
+            ║primary ('^' factor ║ɛ) ('*' term ║'/' term ║ɛ) ('+'║'-') term
+            ║[a-z] (expression ║ɛ)
+expression ← ('+' terms ║'-' terms) / terms
+terms      ← term ('+'║'-') term
+term       ← factor ('*' term ║'/' term ║ɛ)
+factor     ← primary ('^' factor ║ɛ)
+
+
+
+---------
+comment_lang  <- S* 'hi!' S*
+S             <- (SPACE / NL)+          # At least one whiteSPACE/newline
+NL            <- COMMENT? NEWLINE       # End of a line
+
+# Rest don't need to be used directly
+NEWLINE       <- "\n" / "\r\n" / "\r"
+SPACE         <- [ \t] / ML_COMMENT
+COMMENT       <- "#" (!NEWLINE .)* &NEWLINE
+ML_INNER      <- ML_COMMENT / (!"#|" !"|#" .)+
+ML_COMMENT    <- "#|" ML_INNER* "|#"
+
+
+comment_lang  ← S* 'hi!' S*                   # DONE
+S             ← (SPACE / NL)+
+NL            ← COMMENT? NEWLINE
+NEWLINE       ← [\n]║[\r]([\n]║ɛ)           # DONE
+SPACE         ← [ \t] / ML_COMMENT
+COMMENT       ← "#" (!NEWLINE .)* &NEWLINE    # DONE
+ML_INNER      ← ML_COMMENT / (!"#|" !"|#" .)+
+ML_COMMENT    ← "#|" ML_INNER* "|#"           # DONE
+
+# IDEA: Only inline if you can't see immediately that there is a determinant
+
+comment_lang  ← S* 'hi!' S*                   # DONE
+S             ← (SPACE ║ NL)+                # DONE: Immediately obvious
+NL            ← COMMENT NEWLINE ║NEWLINE     # DONE: Immediately obvious
+NEWLINE       ← [\n]║[\r]([\n]║ɛ)           # DONE
+SPACE         ← [ \t] ║ ML_COMMENT           # DONE: Immediately obvious
+COMMENT       ← "#" (!NEWLINE .)* &NEWLINE    # DONE
+ML_INNER      ← ML_COMMENT ║(!"#|" !"|#" .)+ # DONE: Immediately obvious
+ML_COMMENT    ← "#|" ML_INNER* "|#"           # DONE
+# (DONE here is of course only talking about ord elimination- it still has some
+# multiples and predicate work to do.)
+
