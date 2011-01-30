@@ -4,6 +4,23 @@ elseif exists("b:current_syntax")
   finish
 endif
 
+" ---------------------------------
+" I know I know- not the right place for this stuff. Just temporary.
+set ambiwidth=double
+" epsilon: Empty string / success
+map! \eps ɛ
+map! \succ ɛ
+" digamma: failure / !ɛ
+map! \fail ϝ
+map! \dig ϝ
+map! <- ←
+map! -> →
+map! // ║
+" ---------------------------------
+
+syn sync fromstart
+syn sync linebreaks=1
+
 syn keyword erlpegTodo            TODO FIXME XXX NOTE NOTES contained
 syn match   erlpegComment         /#.*$/ contains=erlpegTodo,erlpegDoc,@Spell
 syn region  erlpegBlockComment    start="#|" skip="\(\\#|\|\\|#\)" end="|#" contains=erlpegBlockComment,erlpegTodo,@Spell
@@ -29,10 +46,11 @@ syn match   erlpegTaggedRule      /:[a-zA-Z0-9_]*/ contained
 syn match   erlpegEntryRule       /\(^\|;\)\s*:[a-z][a-zA-Z0-9_]*/ contains=erlpegEntryDelim
 syn match   erlpegNormRuleName    /\(^\|;\)\s*[a-z][a-zA-Z0-9_]*/
 syn match   erlpegTokRuleName     /\(^\|;\)\s*[A-Z][a-zA-Z0-9_]*/
-syn match   erlpegAssign          /<\(-\|=\)\+/
+syn match   erlpegAssign          /<\(-\|=\)\+\|←/
 
 syn match   erlpegEntryDelim      /:/ contained
 syn match   erlpegOrdSep          /\//
+syn match   erlpegXordSep         /\/\/\|║/
 syn match   erlpegSeqSep          /,/
 syn match   erlpegGroup           /[()]/
 syn match   erlpegPrefix          /[!&]/
@@ -43,9 +61,10 @@ syn match   erlpegCollapseFun     /-{[^}]*}/ "contains=erlpegTransAtom
 syn match   erlpegTransFun        /-{|[^|]*|}/ "contains=erlpegTransAtom
 
 " Special rules
-syn match erlpegEmpty   +\<\empty\>\|''\|""\|&\s*(\s*any\s*/\s*eof)\|&\s*(\s*eof\s*/\s*any)+
+syn match erlpegEmpty   +ɛ\|\<succ\>\|\<empty\>\|''\|""\|&\s*(\s*any\s*/\s*eof)\|&\s*(\s*eof\s*//\?\s*any)+
 syn match erlpegAny     +\<any\>\|\.\|!\s*eof+
 syn match erlpegEOF     +\<eof\>\|!\s*\.\|!\s*any+
+syn match erlpegFail    +ϝ\|fail+
 
 " Ranges
 syn match   erlpegAllCharMods     /\\[0-7]\{1,3\}\|\\x{[a-fA-F0-9]*}\|\\x[a-fA-F0-9]\{2\}\|\\\^[a-zA-Z]\|\\./ contained
@@ -55,11 +74,11 @@ syn match erlpegRangeDelim /-/ contained
 syn match erlpegRangeSpec1 /\[/ contained
 syn match erlpegRangeSpec2 /\]/ contained
 
-syn match erlpegTransform /->.*/ contains=erlpegTransMacro,erlpegTransPosMacro,erlpegTransAtom,erlpegTransDelim
+syn match erlpegTransform /\(->\|→\).*/ contains=erlpegTransMacro,erlpegTransPosMacro,erlpegTransAtom,erlpegTransDelim
 syn match erlpegTransAtom  /[a-zA-Z_][a-zA-Z0-9_]*/ contained
 syn match erlpegTransMacro /\$[A-Za-z_]\+/ contained
 syn match erlpegTransPosMacro /\$[1-9][0-9]*/ contained
-syn match erlpegTransDelim    /->/ contained
+syn match erlpegTransDelim    /->\|→/ contained
 
 hi link erlpegComment             Comment
 hi link erlpegBlockComment        Comment
@@ -76,6 +95,7 @@ hi link erlpegEntryPoint          Typedef
 hi link erlpegEntryDelim          Delimiter
 hi link erlpegAssign              Delimiter
 hi link erlpegOrdSep              Structure
+hi link erlpegXordSep             Structure
 hi link erlpegSeqSep              Structure
 hi link erlpegGroup               Delimiter
 hi link erlpegPrefix              PreProc
@@ -88,6 +108,7 @@ hi link erlpegOptSuffix           Conditional
 hi link erlpegEmpty               Macro
 hi link erlpegAny                 PreProc
 hi link erlpegEOF                 Include
+hi link erlpegFail                Exception
 hi link erlpegRanges              String
 hi link erlpegRange               Character
 hi link erlpegRangeDelim          Special
@@ -105,3 +126,5 @@ hi link erlpegTransFun            Typedef
 hi link erlpegCollapseFun         StorageClass
 
 let b:current_syntax = "erlpeg"
+
+set formatoptions=tcqnl
