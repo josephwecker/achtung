@@ -1,8 +1,9 @@
 [ ] Opt backtracking/memoizing elimination
 [ ] Multi backtracking/memoization elimination
 [ ] Predicate backtracking/memoization elimination
-[ ] Parse transforms and aggregation
+[ ] Transformations and aggregation
 [ ] Left recursion
+[ ] Compiler generation
 
 --- Detailed
 [ ] In transformation area of grammar, implied tuples when no brackets (e.g.,
