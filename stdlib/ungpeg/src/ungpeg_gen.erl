@@ -1,6 +1,6 @@
 %% Assumes the AST is already in (final) optimized form
 
--module(ungpeg_write_compiler).
+-module(ungpeg_gen).
 -compile(export_all).
 
 -record(c,{idx=0,line=0,col=0,ch=0,misc=0,acc=0}).

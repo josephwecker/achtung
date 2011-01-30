@@ -10,8 +10,8 @@ erlc -o ebin priv/ungpeg_n.erl
 echo Compiling ungpeg_optimize
 erlc -o ebin src/ungpeg_optimize.erl
 
-echo Compiling ungpeg_write_compiler
-erlc -o ebin src/ungpeg_write_compiler.erl
+echo Compiling ungpeg_gen
+erlc -o ebin src/ungpeg_gen.erl
 
 echo Compiling ungpeg
 erlc -o ebin src/ungpeg.erl
