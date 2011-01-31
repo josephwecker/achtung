@@ -240,3 +240,29 @@ rules are put into place).
 * entry: name (designated entry point)
 * i: index within original peg (line and column)
 
+
+
+
+== Algebra
+
+=== ord
+ * Associative
+ * Non-commutative (generally)
+
+=== xord
+ * Associative: `a║(b║c) == (a║b)║c`
+ * Commutative: `a║b║c == a║c║b`
+
+=== seq
+ * Associative
+ * Non-commutative (except sometimes with predicates)
+
+
+
+e1,(e2║e3)
+e1║(e1 e2)
+
+
+a/(b/(c/d))
+
+
