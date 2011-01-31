@@ -25,6 +25,27 @@
  - Current generic state available in all transformations and semantic
    predicates.
 
+ - BINARY MATCHING (ala erlang)
+
+ - Call any erlang function as long as it returns either a ɛ or ϝ statement
+   (and new state etc.) (those can, in turn, of course, call other rules as if
+   they were standard functions, which, combined with parameters, essentially
+   gives us unlimited adaptability)
+
+ - Parameterized rules with pattern-matching
+
+ - Focus on runtime creation facilities (which implies things like variable
+   interpolation within the rule definitions etc.) - and only secondarily on
+   'compiler' creation...
+
+ - Basic 'assert' as a semantic predicate using state / context etc. (with
+   ability to do good error message)
+
+ - Definitely need some plans for fault tolerance:
+   - Error recovery! Ad-hoc program can analyze the error message, position,
+     characters remaining, etc.- and decide it can CONTINUE - jumps back in
+     with all state and context (possibly modified) intact.
+
 --------------------- PEG
 
  - Tail recursion on all star expressions means no memory usage for
