@@ -74,7 +74,7 @@ syn match erlpegRangeDelim /-/ contained
 syn match erlpegRangeSpec1 /\[/ contained
 syn match erlpegRangeSpec2 /\]/ contained
 
-syn match erlpegTransform /\(->\|→\).*/ contains=erlpegTransMacro,erlpegTransPosMacro,erlpegTransAtom,erlpegTransDelim
+syn match erlpegTransform /\(->\|→\).*/ contains=erlpegTransMacro,erlpegTransPosMacro,erlpegTransAtom,erlpegTransDelim,erlpegComment
 syn match erlpegTransAtom  /[a-zA-Z_][a-zA-Z0-9_]*/ contained
 syn match erlpegTransMacro /\$[A-Za-z_]\+/ contained
 syn match erlpegTransPosMacro /\$[1-9][0-9]*/ contained
