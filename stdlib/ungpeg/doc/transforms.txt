@@ -212,7 +212,7 @@ e <- T (!T (a / b / any))* T
 e <=- T (T ; (a;b;any) (a;b;any)* T)
 
 str <- '"' (!'"' ('\\\\' / '\\"' / any))* '"'
-str </- '"' ('"' ; ('\\' ('\\' ; '"') ; any)* '"') # not right because inner consumes trailing '"' - should give always fails warning
+str </- '"' ('"' ; ('\\' ('\\' ║ '"') ; any)* '"') # not right because inner consumes trailing '"' - should give always fails warning
 -----------
 
 <predicates> a --> Remove any predicates that are already handled within a
