@@ -2,7 +2,7 @@
 
 S <- (' '/'\t'/'\n'/'\r')*
 S <-- star1
-star1 <-- ([ ]/[\t]/[\n]/[\r]) star1 / succ
+star1 <-- ([ ]/[\t]/[\n]/[\r]) star1 / ɛ
 # TODO: Need a rule/transform to make sure star1 swaps into place of S
 #  done: see NOTE ON STAR REDUCTION IN PLACE below
 
@@ -10,7 +10,7 @@ S | [ ]  |-> S
   | [\t] |-> S
   | [\n] |-> S
   | [\r] |-> S
-  | _    |-> succ
+  | _    |-> ɛ
 
 
 --------------------------------------------
@@ -38,7 +38,7 @@ number <- ( ([-] [1-9] [0-9] [0-9]*) /
 	  ([.] ...)
 	  ([e] ...)
 	  ([E] ...)
-	  (_ -> succ)
+	  (_ -> ɛ)
 
 
 == non-labeled & no transforms/collapse ==
@@ -51,18 +51,18 @@ number  | [-]         |-> [1-9] [0-9] star1 number2
 number2 | [.]         |-> [0-9] star1 number3
         | _           |-> number3
 
-number3 | [eE] [+]    |-> [0-9] star1 succ
-        | [eE] [-]    |-> [0-9] star1 succ
-        | [eE] [0-9]  |-> star1 succ
-        | _           |-> succ
+number3 | [eE] [+]    |-> [0-9] star1 ɛ
+        | [eE] [-]    |-> [0-9] star1 ɛ
+        | [eE] [0-9]  |-> star1 ɛ
+        | _           |-> ɛ
 
 star1   | [0-9]       |-> star1
-([0-9]*)| _           |-> succ
+([0-9]*)| _           |-> ɛ
 
 # TODO: possibly automatically abstract out common runs if there are enough of
-# them / they are big enough to warrant it. (e.g., 'star1 succ')
+# them / they are big enough to warrant it. (e.g., 'star1 ɛ')
 
-# TODO: actually, star1 is guaranteed to succeed, so star1 succ is redundant-
+# TODO: actually, star1 is guaranteed to succeed, so star1 ɛ is redundant-
 # except collapse and transformations may affect it.
 
 # Technically you can pull 4 bytes out at once and jump that far into the
@@ -71,10 +71,10 @@ star1   | [0-9]       |-> star1
 [-]   [1-9] [0-9] [0-9] -> [0-9]*
 [-]   [1-9] [0-9] [.]   -> ...
 [-]   [1-9] [0-9] [eE]  -> ...
-[-]   [1-9] [0-9] _     -> succ
+[-]   [1-9] [0-9] _     -> ɛ
 [1-9] [0-9] [0-9] [0-9] -> [0-9]*
-[1-9] [0-9] [0-9] _     -> succ
-[1-9] [0-9] _     _     -> succ
+[1-9] [0-9] [0-9] _     -> ɛ
+[1-9] [0-9] _     _     -> ɛ
 ...
 # So the rule is: Pull the least amount possible that allows you to branch.(?)
 
@@ -95,7 +95,7 @@ star1        <-- (   [ ]
                    / [\t]
 		   / ML_COMMENT
                    / ([#] (!([\n]/'\r\n'/[\r]) any)* &([\n]/'\r\n'/[\r]))? ([\n]/'\r\n'/[\r])
-		 ) star1 / succ
+		 ) star1 / ɛ
 
 !([\n]/'\r\n'/[\r]) ---- '\r\n' is redundant- but how? (see answers below)
 !([\n\r])
@@ -105,14 +105,14 @@ ML_COMMENT   <-- '#|' (ML_COMMENT / (!('#|'/'|#') any) (!('#|'/'|#') any)*)* '|#
 star1        <-- ( [ \t]
 		   / ML_COMMENT
                    / ([#] (![\n\r] any)* &([\n\r]))? ([\n]/'\r\n'/[\r])
-		 ) star1 / succ
+		 ) star1 / ɛ
 
 comment_lang <-- star1 'hi!' star1
 ML_COMMENT   <-- '#|' (ML_COMMENT / (!('#|'/'|#') any) (!('#|'/'|#') any)*)* '|#'
 star1        <-- ( [ \t]
 		   / ML_COMMENT
                    / ([#] [^\n\r]* &([\n\r]))? ([\n]/'\r\n'/[\r])
-		 ) star1 / succ
+		 ) star1 / ɛ
 
 !('#|'/'|#') any
 # weak backtracking - two bytes compared before only one consumed - can't think
@@ -121,15 +121,15 @@ star1        <-- ( [ \t]
 
 ----------------------------------- Removing redundant predicate terms
 z <- !( abc / ab / a )
-z <-- !( a (bc / b / succ))
-z <-- !( a (b (c / succ) / succ))
+z <-- !( a (bc / b / ɛ))
+z <-- !( a (b (c / ɛ) / ɛ))
 z <-- !( a (b c?)?)
 z <-- !a (see two proofs below)
 
 proof 1
 ********!!!!!  Predicate normalization: all trailing 's' ('1' or '0')
-expressions treated as if they were 'succ' ('0') - which means they can be
-removed completely (since succ at end of seq is implied)
+expressions treated as if they were 'ɛ' ('0') - which means they can be
+removed completely (since ɛ at end of seq is implied)
 
 !(a b?) == !a (because b? always succeeds)
 !(a b*) == !a
@@ -145,10 +145,11 @@ therefore:
 !(a/b/c) == !(b/c/a) == ...
 
 
-(Asside)
+(Aside)
 (the following doesn't reduce further, that I can tell)
 !(a / b c? d)
 !(a / b c d / b d)
+!(a / b (c d / d))
 
 ************ Therefore, in a trailing ord in a predicate, any expression that
 is has any other expression as a prefix (or equal) can/should be removed.
@@ -180,7 +181,7 @@ e <- ( [a] 'bcd' [e] / [a] / 'bcd' / [e] / [a]? 'bcd' / [e] )
 
 e <-- ( [a] 'bcd' [e] / [a] / 'bcd' / [e] / [a] 'bcd' / 'bcd' / [e] )
 e <-- ( [a] 'bcd' [e] / [a] / 'bcd' / [e] )
-e <-- ( [a] ('bcd' [e] / succ) / 'bcd' / [e] )
+e <-- ( [a] ('bcd' [e] / ɛ) / 'bcd' / [e] )
 
 d(t1) = [a]
 d(t2) = 'bcd'
@@ -193,7 +194,7 @@ d(e3) = d(t1)/d(t2)/d(t3) = [a]/'bcd'/[e]
 d(f1) = d(e1)/
 
 
-!!!***********     e1? rest == e1 rest / rest   !!  Much better than (e1 / succ) rest
+!!!***********     e1? rest == e1 rest / rest   !!  Much better than (e1 / ɛ) rest
               (it seems) because it gives us a static determinant
 
 e1 e2 e3? e4 e5 == e1 e2 (e3 e4 e5 / e4 e5)
@@ -202,7 +203,7 @@ e1 e2 expr? expr e4 == e1 e2 (expr expr e4 / expr e4) == e1 e2 expr (expr e4 / e
 (also == )  e1 e2 expr expr? e4
 
 
-expr?      ---> expr / succ      <--- only if it's the last term in an ord
+expr?      ---> expr / ɛ      <--- only if it's the last term in an ord
 expr? rest ---> expr rest / rest <--- anywhere else
 
 
@@ -242,7 +243,7 @@ e <- !'abcde' 'abcd' / 'abcdefg'
 REORDERER
 
 e <-- 'abcdefg' / 'abcd'
-e <=- 'abcd' ('efg' / succ)
+e <=- 'abcd' ('efg' / ɛ)
 
 grammar    <- rule* eof
 rule       <- symbol LEFTARROW expression
@@ -255,29 +256,29 @@ grammar <- ([a-z]'<-' ([a-z]!'<-')*)*  eof
 e <- (a b (a !b)*)*
 (OR) e <-  stuff:(start:ab body:(a!b)*)*
 
-e <-- ab e2 e / succ
-e2<-- a!b e2 / succ
+e <-- ab e2 e / ɛ
+e2<-- a!b e2 / ɛ
 
-e <-- ab e2 e / succ
+e <-- ab e2 e / ɛ
 e2<-- a!b e2 / e     # Pull in tail from context
-                     # don't need / succ because e always succeeds
-e <-- ab e2 e / succ
-e2<-- a!b e2 / (ab e2 e / succ)
+                     # don't need / ɛ because e always succeeds
+e <-- ab e2 e / ɛ
+e2<-- a!b e2 / (ab e2 e / ɛ)
 
 # e2 now has full e, so e2 e is now redundant
-e <-- ab e2 / succ
-e2<-- a!b e2 / (ab e2 / succ)
+e <-- ab e2 / ɛ
+e2<-- a!b e2 / (ab e2 / ɛ)
 
-e <-- ab e2 / succ
-e2<-- a!b e2 / ab e2 / succ  # next is reorder first to terms
+e <-- ab e2 / ɛ
+e2<-- a!b e2 / ab e2 / ɛ  # next is reorder first to terms
 
-e <-- ab e2 / succ
-e2<-- ab e2 / a e2 / succ
-(OR) e2 <-- start:ab e2 / body:a e2 / succ
+e <-- ab e2 / ɛ
+e2<-- ab e2 / a e2 / ɛ
+(OR) e2 <-- start:ab e2 / body:a e2 / ɛ
 
-e <-- ab e2 / succ
-e2<-- a (b e2 / e2) / succ
-(OR) e2 <-- start:body:a (b {start} e2 / {body} e2) / succ
+e <-- ab e2 / ɛ
+e2<-- a (b e2 / e2) / ɛ
+(OR) e2 <-- start:body:a (b {start} e2 / {body} e2) / ɛ
 
 abaaaabaaabab
 ^    ^   ^ ^
@@ -293,8 +294,8 @@ abaaaabaaabab
 SO:
 e <- (a b (a !b)*)*
 
-e <=- a b f / succ
-f <=- a (b f / f) / succ
+e <=- a b f / ɛ
+f <=- a (b f / f) / ɛ
 
 
 grammar    <- rule* eof
@@ -306,7 +307,7 @@ LEFTARROW  <- '<-'
 grammar <-- ([a-z]'<-' ([a-z] !'<-')*)*  eof
 
 grammar <=- [a-z] '<-' g2 / eof
-g2      <=- [a-z] ('<-' g2 // g2) / succ
+g2      <=- [a-z] ('<-' g2 // g2) / ɛ
 
 
 
@@ -343,23 +344,23 @@ Trickier:
 # meta-level- the quantity.
 
 x <-  &y [a]* z
-y <-  [a] y [b] / succ
-z <-  [b] z [c] / succ
+y <-  [a] y [b] / ɛ
+z <-  [b] z [c] / ɛ
 
 x <-- &y w z
-y <-- [a] y [b] / succ
-z <-- [b] z [c] / succ
-w <-- [a] w / succ
+y <-- [a] y [b] / ɛ
+z <-- [b] z [c] / ɛ
+w <-- [a] w / ɛ
 
 x <-- &y w z
-y <-- [a] self [b] / succ
-z <-- [b] self [c] / succ
-w <-- [a] self / succ
+y <-- [a] self [b] / ɛ
+z <-- [b] self [c] / ɛ
+w <-- [a] self / ɛ
 
 x <-- &y w
-y <-- [a] self [b] / succ
+y <-- [a] self [b] / ɛ
 w <-- [a] self / z
-z <-- [b] self [c] / succ
+z <-- [b] self [c] / ɛ
 
 ---
 Trickier Yet:
@@ -368,13 +369,13 @@ Trickier Yet:
 # original peg paper)
 
 x <-  &(y ![b]) [a]* z eof
-y <-  [a] y [b] / succ
-z <-  [b] z [c] / succ
+y <-  [a] y [b] / ɛ
+z <-  [b] z [c] / ɛ
 
 x <-- &(y ![b]) w z eof
-y <-- [a] y [b] / succ
-z <-- [b] z [c] / succ
-w <-- [a] w / succ
+y <-- [a] y [b] / ɛ
+z <-- [b] z [c] / ɛ
+w <-- [a] w / ɛ
 
 ---------
 Also tricky:
@@ -452,7 +453,7 @@ Thought: $_ as tuple but %_ as list? (or something)
 ****** NOTE ON STAR REDUCTION IN PLACE
 e <-  something* rest
 e <-- something e / rest
-(including the case when "rest" is 'succ')
+(including the case when "rest" is 'ɛ')
 
 ******
 to prove: lookahead on terminal does not affect constant space / linear time complexity
@@ -501,11 +502,11 @@ z <-  t:'ones' / u:'one' / v:'only' / w:any+ -> ($t $u $v $w)
 z <-- ('ones' {z_t} / 'one' {z_u} / 'only' {z_v} / any any* {z_w}) {|($t $u $v $w)|}
 z <-- ('on' ('es' {z_t} / 'e' {z_u} / 'ly' {z_v} / any* {z_w}) / any any* {z_w}) {|z|}
 [z <- 'on' ('es' / 'e' / 'ly' / any*) / any+ ]
-[z <- 'on' ('e' ('s' // succ) // 'ly' // any*) // any+ ]
+[z <- 'on' ('e' ('s' // ɛ) // 'ly' // any*) // any+ ]
 z <-- ('on' ('e' ('s' {z_t} // {z_u}) // 'ly' {z_v} // any* {z_w}) // any any* {z_w}) {|z|}
 
 z <=- ('on' ('e' ('s' {z_t} // {z_u}) // 'ly' {z_v} // y {z_w}) // any y {z_w}) {|z|}
-y <=- any y / succ
+y <=- any y / ɛ
 
 
 z <- (a:[y]/b:[x]/c:[w])+ -> ($a $b $c)
@@ -552,7 +553,7 @@ e <-  T:(ab) U:(cd) V:(ef) g / abc T:(def) -> $T $U $V
 e <-- ab-{T} cd-{U} ef-{V} g-{~} {|e|}
     / abc-{~} def-{T} {|e|}
 e <-- ab-{?T1} c-{?~1} d-{?U1} ef-{?V1}-{?T2} 
-       (g-{T1}-{U1}-{V1}-{~} succ-{|e|} / succ-{~1}-{T2}-{|e|})
+       (g-{T1}-{U1}-{V1}-{~} ɛ-{|e|} / ɛ-{~1}-{T2}-{|e|})
 
 * When a function can only be commuted from one side, make a new 'tentative'
   marker, which, at runtime, will mark the size of the accumulator at that
@@ -562,18 +563,18 @@ e <-- ab-{?T1} c-{?~1} d-{?U1} ef-{?V1}-{?T2}
   'execute' marker it will pull that much off the front of the accumulator,
   assign it, remove the tentative variable, and decrement that amount from any
   remaining tentatives.
-  EDIT: Attach 'execute' marker to an 'nop' (succ for seq's) that's at the head
+  EDIT: Attach 'execute' marker to an 'nop' (ɛ for seq's) that's at the head
   of the term where the tentative's term was extracted, and skip those nops
   when looking at subsequent terms to factor out. (see example below)
 
 * It seems helpful currently to attach the final transformation function to
-  dangling succ clauses. (or maybe nop at the head can take over...)
+  dangling ɛ clauses. (or maybe nop at the head can take over...)
 
 * When checking for duplicate terms in an ord (and, probably, most
   normalization rules), ignore functions
 
 AFTER XORD TRANSFORMATIONS (?):
-* {~} gets attached to _all_ terms where appropriate. (so, for example, above's
+#* {~} gets attached to _all_ terms where appropriate. (so, for example, above's
   `abc-{~}` should actually be `a-{~} b-{~} c-{~}`)
 * A {~} on an expression propagates to all its children (creating a call to a
   new non-accumulate versions of rules if necessary). Probably a very similar
@@ -592,34 +593,34 @@ BEST EXAMPLE
 
 e <-  T:(ab) U:(cd) V:(ef) g / abc T:(def) -> $T $U $V
 
-e <--  ab-{T} cd-{U} ef-{V} g-{~} succ-{|e|}
-    / a-{~} b-{~} c-{~} def-{T} succ-{|e|}
+e <--  ab-{T} cd-{U} ef-{V} g-{~} ɛ-{|e|}
+    / a-{~} b-{~} c-{~} def-{T} ɛ-{|e|}
 
-e <-- a-{?~1} (b-{T} cd-{U} ef-{V} g-{~} succ-{|e|}
-              / nop-{~1} b-{~} c-{~} def-{T} succ-{|e|})
+e <-- a-{?~1} (b-{T} cd-{U} ef-{V} g-{~} ɛ-{|e|}
+              / nop-{~1} b-{~} c-{~} def-{T} ɛ-{|e|})
 
-e <-- a-{?~1} b-{?T1|?~2} (nop-{T1} cd-{U} ef-{V} g-{~} succ-{|e|}
-                          / nop-{~1} nop-{~2} c-{~} def-{T} succ-{|e|})
+e <-- a-{?~1} b-{?T1|?~2} (nop-{T1} cd-{U} ef-{V} g-{~} ɛ-{|e|}
+                          / nop-{~1} nop-{~2} c-{~} def-{T} ɛ-{|e|})
 
 # But now {~2} subsumes {~1} because they're next to each other (on the right),
 # so ~1 (both the tentative and the execute) can be removed.
 
-e <-- a b-{?T1|?~2} (nop-{T1} cd-{U} ef-{V} g-{~} succ-{|e|}
-                    / nop-{~2} c-{~} def-{T} succ-{|e|})
+e <-- a b-{?T1|?~2} (nop-{T1} cd-{U} ef-{V} g-{~} ɛ-{|e|}
+                    / nop-{~2} c-{~} def-{T} ɛ-{|e|})
 
-e <-- a b-{?T1} c-{?~3} (nop-{T1} d-{U} ef-{V} g-{~} succ-{|e|}
-                        / nop-{~3} d e f-{T} succ-{|e|})
+e <-- a b-{?T1} c-{?~3} (nop-{T1} d-{U} ef-{V} g-{~} ɛ-{|e|}
+                        / nop-{~3} d e f-{T} ɛ-{|e|})
 
-e <-- a b-{?T1} c-{?~3} d-{?U1} (nop-{T1} nop-{U1} ef-{V} g-{~} succ-{|e|}
-                               / nop-{~3} e f-{T} succ-{|e|})
+e <-- a b-{?T1} c-{?~3} d-{?U1} (nop-{T1} nop-{U1} ef-{V} g-{~} ɛ-{|e|}
+                               / nop-{~3} e f-{T} ɛ-{|e|})
 
-e <-- a b-{?T1} c-{?~3} d-{?U1} e (nop-{T1} nop-{U1} f-{V} g-{~} succ-{|e|}
-                               / nop-{~3} f-{T} succ-{|e|})
+e <-- a b-{?T1} c-{?~3} d-{?U1} e (nop-{T1} nop-{U1} f-{V} g-{~} ɛ-{|e|}
+                               / nop-{~3} f-{T} ɛ-{|e|})
 
 e <-- a b-{?T1} c-{?~3} d-{?U1} e f-{?V1|?T2}
       (
-        nop-{T1} nop-{U1} nop-{V1} g-{~} succ-{|e|} //
-        nop-{~3} nop-{T2} succ-{|e|}
+        nop-{T1} nop-{U1} nop-{V1} g-{~} ɛ-{|e|} //
+        nop-{~3} nop-{T2} ɛ-{|e|}
       )
 
 # Finally we need to accumulate all of the nop operations into the head of the
@@ -627,7 +628,7 @@ e <-- a b-{?T1} c-{?~3} d-{?U1} e f-{?V1|?T2}
 # any case, this is the final result:)
 
 e <-- a b-{?T1} c-{?~3} d-{?U1} e f-{?V1|?T2}
-      ( g-{T1}-{U1}-{V1}-{~} succ-{|e|} // succ-{~3}-{T2}-{|e|} )
+      ( g-{T1}-{U1}-{V1}-{~} ɛ-{|e|} // ɛ-{~3}-{T2}-{|e|} )
 
 --------------
 Backtracking occurs when:
@@ -650,7 +651,7 @@ input: (equiv of a) (equiv of a)
 # OLD WAY (WRONG WAY):
 e <-  head (a b)* a tail
 e <=- head s1 a tail
-s1<=- a b s1 / succ
+s1<=- a b s1 / ɛ
 
 # RIGHT WAY:
 e <-  head (a b)* a tail
@@ -661,7 +662,7 @@ e <-  (a b)* a tail
 e <=- a b e / a tail
 
 * Star expressions turn into recursive ords- but instead of the second term
-  being succ, it is the tail of whatever came after the star expression in the
+  being ɛ, it is the tail of whatever came after the star expression in the
   context where it was first described. (Because this allows us to factor
   things out and turn it into an xord)
 * When expression starts with a star expression, rewrite to recursive
@@ -674,21 +675,21 @@ TAGS / REFERENCES ON RECURSION, PLUS, & STAR EXPRESSIONS
 e  <- T:f+ [@] V:f+ -> $T $V
 f  <- [a-z] [0-9]
 
-e  <-- f-{e-T} f*-{e-T} [@]-{~} f-{e-V} f*-{e-V} succ-{|e|}
+e  <-- f-{e-T} f*-{e-T} [@]-{~} f-{e-V} f*-{e-V} ɛ-{|e|}
 f  <-- [a-z] [0-9]
 
 e  <-- f-{e-T} s1
-s1 <-- f-{e-T} s1 / [@]-{~} f-{e-V} f*-{e-V} succ-{|e|}
+s1 <-- f-{e-T} s1 / [@]-{~} f-{e-V} f*-{e-V} ɛ-{|e|}
 f  <-- [a-z] [0-9]
 
 e  <-- f-{e-T} s1
 s1 <-- f-{e-T} s1 // [@]-{~} f-{e-V} s2
-s2 <-- f-{e-V} s1 // succ-{|e|}
+s2 <-- f-{e-V} s1 // ɛ-{|e|}
 f  <-- [a-z] [0-9]
 
 e  <=- [a-z] [0-9] -{e-T} s1
 s1 <=- [a-z] [0-9] -{e-T} s1 // [@]-{~} [a-z] [0-9] -{e-V} s2
-s2 <=- [a-z] [0-9] -{e-V} s2 // succ-{|($T $V)|}
+s2 <=- [a-z] [0-9] -{e-V} s2 // ɛ-{|($T $V)|}
 
 ----------------
 Will it be possible to do proper factoring / reductions when inlining is
