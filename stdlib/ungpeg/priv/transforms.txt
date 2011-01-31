@@ -1,0 +1,69 @@
+# ord
+# xord
+# seq
+
+# call
+
+# cset  =
+# lit   = sequence of UTF-8 code-points
+# any   = any valid UTF-8 code-point
+# eof   = no more input to be consumed
+
+# ɛ
+# ϝ
+
+# TODO: bytestrings & bitstrings
+
+
+# e1 (e2 e3) →e1 e2 e3
+
+
+O ← ord set of E
+X ← xord set of E
+S ← seq set of E
+R ← call
+E ← ord / xord / seq / call / lit / cset / 
+M ← ord / xord / seq  # Ordered sets
+C ← valid-utf-8-integer
+Sc ← set of C         # Unordered set
+
+# Rewrite literals into character sequences
+#[lit [C]] →[char C]
+#[lit [C|T]] →[seq [[char C] [lit T]]
+
+
+# Remove unneeded grouping
+
+(seq <(seq B)>) →(seq <B>)
+(ord <(ord B)>) →(ord <B>)
+(xrd <(xrd B)>) →(xrd <B>)
+
+(seq <!(chr C) any>)     →(seq <chr_exc(C,any)>)
+(seq <!(chr C) (chr C)>) : →(
+
+[seq <>] →
+E , S  →E , <S>  # E1,(E2,E3) →E1,E2,E3
+E / O  →E / <O>  # E1/(E2/E3) →E1/E2/E3
+E ║X  →E ║<X>  # E1║(E2║E3) →E1║E2║E3
+S , E  →<S> , E
+O / E  →<O> / E
+X ║E  →<X> ║E
+
+# Character sets (character classes / ranges)
+Sc : Sc = {}              →ɛ            # Empty character set is ɛ
+Sc1/Sc2                   →Sc1∪Sc2     # Combining character sets
+Sc1║Sc2                  →Sc1∪Sc2
+
+# Qualifier predicates
+!Sc1,any                  →^Sc1         # Might be just an implementation thing...
+!Sc1,Sc2 : Sc1 ⊇Sc2      →ϝ            # They'll never agree
+!Sc1,Sc2                  →Sc2∖Sc1
+&Sc1,Sc2 : Sc1 ⊇Sc2      →Sc2          # Sc2 is a subset of the predicate, so it doesn't narrow things down.
+&Sc1,Sc2 : Sc1 ⊊ Sc2      →Sc1          # Predicate is a subset - becomes the new charset
+&Sc1,Sc2 : Sc1 ∩Sc2 = {} →ϝ            # They'll never agree
+
+## Not needed since we suck these into the atomic one at a time anyway.
+# !Sc1,!Sc2  →!(Sc1/Sc2)  
+# &Sc1,&Sc2  →Sc1 ∩Sc2
+
+
