@@ -43,7 +43,8 @@ Joseph Wecker <joseph.wecker@gmail.com>
 . If `e` is an `ord` (or `xord`), find final term(s) for every `term`.
 ****
 
-== Step 2 - Inlining and Unaliasing
+== Step 2 - Adaptive Inlining and Unaliasing
+
 
 == Step 3 - Transform to Normal 1
 
@@ -62,3 +63,22 @@ Joseph Wecker <joseph.wecker@gmail.com>
 
 . Remember to do `{~}` propagation to children after inlining
 . Remember to do `{~}` optimization
+
+
+
+== SCRATCH AREA
+
+. Plus expansion
+. Star expansion
+. Opt expansion
+. Predicate processing (requires xords first?)
+.. See if it's a literal qualifier
+..
+
+
+. Expand
+.. Factor ord into xord
+... Pull out any leading terms
+... Check if it's now an xord
+... Expand
+.. Remove any that
