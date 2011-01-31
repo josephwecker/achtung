@@ -1,0 +1,19 @@
+
+# These accept the exact same language, but givin the same input strings they
+# create very different parse trees.
+# Input: aabbb
+
+:s1 ← a1 b1
+a1  ← [a] a1 / ɛ
+b1  ← [b] b1 / ɛ
+# (S (A a (A a A)) (B b (B b (B b B))))
+
+:s2 ← [a] s2 [b] / a2 / b2
+a2  ← [a] a2 / ɛ
+b2  ← [b] b2 / ɛ
+# (S a (S a (S (B b B)) b)
+
+:s3 ← a3 b3
+a3  ← [a]*
+b3  ← [b]*
+# (S (A a a) (B b b b))
