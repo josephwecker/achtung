@@ -1,0 +1,19 @@
+
+
+# High level (from determ.txt) hypothesis: All predicates can be reduced to one
+# of:
+#  - Qualifier
+#  - Reorderer
+#  - Non-predicate (probably usually ɛ or ϝ)
+#
+
+
+Where to they occur?
+ - When are they _not_ part of a seq?
+
+
+
+
+
+
+
