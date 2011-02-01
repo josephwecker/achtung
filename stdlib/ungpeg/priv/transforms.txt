@@ -1,6 +1,8 @@
-
+# Rewrite rules for extended
 # TODO: bytestrings & bitstrings
 
+
+#------------------------ Definitions ----------------------------------------|
 #exp   :: ord | xrd | seq | ref | lit | chr | any
 
 #ord   :: [exp]
@@ -14,49 +16,65 @@
 #utf   :: {x: x is a valid UTF-8 codepoint}
 #range :: (+|-, utf | (utf,utf))
 
-# !& ?+*
-# 
 
-# s = {opt, plus, star}
-# p = {notp, andp}
-# a = {s, p}
-# n = {}
+#------------------------ Aliases --------------------------------------------|
+Seq ~ (P seq S)
+Ord ~ (P ord S)
+Xrd ~ (P xrd S)
+ 
 
-# Transform:
-#  - Grammar components
-#  - Attributes
 
-(｢P type S｣ Body)
+#------------------------ Rewrite Rules --------------------------------------|
 
-# (type Body)       -- No prefix, No suffix
-# (｢type S｣ Body)   -- No prefix, Any number of suffixes (captured by S)
-# (｢P type S｣ Body) -- Any prefixes captured in P, Any suffixes captured in S
+### Simplification: Dead sequence removal
+### A ϝ term anywhere in a seq causes the whole thing to fail
+### A B ϝ D → ϝ
+(Seq <([] ϝ [])>) →                             |w'Sequence always fails'| ϝ |
 
-#-------- Lists --------------------------------------------------------------
-# seq/ord Shortcircuits
-(｢seq _｣ <ϝ>)                 → ϝ
-(｢P ord S｣ <ɛ|T])             → (｢P ord S｣ <ɛ])
-(｢P ord S｣ <ϝ|R])             → (｢P ord S｣ <R])
-(｢P xrd S｣ <ɛ|R])             → (｢P xrd S｣ <ɛ])
-(｢P xrd S｣ <ϝ|R])             → (｢P xrd S｣ <R])
+### Simplification: Sequence NOP removal
+### ɛ anywhere in a sequence doesn't do anything
+### A B ɛ C → A B C
+(Seq <([] ɛ [])|R]) →                                                (Seq <R])
 
-# Remove unneeded grouping (inlining in multis)
-(seq <(seq B)>)               → (seq <B>)
-(ord <(ord B)>)               → (ord <B>)
-(xrd <(xrd B)>)               → (xrd <B>)
+### Simplification: Dead choice short circuit
+### Anything after an ɛ in an ord or xrd is unreachable
+### A/B/ɛ/C/D → A/B/ɛ
+(Ord <ɛ|R]) →                                |w'Unreachable code'| (Ord <ɛ]) |
+(Xrd <ɛ|R]) →                                |w'Unreachable code'| (Xrd <ɛ]) |
 
-# Inline Single Term multis
-(seq A1 [(E A2 B)])              → E
-(ord [E])                      → E
-(xrd [E])                      → E
+### Simplification: NOP Choice removal
+### A term in an ord/xrd that is guaranteed to fail can be skipped
+### A/B/ϝ/C/D → A/B/C/D
+(Ord <ϝ|R]) →                                                        (Ord <R])
+(Xrd <ϝ|R]) →                                                        (Xrd <R])
 
-#-------- Literals -----------------------------------------------------------
-# Transform literal into sequence of character classes
-(lit [])                       → ɛ
-(lit [C|T])                    → (seq [(chr C) (lit T)])
+### Simplification: Inline subgroup
+### seq, ord, and xrd are associative, and inner terms of the same type
+### A·(B·C)·D → A·B·C·D
+(M <(([] M []) B)>) →                                                  (M <B>)
+
+### Simplification: Inline single
+### An ord/xrd/seq is just the term (with attributes combined)
+### A (B*)? C → A B*? C
+((P1 M1 S1) [((P2 E S2) B)]) →                           ((P1++P2 E S1++S2) B)
+
+### Expansion: Literal removal
+### Transform literal into sequence of character classes (after several
+###     applications)
+### 'abc' →[a] 'bc'
+(lit [C|R]) →                                          (seq [(chr C) (lit R)])
+
+### Simplification: Empty literal
+### By definition
+### '' →ɛ
+(lit []) →                                                                  ɛ
+
+
+(Seq <((P E
+
 
 #-------- Character Sets -----------------------------------------------------
-(chr C) : C = {}               → ɛ
+(chr C) : |C| = 0              → ɛ
 (ord <(chr C1) (chr C2)>)      →(ord <(chr C1∪C2)>)
 (xrd <(chr C1) (chr C2)>)      →(xrd <(chr C1∪C2)>)
 
@@ -65,6 +83,6 @@
   : C ⊇ Sub                   → ϝ
 (seq <!(chr C1) (chr C2)>)     → (seq <(chr C1∖C2)>)
 (seq <&(chr C1) (chr C2)>)
-  : C1∩C2 = {}                → ϝ
+  : |C1∩C2| = 0               → ϝ
 (seq <&(chr C1) (chr C2)>)     → (seq <(chr C1∩c2)>)
 
