@@ -9,56 +9,50 @@
 # any   = any valid UTF-8 code-point
 # eof   = no more input to be consumed
 
-# ɛ
-# ϝ
-
 # TODO: bytestrings & bitstrings
 
 
-# e1 (e2 e3) →e1 e2 e3
+exp   :: ord | xrd | seq | ref | lit | chr | any
+ord   :: [exp]
+xrd   :: [exp]
+seq   :: [exp]
+ref   ::
+lit   :: [utf]
+chr   :: [ccr]
+any   :: {utf}
+utf   :: {x: x is a valid UTF-8 codepoint}
+range :: (+|-, utf | (utf,utf))
+
+# seq/ord Shortcircuits
+(seq <ϝ>)                      → ϝ
+(ord <ɛ|R])                    → (ord <ɛ])
+(ord <ϝ|R])                    → (ord <R])
+(xrd <ɛ|R])                    → (xrd <ɛ])
+(xrd <ϝ|R])                    → (xrd <R])
 
 
-O ← ord set of E
-X ← xord set of E
-S ← seq set of E
-R ← call
-E ← ord / xord / seq / call / lit / cset / 
-M ← ord / xord / seq  # Ordered sets
-C ← valid-utf-8-integer
-Sc ← set of C         # Unordered set
+# Remove unneeded grouping (inlining in multis)
+(seq <(seq B)>)                → (seq <B>)
+(ord <(ord B)>)                → (ord <B>)
+(xrd <(xrd B)>)                → (xrd <B>)
 
-# Rewrite literals into character sequences
-#[lit [C]] →[char C]
-#[lit [C|T]] →[seq [[char C] [lit T]]
+#-------- Qualifier Predicates -----------------------------------------------
+(seq <!(chr C) (chr Sub)>)
+  : C ⊇ Sub                   → ϝ
+(seq <!(chr C1) (chr C2)>)     → (seq <(chr C1∖C2)>)
+(seq <&(chr C1) (chr C2)>)
+  : C1∩C2 = {}                → ϝ
+(seq <&(chr C1) (chr C2)>)     → (seq <(chr C1∩c2)>)
 
+#-------- Literals -----------------------------------------------------------
+(lit [C|T])                    → (seq [(chr C) (lit T)])
 
-# Remove unneeded grouping
+#-------- Character Sets -----------------------------------------------------
+(chr C) : C = {}               → ɛ
+(ord <(chr C1) (chr C2)>)      →(ord <(chr C1∪C2)>)
+(xrd <(chr C1) (chr C2)>)      →(xrd <(chr C1∪C2)>)
 
-(seq <(seq B)>) →(seq <B>)
-(ord <(ord B)>) →(ord <B>)
-(xrd <(xrd B)>) →(xrd <B>)
-
-(seq <!(chr C) any>)     →(seq <chr_exc(C,any)>)
-(seq <!(chr C) (chr C)>) : →(
-
-[seq <>] →
-E , S  →E , <S>  # E1,(E2,E3) →E1,E2,E3
-E / O  →E / <O>  # E1/(E2/E3) →E1/E2/E3
-E ║X  →E ║<X>  # E1║(E2║E3) →E1║E2║E3
-S , E  →<S> , E
-O / E  →<O> / E
-X ║E  →<X> ║E
-
-# Character sets (character classes / ranges)
-Sc : Sc = {}              →ɛ            # Empty character set is ɛ
-Sc1/Sc2                   →Sc1∪Sc2     # Combining character sets
-Sc1║Sc2                  →Sc1∪Sc2
-
-# Qualifier predicates
-!Sc1,any                  →^Sc1         # Might be just an implementation thing...
-!Sc1,Sc2 : Sc1 ⊇Sc2      →ϝ            # They'll never agree
-!Sc1,Sc2                  →Sc2∖Sc1
-&Sc1,Sc2 : Sc1 ⊇Sc2      →Sc2          # Sc2 is a subset of the predicate, so it doesn't narrow things down.
+&Sc1,Sc2 : Sc1 ⊇Sc2           →Sc2          # Sc2 is a subset of the predicate, so it doesn't narrow things down.
 &Sc1,Sc2 : Sc1 ⊊ Sc2      →Sc1          # Predicate is a subset - becomes the new charset
 &Sc1,Sc2 : Sc1 ∩Sc2 = {} →ϝ            # They'll never agree
 
