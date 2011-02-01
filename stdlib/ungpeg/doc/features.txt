@@ -46,6 +46,11 @@
      characters remaining, etc.- and decide it can CONTINUE - jumps back in
      with all state and context (possibly modified) intact.
 
+ - PEG →pygments (→syntax.vim)
+
+ - Special return type that is an error / failure, but acts like a success
+   therefore allowing the parsing to continue.
+
 --------------------- PEG
 
  - Tail recursion on all star expressions means no memory usage for
