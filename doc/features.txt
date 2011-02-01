@@ -25,6 +25,7 @@
 
 Maybe triple back-ticks or something breaks into erlang?
 
+{a b c} is an unordered set, while {a:1 b:2 c:3} is a dictionary
 
 keyword that corresponds to current function name- like 'this' or 'recurse' or
 something- makes recursion easier on long-named functions and makes it much,
