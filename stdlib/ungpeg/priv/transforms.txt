@@ -1,40 +1,64 @@
-# ord
-# xord
-# seq
-
-# call
-
-# cset  =
-# lit   = sequence of UTF-8 code-points
-# any   = any valid UTF-8 code-point
-# eof   = no more input to be consumed
 
 # TODO: bytestrings & bitstrings
 
+#exp   :: ord | xrd | seq | ref | lit | chr | any
 
-exp   :: ord | xrd | seq | ref | lit | chr | any
-ord   :: [exp]
-xrd   :: [exp]
-seq   :: [exp]
-ref   ::
-lit   :: [utf]
-chr   :: [ccr]
-any   :: {utf}
-utf   :: {x: x is a valid UTF-8 codepoint}
-range :: (+|-, utf | (utf,utf))
+#ord   :: [exp]
+#xrd   :: [exp]
+#seq   :: [exp]
+#lit   :: [utf]
 
+#ref   ::
+#chr   :: [ccr]
+#any   :: {utf}
+#utf   :: {x: x is a valid UTF-8 codepoint}
+#range :: (+|-, utf | (utf,utf))
+
+# !& ?+*
+# 
+
+# s = {opt, plus, star}
+# p = {notp, andp}
+# a = {s, p}
+# n = {}
+
+# Transform:
+#  - Grammar components
+#  - Attributes
+
+(｢P type S｣ Body)
+
+# (type Body)       -- No prefix, No suffix
+# (｢type S｣ Body)   -- No prefix, Any number of suffixes (captured by S)
+# (｢P type S｣ Body) -- Any prefixes captured in P, Any suffixes captured in S
+
+#-------- Lists --------------------------------------------------------------
 # seq/ord Shortcircuits
-(seq <ϝ>)                      → ϝ
-(ord <ɛ|R])                    → (ord <ɛ])
-(ord <ϝ|R])                    → (ord <R])
-(xrd <ɛ|R])                    → (xrd <ɛ])
-(xrd <ϝ|R])                    → (xrd <R])
-
+(｢seq _｣ <ϝ>)                 → ϝ
+(｢P ord S｣ <ɛ|T])             → (｢P ord S｣ <ɛ])
+(｢P ord S｣ <ϝ|R])             → (｢P ord S｣ <R])
+(｢P xrd S｣ <ɛ|R])             → (｢P xrd S｣ <ɛ])
+(｢P xrd S｣ <ϝ|R])             → (｢P xrd S｣ <R])
 
 # Remove unneeded grouping (inlining in multis)
-(seq <(seq B)>)                → (seq <B>)
-(ord <(ord B)>)                → (ord <B>)
-(xrd <(xrd B)>)                → (xrd <B>)
+(seq <(seq B)>)               → (seq <B>)
+(ord <(ord B)>)               → (ord <B>)
+(xrd <(xrd B)>)               → (xrd <B>)
+
+# Inline Single Term multis
+(seq A1 [(E A2 B)])              → E
+(ord [E])                      → E
+(xrd [E])                      → E
+
+#-------- Literals -----------------------------------------------------------
+# Transform literal into sequence of character classes
+(lit [])                       → ɛ
+(lit [C|T])                    → (seq [(chr C) (lit T)])
+
+#-------- Character Sets -----------------------------------------------------
+(chr C) : C = {}               → ɛ
+(ord <(chr C1) (chr C2)>)      →(ord <(chr C1∪C2)>)
+(xrd <(chr C1) (chr C2)>)      →(xrd <(chr C1∪C2)>)
 
 #-------- Qualifier Predicates -----------------------------------------------
 (seq <!(chr C) (chr Sub)>)
@@ -43,21 +67,4 @@ range :: (+|-, utf | (utf,utf))
 (seq <&(chr C1) (chr C2)>)
   : C1∩C2 = {}                → ϝ
 (seq <&(chr C1) (chr C2)>)     → (seq <(chr C1∩c2)>)
-
-#-------- Literals -----------------------------------------------------------
-(lit [C|T])                    → (seq [(chr C) (lit T)])
-
-#-------- Character Sets -----------------------------------------------------
-(chr C) : C = {}               → ɛ
-(ord <(chr C1) (chr C2)>)      →(ord <(chr C1∪C2)>)
-(xrd <(chr C1) (chr C2)>)      →(xrd <(chr C1∪C2)>)
-
-&Sc1,Sc2 : Sc1 ⊇Sc2           →Sc2          # Sc2 is a subset of the predicate, so it doesn't narrow things down.
-&Sc1,Sc2 : Sc1 ⊊ Sc2      →Sc1          # Predicate is a subset - becomes the new charset
-&Sc1,Sc2 : Sc1 ∩Sc2 = {} →ϝ            # They'll never agree
-
-## Not needed since we suck these into the atomic one at a time anyway.
-# !Sc1,!Sc2  →!(Sc1/Sc2)  
-# &Sc1,&Sc2  →Sc1 ∩Sc2
-
 
