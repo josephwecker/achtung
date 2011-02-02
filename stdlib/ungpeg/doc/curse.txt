@@ -1,4 +1,4 @@
-e  <- T:f+ [@] V:f+ -> $T $V
+#|e  <- T:f+ [@] V:f+ -> $T $V
 f  <- [a-z] [0-9]
 
 e  <=- [a-z] [0-9] -{e-T} s1
@@ -11,4 +11,56 @@ a⑊b⑊c /d/e
 e ← [a] e / [a]
 ⌿/
 e <= [a] e-{|e|} / [a]-{|e|} ʃ 
+|#
+
+
+yield: finishes and returns context
+eof:   matches end of input
+fin:   eof if no characters left, otherwise yield
+-----
+
+e ← ([a] e [b] / [c]) fin   || (1)
+# Informally: a{n}> c <b{n}
+e ← ([a] e [b] / [a]) fin   || (2)
+# Informally: a{n}> a <b{n}
+e ← ([a] e [a] / [a]) fin   || (3)
+# Informally: a{n}> a <a{n}
+
+#*** {n} means run that many times successfully- not necessarily # consumed.
+
+e ← ([a] e [b] / [c]) fin   || (1)
+=> 'c' | 'acb' | 'aacbb' | 'aaacbbb'
+/> 'acba' | 'ab'
+
+
+{{'a','c'}}
+if i[1,()]='a' → left  IOU('a',__) {{'a','c'}}
+if i[1,()]='c' → right {{fin}}
+
+{{'a','c'}}
+if i[2,('a',__)]='a' → left  PAY('a',('a',__)) {{'a','b','c'}}
+if i[2,('a',__)]='c' → right PAY('a','c') {{'b'}}
+
+
+# Informally: a{n}> c <b{n}
+=>> 'acb'
+i1{'a',1,[]} →Left side only
+
+
+
+
+---------------
+e ← [a] [b] [c]-{left} / [a] [b]-{right}
+  ← [a] [b] ([c]-{left} / -{right})
+
+
+e ← v:([a] e [a] / [a]) fin →$v
+  ← [a] e [a]-{v} fin-{|e|} / [a]-{v} fin-{|e|}
+  ← [a]   (e [a] {v} fin {|e|} ⑊ ɛ {v} fin {|e|})
+
+  ← [a]   (e [a] {v} fin {|e|} ⑊ fin {v} {|e|})  # Collapse can move to the right of non-consuming
+
+  ← [a]   (e [a] fin {v} {|e|} ⑊ fin {v} {|e|})
+      ok    ^                     ^
+#           This one?             Or this one? - I need as many finishes as starts + 1
 

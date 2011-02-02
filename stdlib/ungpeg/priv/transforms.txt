@@ -27,17 +27,51 @@ REF ~ (P ref S)
 Ɛ   ~ (P ɛ S)
 Ϝ   ~ (P ϝ S)
 
-𝛼chr ~ ([] chr [])
-𝛼lit ~ ([] lit [])
-𝛼ϝ   ~ ([] ϝ [])
+αchr ~ ([] chr [])
+αlit ~ ([] lit [])
+αϝ   ~ ([] ϝ [])
 #Ø
 
 #------------------------ Rewrite Rules --------------------------------------|
+┊
+┊
 
+┋
+┋
+
+│
+│
+
+╎
+╎
+╎
+╎
+
+║
+║
+║
+║
+║
+║
+
+⁑
+⁑
+⁝
+⁝
+⁝
+•
+•
+⸏
+_
+⸐
+⁜
+⁘
+‖
+⸖
 ### Simplification: Dead sequence removal
 ### A ϝ term anywhere in a seq causes the whole thing to fail
 ### A B ϝ D → ϝ
-(Seq <𝛼ϝ>) →                                    |w'Sequence always fails'| ϝ |
+(Seq <αϝ>) →                                   |w'Sequence always fails'| ϝ |
 
 ### Simplification: Sequence NOP removal
 ### ɛ anywhere in a sequence doesn't do anything

@@ -627,8 +627,11 @@ e <-- a b-{?T1} c-{?~3} d-{?U1} e f-{?V1|?T2}
 # first non-nop term in each xord-term. (I'm sure there's a better way- but in
 # any case, this is the final result:)
 
+〉
+〉
+
 e <-- a b-{?T1} c-{?~3} d-{?U1} e f-{?V1|?T2}
-      ( g-{T1}-{U1}-{V1}-{~} ɛ-{|e|} >< ɛ-{~3}-{T2}-{|e|} )
+      ( g-{T1}-{U1}-{V1}-{~} ɛ-{|e|} ⑊ ɛ-{~3}-{T2}-{|e|} )
 
 --------------∥╳
 ()[]{}“”‘’‹›«»「」『』〈〉《》【】
