@@ -10,12 +10,14 @@ set ambiwidth=double
 " epsilon: Empty string / success
 map! \eps ɛ
 map! \succ ɛ
+map! \empty ɛ
 " digamma: failure / !ɛ
 map! \fail ϝ
 map! \dig ϝ
+
 map! <- ←
 map! -> →
-map! // ║
+map! // ⑊
 " ---------------------------------
 
 syn sync fromstart
@@ -50,7 +52,7 @@ syn match   erlpegAssign          /<\(-\|=\)\+\|←/
 
 syn match   erlpegEntryDelim      /:/ contained
 syn match   erlpegOrdSep          /\//
-syn match   erlpegXordSep         /\/\/\|║/
+syn match   erlpegXordSep         /\/\/\|║\|⑊/
 syn match   erlpegSeqSep          /,/
 syn match   erlpegGroup           /[()]/
 syn match   erlpegPrefix          /[!&]/
