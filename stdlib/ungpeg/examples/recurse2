@@ -1,0 +1,5 @@
+a <- b (!.)? `[R|_]=Node, R`;
+b <- l b r / nil `case Node of [N1,M,N2] -> {[N1],M,[N2]}; O -> O end`;
+l <- [0-9] ~;
+r <- [0-9] ~;
+nil <- '' `epsilon`;

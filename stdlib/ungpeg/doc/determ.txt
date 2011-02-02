@@ -445,7 +445,7 @@ b <- 'bcd'       #(implied) -> {b,Pos,$_}
 input: 'abcbcd'
 {e, {1,1}, {b,{1,4},'bcd'}}
 
-Except, maybe simple literals shouldn't be ast-wrapped like that...
+#Except, maybe simple literals shouldn't be ast-wrapped like that...
 
 ******
 Thought: $_ as tuple but %_ as list? (or something)
@@ -459,9 +459,9 @@ e <-- something e / rest
 to prove: lookahead on terminal does not affect constant space / linear time complexity
 
 ******
-NOTE: Possibly simplifies things (for users' understanding) if predicates are
-completely invisible to transformation expressions. (problem might be when
-they're counting the terms...)
+#NOTE: Possibly simplifies things (for users' understanding) if predicates are
+#completely invisible to transformation expressions. (problem might be when
+#they're counting the terms...)
 
 
 -----------------------------------------------------
@@ -523,10 +523,10 @@ w <-- dig-w:[0-9] ([-] dig-x:[0-9]*)
 w <=- [0-9] {dig-w} ~[-] [0-9]* {dig-x} {|x|} {|w|}
 
 
-* When inlining- inlined body always comes _before_ the current transform
+# * When inlining- inlined body always comes _before_ the current transform
 
-* Warning if tags aren't used
-* Labels used "upstream"?
+# * Warning if tags aren't used
+# * Labels used "upstream"?
 
 * Transform function also cleans out anything remaining in accumulator (?)
 
@@ -628,9 +628,15 @@ e <-- a b-{?T1} c-{?~3} d-{?U1} e f-{?V1|?T2}
 # any case, this is the final result:)
 
 e <-- a b-{?T1} c-{?~3} d-{?U1} e f-{?V1|?T2}
-      ( g-{T1}-{U1}-{V1}-{~} ɛ-{|e|} // ɛ-{~3}-{T2}-{|e|} )
+      ( g-{T1}-{U1}-{V1}-{~} ɛ-{|e|} >< ɛ-{~3}-{T2}-{|e|} )
 
---------------
+--------------∥╳
+()[]{}“”‘’‹›«»「」『』〈〉《》【】
+〖〗〔〕〘〙（）［］｛｝｢｣⟨⟩⟪⟫⟦⟧❛❜❝❞❨❩❪❫❬❭❮❯❰❱❲❳❴❵〚〛⦃⦄﹛﹜﹝﹞⸢⸣⸤⸥⁅⁆〈〉
+
+)(][}{›‹»«」「』『〉〈》《】【
+〗〖〕〔〙〘）（］［｝｛｣｢⟩⟨⟫⟪⟧⟦❩❨❫❪❭❬❯❮❱❰❳❲❵❴〛〚⦄⦃﹜﹛﹞﹝⸣⸢⸥⸤⁆⁅〉〈
+
 Backtracking occurs when:
 - ord instead of xord (including implied ord on star expressions)
 - predicates because they don't consume anything

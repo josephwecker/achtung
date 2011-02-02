@@ -1,0 +1,11 @@
+Analytical Parsing Grammar (APG)
+
+- Entrypoints
+- Formalized failure
+- Left recursion mechanism
+- Formalized prefix/suffix algebra
+- 
+
+- Loop failures as recognition failures
+  * APGs are Complete / can be proven complete
+  * Every APG can become a well-defined APG

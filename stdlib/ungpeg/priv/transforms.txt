@@ -18,18 +18,26 @@
 
 
 #------------------------ Aliases --------------------------------------------|
-Seq ~ (P seq S)
-Ord ~ (P ord S)
-Xrd ~ (P xrd S)
- 
+SEQ ~ (P seq S)
+PCH ~ (P pch S)
+XCH ~ (P xch S)
+LIT ~ (P lit S)
+CHR ~ (P chr S)
+REF ~ (P ref S)
+Ɛ   ~ (P ɛ S)
+Ϝ   ~ (P ϝ S)
 
+𝛼chr ~ ([] chr [])
+𝛼lit ~ ([] lit [])
+𝛼ϝ   ~ ([] ϝ [])
+#Ø
 
 #------------------------ Rewrite Rules --------------------------------------|
 
 ### Simplification: Dead sequence removal
 ### A ϝ term anywhere in a seq causes the whole thing to fail
 ### A B ϝ D → ϝ
-(Seq <([] ϝ [])>) →                             |w'Sequence always fails'| ϝ |
+(Seq <𝛼ϝ>) →                                    |w'Sequence always fails'| ϝ |
 
 ### Simplification: Sequence NOP removal
 ### ɛ anywhere in a sequence doesn't do anything
@@ -60,29 +68,36 @@ Xrd ~ (P xrd S)
 
 ### Expansion: Literal removal
 ### Transform literal into sequence of character classes (after several
-###     applications)
+###   applications)
 ### 'abc' →[a] 'bc'
-(lit [C|R]) →                                          (seq [(chr C) (lit R)])
+(Lit [C|R]) →                                        (Seq [(𝛼chr C) (𝛼lit R)])
 
 ### Simplification: Empty literal
 ### By definition
 ### '' →ɛ
-(lit []) →                                                                  ɛ
+(Lit []) →                                                                   ɛ
+
+### Simplification: Empty character class
+### By definition
+### [] →ɛ
+(Chr C) : C = {} →                                                           ɛ
+
+### Simplification: Merge character classes
+### If one character class is to be tried and then another, try them at the
+###   same time instead.
+### A/B/[0-9]/[x]/C → A/B/[0-9x]/C
+(Ord <(chr C1) (chr C2)>) →                               (ord <(chr C1∪C2)>)
+(Xrd <(chr C1) (chr C2)>) →                               (xrd <(chr C1∪C2)>)
+
+### 
 
 
-(Seq <((P E
+#(Seq <((P E
 
 
-#-------- Character Sets -----------------------------------------------------
-(chr C) : |C| = 0              → ɛ
-(ord <(chr C1) (chr C2)>)      →(ord <(chr C1∪C2)>)
-(xrd <(chr C1) (chr C2)>)      →(xrd <(chr C1∪C2)>)
 
-#-------- Qualifier Predicates -----------------------------------------------
-(seq <!(chr C) (chr Sub)>)
-  : C ⊇ Sub                   → ϝ
-(seq <!(chr C1) (chr C2)>)     → (seq <(chr C1∖C2)>)
-(seq <&(chr C1) (chr C2)>)
-  : |C1∩C2| = 0               → ϝ
-(seq <&(chr C1) (chr C2)>)     → (seq <(chr C1∩c2)>)
+(seq <!(chr C) (chr Sub)>) : C ⊇ Sub →                                      ϝ
+(seq <!(chr C1) (chr C2)>) →                               (seq <(chr C1∖C2)>)
+(seq <&(chr C1) (chr C2)>) : C1∩C2 = {}→                                    ϝ
+(seq <&(chr C1) (chr C2)>) →                              (seq <(chr C1∩c2)>)
 
