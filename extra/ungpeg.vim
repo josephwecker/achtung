@@ -18,6 +18,11 @@ map! \dig ϝ
 map! <- ←
 map! -> →
 map! // ⑊
+map! <<< 《
+map! << 〈
+map! >>> 》
+map! >> 〉
+
 " ---------------------------------
 
 syn sync fromstart
@@ -31,11 +36,11 @@ syn match   erlpegLitModifier     /\\\^[a-zA-Z]\|\\./ contained
 syn match   erlpegLitModifier     /\\x{[a-fA-F0-9]*}\|\\x[a-fA-F0-9]\{2\}/ contained contains=erlpegNum
 syn match   erlpegLitModifier     /\\[0-7]\{1,3\}/ contained contains=erlpegOctNum
 syn region  erlpegDoubleLit       start=+"+ skip=+\\.+ end=+"+ keepend contains=erlpegDLitDelim,@Spell,erlpegLitModifier
-syn region  erlpegSingleLit       start=+'+ skip=+\\.+ end=+'+ keepend contains=@Spell,erlpegLitModifier,erlpegSLitDelim
+syn region  erlpegSingleLit       start=+'\|‹+ skip=+\\.+ end=+'\|›+ keepend contains=@Spell,erlpegLitModifier,erlpegSLitDelim
 syn match   erlpegNum             /[a-fA-F0-9]*/ contained
 syn match   erlpegOctNum          /[0-7]\{1,3\}/ contained
 syn match   erlpegDLitDelim       /\\\@!"/ contained
-syn match   erlpegSLitDelim       /\\\@!'/ contained
+syn match   erlpegSLitDelim       /\\\@!\('\|‹\|›\)/ contained
 
 
 syn match   erlpegToken           /\<[A-Z][a-zA-Z0-9_:]*/ contains=erlpegTaggedRule
@@ -59,8 +64,12 @@ syn match   erlpegPrefix          /[!&]/
 syn match   erlpegSuffix          /[\*+]/
 syn match   erlpegOptSuffix       /?/
 
-syn match   erlpegCollapseFun     /-{[^}]*}/ "contains=erlpegTransAtom
-syn match   erlpegTransFun        /-{|[^|]*|}/ "contains=erlpegTransAtom
+syn match   erlpegCollapseFun     /-\?{[^}]*}/ contains=erlpegExecDelim "contains=erlpegTransAtom
+syn match   erlpegTransFun        /-\?{|[^|]*|}/ contains=erlpegExecDelim "contains=erlpegTransAtom
+syn match   erlpegCollapseFun2    /〈[^〉]*〉/ contains=erlpegExecDelim "contains=erlpegTransAtom
+syn match   erlpegTransFun2       /《[^》]*》/ contains=erlpegExecDelim "contains=erlpegTransAtom
+
+syn match   erlpegExecDelim       /\\\@!\({\|}\)/ contained
 
 " Special rules
 syn match erlpegEmpty   +ɛ\|\<succ\>\|\<empty\>\|''\|""\|&\s*(\s*any\s*/\s*eof)\|&\s*(\s*eof\s*//\?\s*any)+
@@ -118,6 +127,7 @@ hi link erlpegRangeSpec1          Special
 hi link erlpegRangeSpec2          Special
 hi link erlpegDLitDelim           Delimiter
 hi link erlpegSLitDelim           Delimiter
+"hi link erlpegExecDelim           SpecialComment
 hi link erlpegTaggedRule          Comment
 hi link erlpegTransform           Delimiter
 hi link erlpegTransMacro          Macro
@@ -126,6 +136,8 @@ hi link erlpegTransAtom           Constant
 hi link erlpegTransDelim          Exception
 hi link erlpegTransFun            Typedef
 hi link erlpegCollapseFun         StorageClass
+hi link erlpegCollapseFun2        StorageClass
+hi link erlpegTransFun2           Typedef
 
 let b:current_syntax = "erlpeg"
 

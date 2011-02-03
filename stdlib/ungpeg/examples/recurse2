@@ -4,9 +4,67 @@
 %r <- [0-9] ~;
 %nil <- '' `epsilon`;
 
-a <- b (!.)? `[R|_]=Node, R`;
-b <- l b r / nil `case Node of [N1,M,N2] -> {N1,M,N2}; O -> O end`;
-l <- 'a' ~;
-r <- 'c' ~;
-nil <- 'a' ~;
+%a <- b (!.)? `[R|_]=Node, R`;
+%b <- l b r / nil `case Node of [N1,M,N2] -> {N1,M,N2}; O -> O end`;
+%l <- 'a' ~;
+%r <- 'c' ~;
+%nil <- 'a' ~;
+
+
+% R ← a R a a a / a a R / a
+%R <- (T1 / T2 / T3) (T1:('a' R 'a' 'a' 'a') / T2:('a' 'a' R) / T3:('a')) (!.)? `hd(Node)`;
+%r <- (t1 / t2 / t3) (!.)? `hd(Node)`;
+%r <- (t1 / t2 / t3) (!.)?               `hd(Node)`;
+%t1 <- 'a' r2 'a' 'a' 'a'                `list_to_tuple([t1|Node])`;
+%t2 <- 'a' 'a' r3                        `list_to_tuple([t2|Node])`;
+%t3 <- 'a'                               `list_to_tuple([t3|[Node]])`;
+%r3 <- (t1 / t2 / t3) (!.)? `hd(Node)`;
+
+% r -> t1 -> r2 -> t6
+R <- (l / m / r)      (!.)? `hd(Node)`;
+l <- 'a' R_ 'a' 'a' 'a' (!.)?                `list_to_tuple([l|Node])`;
+m <- 'a' 'a' R_ (!.)?                        `list_to_tuple([m|Node])`;
+r <- 'a' (!.)?                               `list_to_tuple([r|[Node]])`;
+
+%-
+R_ <- (l_ / m_ / r_) `Node`;
+l_ <- 'a' R__ 'a' 'a' 'a' (!.)?                `list_to_tuple([l|Node])`;
+m_ <- 'a' 'a' R__ (!.)?                        `list_to_tuple([m|Node])`;
+r_ <- 'a' (!.)?                               `list_to_tuple([r|[Node]])`;
+
+%--
+R__ <- (l__ / m__ / r__) (!.)? `Node`;
+l__ <- 'a' R___ 'a' 'a' 'a' (!.)?                 `list_to_tuple([l|Node])`;
+m__ <- 'a' 'a' R___ (!.)?                         `list_to_tuple([m|Node])`;
+r__ <- 'a' (!.)?                               `list_to_tuple([r|[Node]])`;
+
+%---
+R___ <- (l___ / m___ / r___) (!.)? `Node`;
+l___ <- 'a' R____ 'a' 'a' 'a' (!.)?                 `list_to_tuple([l|Node])`;
+m___ <- 'a' 'a' R____ (!.)?                         `list_to_tuple([m|Node])`;
+r___ <- 'a' (!.)?                               `list_to_tuple([r|[Node]])`;
+
+%----
+R____ <- (l____ / m____ / r____) (!.)? `Node`;
+l____ <- 'a' R_____ 'a' 'a' 'a' (!.)?                 `list_to_tuple([l|Node])`;
+m____ <- 'a' 'a' R_____ (!.)?                         `list_to_tuple([m|Node])`;
+r____ <- 'a' (!.)?                               `list_to_tuple([r|[Node]])`;
+
+%-----
+R_____ <- (l_____ / m_____ / r_____) (!.)? `Node`;
+l_____ <- 'a' R 'a' 'a' 'a' (!.)?                 `list_to_tuple([l|Node])`;
+m_____ <- 'a' 'a' R (!.)?                         `list_to_tuple([m|Node])`;
+r_____ <- 'a' (!.)?                               `list_to_tuple([r|[Node]])`;
+
+%io:format("~p | ~p~n",[StartIndex, Name]),
+
+%1st try: left('a') rec
+%                    left('a') rec
+%                               left('a') rec
+%                                          left('a') rec
+%                                                     left('a') rec
+%                                                                left('a') fail
+%                                                     mid('a') fail
+%                                          left('
+
 

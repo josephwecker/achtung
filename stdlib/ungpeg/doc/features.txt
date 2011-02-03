@@ -51,6 +51,9 @@
  - Special return type that is an error / failure, but acts like a success
    therefore allowing the parsing to continue.
 
+ - Idea: Probabilistic code rewriting on `xch`s - determine which choice is
+   checked first based on which one passes more often.
+
 --------------------- PEG
 
  - Tail recursion on all star expressions means no memory usage for

@@ -64,3 +64,89 @@ e ← v:([a] e [a] / [a]) fin →$v
       ok    ^                     ^
 #           This one?             Or this one? - I need as many finishes as starts + 1
 
+
+--------------
+
+R←a R a / a →$_
+
+ ←a R a《R》
+  /a《R》
+
+ ←a (a R a《R》/ a《R》) R a《R》
+  /a《R》
+
+ ←a (a R a《R》/ a《R》) R a《R》
+  /a《R》
+
+---------------
+R ← a R a / a
+I1='a'
+(i1,'a',[]) => succ on left
+
+
+a a a a a a a a a
+
+(a(a(a(a(a(a(a(a(a(
+                   ^
+(a(a(a(a(a(a(a(a(a)
+                 ^
+(a(a(a(a(a(a(a(a)a)
+               ^
+(a(a(a(a(a(a(a)a)a)
+             ^
+(a(a(a(a(a(a)a)a)a)
+           ^
+(a(a(a(a(a)a)a)a)a)    < If next is fin
+         ^
+fin after a*0|→            (_)ϝ
+fin after a*1|→            (a)
+fin after a*2|→      (a (a) _) ϝ
+fin after a*3|→      (a (a) a)
+fin after a*4|→(a (a (a) a) _) ϝ
+fin after a*5|→(a (a (a) a) a)
+
+Shift left if equivalency in suffix/prefix according to deterministic nature of
+the `pch` and `xch` terms.
+
+i2 ∊ fin, a+promise
+
+At any given time- three possible next actions:
+
+R  ← left R right / middle
+
+R` ← left{*i} 〈N=i〉middle right{N}
+
+
+
+
+--------------------
+
+
+If the results are not going to be consumed, then probably most of this can be
+skipped in leueue of counters.
+
+
+
+
+
+--------------------
+b ← aaa/aa/a
+  ← a(aa/a/ɛ)
+  ← a(a(a/ɛ)/ɛ) 
+
+R ← aRaaa / aaR / a
+  ← a (Raaa / aR / ɛ)
+        ^       
+        ------------------
+  #← a(a(Raaa / aR / ɛ) aaa / aR / ɛ)
+  ← a(a((Raaa / aR / ɛ) aaa / R) / ɛ)
+
+n0: ϝ
+n1: (a)                  3
+n2: ϝ
+n3: (a a (a))            2(3)
+n4: ϝ
+n5: (a (a) a a a)        1(3)
+n6: ϝ
+n7: (a (a a (a)) a a a)  1(2(3))
+n8: 
