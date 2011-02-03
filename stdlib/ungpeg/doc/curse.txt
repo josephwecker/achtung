@@ -207,3 +207,32 @@ L-a-(L-a-(L-a-(L-a-(L-a-(L-fail
     /R-a-succ)
 
 
+
+----------------------
+R ← aRaaa / aaR / a
+----------------------
+
+a →         (a)
+aa →         |
+aaa →       (a a(a))
+aaaa →       |
+aaaaa →     (a(a a(a)))
+
+
+
+--------
+Hypothesis: memoization needed with recursion:
+   Tail recursive   | never
+   Left recursive   | specialized
+   Middle recursive | ???
+
+
+   ! Memoization required (or at least set up) if factoring is intractable.
+
+--------------------
+
+
+
+R ← l1
+
+
