@@ -312,7 +312,100 @@ P(A) = [ 't' 'v'
 
 *** Theorem: A self-referencing rule with no concrete clauses (after opt, plus,
 and star expansions) never terminates.
-*** 
 
 
 
+
+
+
+A ← h A t / c
+  ← h A t ⑊ c
+
+
+A ← h^ (c) t^ / (c)
+
+A ← l A m A r / c
+
+
+A ← p1 A m1 A r1 / p2 A r2 / c1 / c2
+
+
+success-determinant - anything that A will accept
+path-determinant - sufficiently distinguishes every path in A
+
+A ← a A a a / A
+
+
+
+A ← aaaAa / aAa / a
+
+  ← a (aa A a / A a / ɛ)
+
+p(A)   = {a}
+p(A,2) = p(aa A a) / p(A a)
+
+longest static prefix
+
+
+
+PREFIX
+ Follows every seq item.
+ Branches at every choice.
+ Branch is done when it reaches the end of the grammar.
+ Branch is done if it ever sees the same spot twice.
+ If a branch consumes nothing it can be replaced with ɛ at the origin
+
+A ← aaaAa / aAa / a
+-+a--a--a--<
+ +a--<
+ +a-->
+
+A ← B / C / D
+B ← a B b / 1
+C ← b C c / 2
+D ← b b D d / 3
+
+A-+-+-a--< a|1 <
+  | \-1-->
+  |
+  +-+-b--< b|2 <
+  | \-2-->
+  |
+  +-+-b-b-< b-b|3 <
+    \-3->
+
+{a,1,b(+|2),2,bb(+|2),3}
+
+snap. what about left recursion then in this shorthand? Just a
+
+
+A ← A [-] [0-9] / [0-9] [-] A / 't'
+
+A-+-《 left(A)|[0-9][-]|t《
+  +-[0-9]-[-]-《 left(A)|[0-9][-]|t《
+  +-t->
+*** Hypothesis: Despite any tricks, _should_ never work in a PEG _UNLESS_ a cycle is a
+  failure. So declaring non-termination a failure gives us the advantage of
+  making left-recursion well defined as well as other things... (?)
+
+
+star expressions:
+
+A   ← a b* c d / e f
+    ← a S1 / e f
++S1 ← b S1 / c d
+
+A ← a b* c d / e f
+  ← a (b〈 b〈 / c d) / e f
+
+A-+-a-+-b-<b<
+  |   \-c-d-|
+  \-e-f-|
+
+det(A) = 〈ab[b], acd, ef〉
+fac(A) = 〈a〈b,c〉,e〉
+
+ɛ at the end of a choice simply goes up the stack to where it was headed anyway.
+
+
+Each branch  

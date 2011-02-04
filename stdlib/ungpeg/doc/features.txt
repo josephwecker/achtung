@@ -1,5 +1,15 @@
- - Only memoize when it's truly necessary, and remove memoized entry at the
-   earliest possible time.
+Benefits it shares with PEGs
+
+
+Benefits unique to AP/APGs
+
+
+
+
+
+--------------------------
+ - Only memoize when it's truly necessary,
+ - Remove memoized entry at the earliest possible time.
 
  - Multiple entry-points designated (e.g.-> module,form,expression,term)
  - Allow appending to warning stack in parse-transform
@@ -53,6 +63,9 @@
 
  - Idea: Probabilistic code rewriting on `xch`s - determine which choice is
    checked first based on which one passes more often.
+
+
+ - {finish, AST, Rest}, {cont, State, AST}, {finish, AST}, {fail, Failures}
 
 --------------------- PEG
 
