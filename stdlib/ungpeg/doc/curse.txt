@@ -230,9 +230,89 @@ Hypothesis: memoization needed with recursion:
    ! Memoization required (or at least set up) if factoring is intractable.
 
 --------------------
+# Expected character consumption:
+
+[x,y] !e →[x,y]     # Including, separately, all children
+[x,y] &e →[x,y]     # Including, separately, all children
+[x,y] e? →[x,y+|e|]
+[x,y] e* →[x,inf]
+[x,y] e  →[x+|e|,y+|e|]
+[x,y] e+ →[x+|e|,inf]
+[x,y]/e  →[min(x,|e|.x), max(y,|e|.y)]
+[x,y]⑊e  →[min(x,|e|.x), max(y,|e|.y)]
+
+if final answer is [inf,y] - it will never terminate
+
+# TODO: Anything that can be infered from recursion.
+#       That is, "R" level range.
+#[x,y] e<he/ɛ →[x,inf]
+#[x,y] e<he/r →[x+|r|,inf]
+#[x,y] e<et/ɛ →[x,inf]
+#[x,y] e<et/r →[x+|r|,inf]
+#[x,y] e<het/ɛ
+
+--------------------
+
+R ← aRaaa / aaR / a
+     #       ##    #-CONCRETE/RSUFF
+     #       ##
+     #-------##------RSUFF
+
+R ← aRaaa / aaR / a
+     #       ##    #-CONCRETE/RSUFF
+     #       ##
+     #-------##------RPREF
+
+*** Theorem: A Rule R with no concrete term choices is a degenerate loop
+*** Theorem: A Rule R where all r-prefixes are non-determinant may require memoization
+*** Theorem: 
+
+<R> = <aRaaa> / <aaR> / <a>
+    = <[1,1]<R>[3,3]> # [4,4]
+    / <[2,2]<R>>      # [2,2]
+    / [1,1]           # [1,1]
+      # x=1 (minimum of three first terms, which will never go down)
+    = <[1,1][1,?][3,3]>
+      <[2,2][1,?]>
+      [1,1]
+
+    = [5,?] / [3,?] / [1,1]
+
+---
+R ← a. R a. / a. R a. / a. / a.
+
+R ← a. R a. R a. / a. R a. / a. R a. / a. / a.
+
+prefix|recurse|suffix
+
+recurse-point:
+  - is follower
+  - prefix
+  - suffix
+  - is leader
 
 
+R ← abc R def R def / R asd / asdf R / lkj / z
+         1     2       3            4
 
-R ← l1
+P1: 〈f,'abc','def',t〉
+P2: 〈t,'def','def',f〉
+P3: 〈f,ɛ,'asd',f〉
+P4: 〈f,'asdf',ɛ,f〉
+
+
+A ← 't' B 'u' A / 'f'
+B ← 'v' C 'w' B?
+  ← 'v' C 'w' B / 'v' C 'w'      ## TODO: Make sure this sort of trans. exists
+C ← 'x' A / 'y' B / 'z' C
+
+P(A) = [ 't' 'v'
+         't'
+
+
+*** Theorem: A self-referencing rule with no concrete clauses (after opt, plus,
+and star expansions) never terminates.
+*** 
+
 
 
