@@ -1,0 +1,2 @@
+Under what circumstances/grammars/inputs does it make sense (theoretically) to
+shortcircuit to failure / success?

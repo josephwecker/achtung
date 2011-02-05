@@ -2,9 +2,13 @@
 -compile(export_all).
 
 
-% 1. Inject synthesis & collapse rules as necessary & Normalize
-% 2. 
+% 1. Inject synthesis + collapse rules (as necessary).
+% 2. Normalize
 
-transform(AST) ->
+%transform(AST) ->
 
+
+
+
+common_prefix(E1,E2) ->
 

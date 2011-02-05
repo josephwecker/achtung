@@ -7,13 +7,210 @@
 #  - Non-predicate (probably usually ɛ or ϝ)
 #
 
+---------------------
+******
+expressions can _always_ be thought of as either part of an pch, xch, or
+sequence. Even if it is the only one in the grammar.
 
-Where to they occur?
- - When are they _not_ part of a seq?
+A ← [a]
+  ← [a] {fin}  # Part of a sequence.
+
+******
+expressions (used with seq) can be written as:
+e → e/ϝ
+******
+
+-------------------
+
+
+A ← a/b/!c
+  - 'a or b or next one is anything but c'
+  - if c ⊇ 
 
 
 
 
+---------------------
+# Reduction with backtracking assumption
+A ← !B C D
+
+A     ← not_B C D
+not_B ← B (any*) / ɛ
+           ^- guarantees that next expression will fail
+A ← (B.*/ɛ) C D
+
+A ← &B C D
+  ← !(B.*/ɛ) C D
+  ← ((B.*/ɛ).+/ɛ) C D
+----------
+# Reduction with higher-level context assumption
+      1 2 3
+A ← !B C D   # ASSUMING THIS IS THE START EXPR
+  ← !B C D {fin}
+  → B is true, so 1 fails - entirety fails.
+  → B is false
+
+  ← !B C D {fin} / &B {fin}
+
+
+  → if B ⊑ (C D): automatic ϝ
+  → otherwise:
+
+
+*****
+# Can I always get predicates into this form effectively?
+pTest Rest / FailPath
+*****
+
+!E → !ps(E) → !sE  # ps() = predicate-simplification
+
+
+# TODO: RECHECK THESE!
+
+given: &sE Rest / FailPath
+sE  ⊑ Rest & sE  ⊑ FailPath => Rest / FailPath
+sE !⊑ Rest & sE  ⊑ FailPath => FailPath
+sE  ⊑ Rest & sE !⊑ FailPath => Rest
+sE !⊑ Rest & sE !⊑ FailPath => ϝ
+
+given: !sE Rest / FailPath
+sE  ⊑ Rest & sE  ⊑ FailPath => &sE FailPath    # Probably very rare usage
+sE !⊑ Rest & sE  ⊑ FailPath => FailPath / Rest
+sE  ⊑ Rest & sE !⊑ FailPath => ϝ
+sE !⊑ Rest & sE !⊑ FailPath => &sE Rest        # Probably very rare usage
+
+# This would combine with rules for Qualifiers
+
+each determinant is a new path for the program to take.
+
+D(e) - determinants of e
+d - the current determinant of e
+
+common_prefix(e1,e2) → {prefix, D(e1-prefix), D(e2-prefix)}
+                        {none}
+                        {unknown}
+                        {
+
+# TERM DEPTH... (possibly a useful concept for traversing these and getting
+# them into the right form...)
+
+
+
+
+**** First order of business:
+ - Tagging and function terms
+ - Desugar 'plus' expressions
+ - Inline-desugar 'opt' expressions
+ - Desugar (inline when possible) 'star' expressions
+
+
+Transformations:
+ - Correct synthesis (etc.) placement no matter the transformation
+ - Correct attribute transformation (normalization, according to rules)
+ - Mimic transformations (like attribute normalization) while traversing for
+   some purposes?
+ - Perhaps a better approach - when doing transformations, take the recursive
+   possibility into account, and also treat a reference essentially as its
+   body. (would need to better define the recursive actions, but should work
+   very well in every other way...)
+   * Wait- in addition to specifying how to handle recursion, the rewrite needs
+   to also ensure that the rule, if referenced somewhere else, is left in a
+   pristine state for the other rule. Esp, factoring out terms etc. that cross
+   the invisible border between rules.
+   * It would also imply that somehow recursion recognition is happening during
+   transformation traversal in an invisible way...
+   * Also, it would imply/require an awareness of inner-term recursion.
+ - Preserve rules reused elsewhere
+ - Correct recursion transformation actions
+ - (Correctly detect applicable recursion when traversing)
+ - When done, collapse duplicate rules (unless they are separate entrypoints,
+   in which case warn)
+
+Transformations are done on a special traversal model: recursion is defined
+only in terms of the rule where
+
+
+
+a ← b c d
+b ← e b a
+
+a ← (e <term <self) c d
+
+
+a ← b !a c / d
+SCARY!
+Does this compute at the end of the day?
+
+---------------------
+MODULES:
+
+rule ← blah blah blah
+
+(then somewhere else entirely or in the same module)
+
+thegrammar:rule
+ |State CurrNode|→ ...
+ |error ErrorData State|→ ...
+
+(would require some kind of parse_with(SynthModule)...)
+
+If the APG AST is a cyclical graph, how do you mutate it while keeping your
+position?
+Know exactly what you want to change and why... work from there.
+
+----
+Re: Getting them into PR/F form:
+
+
+e ← a b c
+b ← !a d
+
+e ← a b c / ϝ
+b ← !a d
+
+e ← a !a d c / ϝ
+e ← a (!a d c / ϝ)
+
+
+e ← a/b/c
+b ← !a d
+e ← a/b
+b ← !a d
+
+
+**** Common algorithm for joining /succ or /fail with the right spot in the
+traversal tree?
+
+# basically, used in context, they are jumps
+
+
+**** At the very beginning, inline everything that is a single non-hidden term
+(?) Nah, just suck it in, in context, as needed. If it self-recurses, then it
+will have no concrete term and therefore get sucked in as a ϝ.
+
+
+
+
+
+-------------
+e <- (a b (a !b)*)*
+
+e ←
+
+e <=- a b f / ɛ
+f <=- a (b f / f) / ɛ
+
+
+grammar    <- rule* eof
+rule       <- symbol LEFTARROW expression
+expression <- (symbol !LEFTARROW)*
+symbol     <- [a-z]
+LEFTARROW  <- '<-'
+
+grammar <-- ([a-z]'<-' ([a-z] !'<-')*)*  eof
+
+grammar <=- [a-z] '<-' g2 / eof
+g2      <=- [a-z] ('<-' g2 // g2) / ɛ
 
 
 

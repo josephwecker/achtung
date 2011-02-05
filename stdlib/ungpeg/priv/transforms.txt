@@ -18,84 +18,57 @@
 
 
 #------------------------ Aliases --------------------------------------------|
-SEQ ~ (P seq S)
-PCH ~ (P pch S)
-XCH ~ (P xch S)
-LIT ~ (P lit S)
-CHR ~ (P chr S)
-REF ~ (P ref S)
-Ɛ   ~ (P ɛ S)
-Ϝ   ~ (P ϝ S)
+SEQ ~ (Ps seq Ss)
+PCH ~ (Pp pch Sp)
+XCH ~ (Px xch Sx)
+LIT ~ (Pl lit Sl)
+CHR ~ (Pc chr Sc)
+REF ~ (Pr ref Sr)
+Ɛ   ~ (Pe ɛ Se)
+Ϝ   ~ (Pf ϝ Sf)
+
+E1 ~ (Pe1 ET1 Se1)
+E2 ~ (Pe2 ET2 Se2)
 
 αchr ~ ([] chr [])
 αlit ~ ([] lit [])
 αϝ   ~ ([] ϝ [])
+αɛ   ~ ([] ɛ [])
+αe1  ~ ([] ET1 [])
+αe2  ~ ([] ET1 [])
 #Ø
 
 #------------------------ Rewrite Rules --------------------------------------|
-┊
-┊
-
-┋
-┋
-
-│
-│
-
-╎
-╎
-╎
-╎
-
-║
-║
-║
-║
-║
-║
-
-⁑
-⁑
-⁝
-⁝
-⁝
-•
-•
-⸏
-_
-⸐
-⁜
-⁘
-‖
-⸖
-### Simplification: Dead sequence removal
+'Dead sequence removal (Simplification)'
 ### A ϝ term anywhere in a seq causes the whole thing to fail
 ### A B ϝ D → ϝ
 (Seq <αϝ>) →                                   |w'Sequence always fails'| ϝ |
 
-### Simplification: Sequence NOP removal
+'Sequence NOP removal (Simplification)'
 ### ɛ anywhere in a sequence doesn't do anything
 ### A B ɛ C → A B C
 (Seq <([] ɛ [])|R]) →                                                (Seq <R])
 
-### Simplification: Dead choice short circuit
+'Dead choice short circuit (Simplification)'
 ### Anything after an ɛ in an ord or xrd is unreachable
 ### A/B/ɛ/C/D → A/B/ɛ
 (Ord <ɛ|R]) →                                |w'Unreachable code'| (Ord <ɛ]) |
 (Xrd <ɛ|R]) →                                |w'Unreachable code'| (Xrd <ɛ]) |
+# TODO: When formalizing this syntax- remember that ..A|R] implies R != []
+# otherwise you'd write ..A]
 
-### Simplification: NOP Choice removal
+'NOP Choice removal (Simplification)'
 ### A term in an ord/xrd that is guaranteed to fail can be skipped
 ### A/B/ϝ/C/D → A/B/C/D
 (Ord <ϝ|R]) →                                                        (Ord <R])
 (Xrd <ϝ|R]) →                                                        (Xrd <R])
 
-### Simplification: Inline subgroup
+'Inline like-subgroup (Simplification)'
 ### seq, ord, and xrd are associative, and inner terms of the same type
 ### A·(B·C)·D → A·B·C·D
-(M <(([] M []) B)>) →                                                  (M <B>)
+(E1 <(αe1 B)>) →                                                     (E1 <B>)
 
-### Simplification: Inline single
+'Inline orphan (Simplification)'
 ### An ord/xrd/seq is just the term (with attributes combined)
 ### A (B*)? C → A B*? C
 ((P1 M1 S1) [((P2 E S2) B)]) →                           ((P1++P2 E S1++S2) B)

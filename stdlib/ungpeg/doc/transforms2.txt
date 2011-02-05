@@ -1,0 +1,52 @@
+
+
+Essential:
+ - unwrap opt
+ - unwrap star
+ - unwrap (non-qualifier) predicates
+
+
+'opt-unwrap-1'
+es ← e1? e2 e3
+   ← e1 e2 e3 / e2 e3
+
+'opt-unwrap-2'
+es ← e1 e2? e3
+   ← e1 (e2 e3 / e3)
+
+'opt-unwrap-3'
+es ← e1 e2 e3?
+   ← e1 e2 (e3 / ɛ)
+
+es ← e1?/e2/e3
+   ← e1/ɛ/e2/e3
+   ← e1/ɛ
+
+
+'General opt unwrap'
+(E1 B) : opt(E1) → ((Pe1 pch Se1) [
+
+'General pch unwrap'
+(SEQ [(PCH [H|Ɛ])|R]) → ((Ps++Pp pch Ss++Sp) [H|R])
+(SEQ [H1|(PCH [H2|Ɛ])|R]) → (SEQ [H1|(PCH [H2|R])])
+
+
+
+
+# Inner list matching
+#
+# []      - (like '') Matches empty
+# [T T T] - (like 'a b c') tries to match once on whole thing
+#   <T T] - (like '* b c') only tries to match last two parts once
+# [T T>   - (like 'a b *') only tries to match first two once
+#   <T>   - (like '* b *') Tries for every single term, including first and last.
+# [H|T|R] - Tries for every term except the first or last (H and R are
+#           sublists with 1 or more elements each)
+# [H|T>   - Tries for every single term except the first
+# [H>     - Just the first element
+# <T]     - Just the last element
+# <H|T]   - Tries all but last (T will always hold at least one item if it
+#           matches)
+
+# ( <H|T>   - ERROR Bad syntax. The pipes pair up with square ends only)
+# ( <H|T|R> - ERROR Bad syntax )

@@ -1,10 +1,32 @@
-Benefits it shares with PEGs
+Benefits it shares with PEGs/packrat-parsers
+ - Deterministic - one parse tree for a given language
+ - Linear time complexity
+ - Unification of lexical and syntactical processing
+ - Operations tuned to programming tasks
+ - Unlimited look-ahead
+ - Context-sensitive languages allowed
 
+Benefits shared with other extensions to PEGs/packrat-parsers
+ - Left recursion
+ - Tagging for synthesis
+ - Orthogonal synthesis (modules)
+ - "Inline" expression syntax (APEXP/PEGEXP)
+ - (Implementation specific: automatic unicode support)
 
 Benefits unique to AP/APGs
+ - Constant space complexity
+ - Sometimes sublinear time complexity (fail and succ shortcircuits)
+ - LALR comparible speed. (Or even faster?)
+ - Idealized error state feedback (easy meaningful error messages)
+ - More mathematically robust and well-defined
+ - In-Line
+ - Degenerate loop detection
+ - Converts any PEG into a well-formed variant
 
-
-
+Future directions
+ - Binary matching
+ - Formalized Adaptability
+ - (Achtung- ability to attach it to inline text at any point)
 
 
 --------------------------

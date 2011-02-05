@@ -457,7 +457,7 @@ e <-- something e / rest
 
 ******
 to prove: lookahead on terminal does not affect constant space / linear time complexity
-
+IF LIMITED CONSTANT
 ******
 #NOTE: Possibly simplifies things (for users' understanding) if predicates are
 #completely invisible to transformation expressions. (problem might be when
