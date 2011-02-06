@@ -21,7 +21,7 @@ ref           <- nonterm !(_S DEFINE)                `{ref,?noattr,?e2(?p1)}`;
 
 specials      <- any / eof / succ / fail / fin                              ~;
 fin           <- "\\fin" !normal_sym / "‣"                 `{fin,?noattr,[]}`;
-any           <- "\\any" !normal_sym / "."                `{chr,?noattr,any}`;
+any           <- "\\any" !normal_sym / "."              `{chr,?noattr,[any]}`;
 eof           <- "\\eof" !normal_sym                       `{eof,?noattr,[]}`;
 succ          <- "\\epsilon" !normal_sym
                / "\\empty" !normal_sym
