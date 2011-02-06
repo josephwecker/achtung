@@ -3,9 +3,9 @@ peg_grammar   <- _S rule+ EOF                                           `?p2`;
 rule          <- ENTRY? nonterm _S DEFINE _S expr _S
                  transform? _S RULE_DELIM?          `c_rule(?p1,?p2,?p6,?p8)`;
 
-expr          <- ordered / sequence / primary                               ~;
+expr          <- pchoice / sequence / primary                               ~;
 
-ordered       <- alt (_S ORD alt)+              `{ord,?noattr,[?p1|?i(2,3)]}`;
+pchoice       <- alt (_S PCH alt)+              `{pch,?noattr,[?p1|?i(2,3)]}`;
 alt           <- sequence / primary                                         ~;
 sequence      <- primary ([,]? _S primary)+     `{seq,?noattr,[?p1|?i(2,3)]}`;
 
@@ -13,18 +13,20 @@ primary       <- prefix* atomic suffix*              `c_primary(?p1,?p2,?p3)`;
 prefix        <- notp / andp / opt2                                         ~;
 suffix        <- star / plus / opt                                          ~;
 atomic        <- _S trans_pref?
-                 (specials / call / paren_expr / literal
+                 (specials / ref / paren_expr / literal
                   / charclass) _S                                 `{?p2,?p3}`;
 
 paren_expr    <- GRP_OPEN expr GRP_CLOSE                                `?p2`;
-call          <- nonterm !(_S DEFINE)               `{call,?noattr,?e2(?p1)}`;
+ref           <- nonterm !(_S DEFINE)                `{ref,?noattr,?e2(?p1)}`;
 
-specials      <- any / eof / succ / fail                                    ~;
-any           <- "any" !normal_sym / "."              `{special,?noattr,any}`;
-eof           <- "eof" !normal_sym                    `{special,?noattr,eof}`;
-succ          <- "succ" !normal_sym / "epsilon" !normal_sym
-               / "''" / '""'                         `{special,?noattr,succ}`;
-fail          <- "fail" !normal_sym                  `{special,?noattr,fail}`;
+specials      <- any / eof / succ / fail / fin                              ~;
+fin           <- "\\fin" !normal_sym / "‣"                 `{fin,?noattr,[]}`;
+any           <- "\\any" !normal_sym / "."                `{chr,?noattr,any}`;
+eof           <- "\\eof" !normal_sym                       `{eof,?noattr,[]}`;
+succ          <- "\\epsilon" !normal_sym
+               / "\\empty" !normal_sym
+               / "ɛ" / "''" / '""'                         `{eps,?noattr,[]}`;
+fail          <- "\\fail" / "ϝ" !normal_sym               `{fail,?noattr,[]}`;
 
 nonterm       <- !TRANS (token_sym / normal_sym)                        `?p2`;
 token_sym     <- [A-Z0-9_-]+ !normal_sym          `{token,?scan([$',?N,$'])}`;
@@ -37,7 +39,7 @@ doublequoted  <- '"' not_dquot* '"'                                         ~;
 not_squot     <- !"'" ("\\" . / .)                                      `?p2`;
 not_dquot     <- !'"' ("\\" . / .)                                      `?p2`;
 
-charclass     <- "[" range* char* "]"               `{char,?noattr,?p2++?p3}`;
+charclass     <- "[" range* char* "]"                `{chr,?noattr,?p2++?p3}`;
 range         <- char "-" char                                    `{?p1,?p3}`;
 char          <- (&. char_escapes) / (!"]" .)              `?scan(["$",?p2])`;
 char_escapes  <- "\\^" [a-zA-Z] / "\\" o (o o?)? / "\\x{" h+ "}" /
@@ -72,7 +74,7 @@ opt2          <- "_" _S                                                 `opt`;
 
 GRP_OPEN      <- "(" _S                                          `'GRP_OPEN'`;
 GRP_CLOSE     <- ")" _S                                         `'GRP_CLOSE'`;
-ORD           <- "/" _S                                               `'ORD'`;
+PCH           <- "/" _S                                               `'PCH'`;
 DEFINE        <- "<-" _S                                           `'DEFINE'`;
 TRANS         <- "->" _S                                            `'TRANS'`;
 ENTRY         <- ":" _S                                             `'ENTRY'`;
@@ -94,7 +96,7 @@ ML_COMMENT    <- "#|" ML_INNER* "|#"                           `'ML_COMMENT'`;
 `
 % [{rule,Name,RAttr,Body}]
 % Body ::{Type,{Modifiers,MiscAttr},Value}
-%  Type :: ref|ord|seq|lit|char|any
+%  Type :: ref|pch|seq|lit|chr|any
 %  Modifiers ::
 %    Pref :: notp|andp
 %    Suff :: star|plus|opt
