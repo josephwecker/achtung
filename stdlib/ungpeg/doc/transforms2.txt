@@ -24,11 +24,15 @@ es ← e1?/e2/e3
 
 
 'General opt unwrap'
-(E1 B) : opt(E1) → ((Pe1 pch Se1) [
+### Remove opt attributes
+### A? →(A/ɛ)
+(E1 B) : opt(E1) → ((Pe1 pch Se1--[opt]) [B Ɛ])
 
 'General pch unwrap'
+### 
+###
 (SEQ [(PCH [H|Ɛ])|R]) → ((Ps++Pp pch Ss++Sp) [H|R])
-(SEQ [H1|(PCH [H2|Ɛ])|R]) → (SEQ [H1|(PCH [H2|R])])
+(SEQ [H1|(PCH [H2|αɛ])|R]) → (SEQ [H1|(PCH [H2|R])])
 
 
 

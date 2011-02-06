@@ -77,7 +77,7 @@ E2 ~ (Pe2 ET2 Se2)
 ### Transform literal into sequence of character classes (after several
 ###   applications)
 ### 'abc' →[a] 'bc'
-(Lit [C|R]) →                                        (Seq [(𝛼chr C) (𝛼lit R)])
+(Lit [C|R]) →                                        (Seq [(αchr C) (αlit R)])
 
 ### Simplification: Empty literal
 ### By definition
