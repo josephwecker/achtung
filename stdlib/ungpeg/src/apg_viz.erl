@@ -53,17 +53,18 @@ cluster(Name,Body) ->
     fl("}\n")
   ].
 
-callgraph({T,Attr,Val},_RecursePoint,[FID|_],[SID|_],{FC,SC}) when T==char;T==lit ->
+callgraph({T,Attr,Val},_RecursePoint,[FID|_],[SID|_],{FC,SC}) when T==chr;T==lit ->
   ID = id(Attr),
   [node(T,ID,Val),fail_edge(ID,FID,FC),succ_edge(ID,SID,SC)];
 
-callgraph({T,_,EL},RecursePoint,[FID|_],[SID|_],Colors) when T==ord;T==pch ->
+callgraph({pch,_,EL},RecursePoint,[FID|_],[SID|_],Colors) ->
   Fails = tl([id(IE)||IE<-EL]) ++ [FID],
   lists:map(fun({InnerExp,InnerFailID})->
         callgraph(InnerExp,RecursePoint,[InnerFailID],[SID],Colors)
     end, lists:zip(EL,Fails));
 
-% TODO: xch/xord -> succ to all nodes to designate parallel?
+% TODO: xch -> succ to all nodes to designate parallel?
+%   Fail action in inner sequences shortcircuits to the xch's fail-id
 
 callgraph({T,_,EL},RecursePoint,[FID|_],[SID|_],Colors) when T==seq ->
   Succs = tl([id(IE)||IE<-EL]) ++ [SID],
@@ -74,12 +75,12 @@ callgraph({T,_,EL},RecursePoint,[FID|_],[SID|_],Colors) when T==seq ->
 callgraph(_,_,_,_,_) -> "".
 
 
-node(char,ID,Val) -> fl("~s [style=\"filled\",fillcolor=\"/greys9/2\",label=\"~s\"];",[ID,pp_ranges(Val)]);
+node(chr,ID,Val) -> fl("~s [style=\"filled\",fillcolor=\"/greys9/2\",label=\"~s\"];",[ID,pp_ranges(Val)]);
 node(lit,ID,Val) -> fl("~s [style=\"filled\",fillcolor=\"/greys9/3\",label=\"'~s'\"];",[ID,str(Val)]).
 fail_edge(FromID, ToID, Color) -> fl("~s -> ~s [style=\"dashed\",color=\"/reds9/~s\"];",[FromID,ToID,Color]).
 succ_edge(FromID, ToID, Color) -> fl("~s -> ~s [style=\"solid\",color=\"/greens9/~s\"];",[FromID,ToID,Color]).
 
-id({T,_,[H|_]}) when T==ord;T==xord;T==xrd;T==seq;T==pch;T==xch -> id(H);
+id({T,_,[H|_]}) when T==seq;T==pch;T==xch -> id(H);
 id({_T,Attr,_B}) -> id(Attr);
 id(Attr) -> proplists:get_value(uid,Attr).
 

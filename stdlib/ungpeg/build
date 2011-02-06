@@ -14,5 +14,5 @@ echo Compiling apg_to_parser
 erlc -o ebin src/apg_to_parser.erl
 
 echo Compiling apg_viz
-erlc -o ebin src/apg_viz
+erlc -o ebin src/apg_viz.erl
 

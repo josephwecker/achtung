@@ -13,7 +13,7 @@ make_defs([],Defs) -> Defs;
 make_defs([{rule,Name,Attrs,{ExType,ExAttr,ExBody}}|R],Defs) ->
   make_defs(R,Defs:store(Name,give_uids({ExType,ExAttr++Attrs,ExBody}))).
 
-give_uids({T,A,L}) when T==ord;T==xord;T==xrd;T==seq;T==pch;T==xch ->
+give_uids({T,A,L}) when T==seq;T==pch;T==xch ->
   {T,[{uid,uid(T)}|A],lists:map(fun give_uids/1, L)};
 give_uids({T,A,B}) -> {T,[{uid,uid(T)}|A],B}.
 
