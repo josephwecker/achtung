@@ -22,6 +22,8 @@ Benefits unique to AP/APGs
  - In-Line
  - Degenerate loop detection
  - Converts any PEG into a well-formed variant
+ - APG/PEG rewriting grammar (formally defined)
+ - APG/PEG visualization & graph-theory interpretation
 
 Future directions
  - Binary matching
