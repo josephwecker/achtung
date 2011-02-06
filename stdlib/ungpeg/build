@@ -10,8 +10,9 @@ erlc -o ebin priv/ungpeg_n.erl
 echo Compiling ungpeg_optimize
 erlc -o ebin src/ungpeg_optimize.erl
 
-echo Compiling ungpeg_gen
-erlc -o ebin src/ungpeg_gen.erl
+echo Compiling apg_to_parser
+erlc -o ebin src/apg_to_parser.erl
 
-echo Compiling ungpeg
-erlc -o ebin src/ungpeg.erl
+echo Compiling apg_viz
+erlc -o ebin src/apg_viz
+
