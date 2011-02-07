@@ -352,14 +352,10 @@ pp_suffs([_|R],Acc)            -> pp_suffs(R,Acc).
 
 all_atomics(L) ->
   lists:all(fun
-      ({chr,_,_}) -> true;
-      ({lit,_,_}) -> true;
-      ({eof,_,_}) -> true;
-      ({fin,_,_}) -> true;
-      ({eps,_,_}) -> true;
-      ({ref,_,_}) -> true;
       ({pch,_,_}) -> false;
-      ({seq,_,_}) -> false
+      ({seq,_,_}) -> false;
+      ({xch,_,_}) -> false;
+      (_) -> true
     end, L).
 
 chr_replace(Needle,Replacement,Haystack) ->
