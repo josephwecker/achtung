@@ -1,0 +1,42 @@
+
+
+
+        |S1|=0
+/---\   {chars}
+| S |------------------
+\-+-/   
+  |      out/in
+  |     S1:ɛ/C
+  |     {chars}
+  +-----------------
+  |
+  |     S1/⊥/C
+  |     {chars}
+  +-----------------
+
+
+push Var
+pop Lit
+pop all - combine into synthesis variable
+
+
+
+
+Stacks with only one kind of element (or with something that does not need the
+popped results) can be implemented as simply a counter.
+
+
+Synthesis-accumulator
+General-call-stack
+
+
+-----
+Some kind of algorithm for recursively finding submachines, not to mention
+showing whether or not certain machines are suffixes of others.
+
+
+
+Hypothesis: The "strange" problem- a←&(y![b]) ... The predicate can be shown
+to be a prefix to the remaining via automaton analysis...
+
+
