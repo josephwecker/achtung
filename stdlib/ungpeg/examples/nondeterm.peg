@@ -1,0 +1,6 @@
+# {a^i b^j c^k | i,j,k>=0 && (i = j || i = k)}
+
+A  ← IJ / IK
+IJ ← ([a] IJ [b])* [c]*
+IK ← [a] IK [c] / [b]*
+
