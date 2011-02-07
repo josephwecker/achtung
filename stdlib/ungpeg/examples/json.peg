@@ -4,7 +4,7 @@ object    <- '{'S?pair (S? ',' S? pair)* S? '}'/'{'S?'}'   ->      (obj $pair)
 pair      <- S? str S? ':' S? json_val S?                  -> ($str $json_val)
 array     <- '[' S? json_val (S?','S?json_val)* S?']'
            /'['S?']'                                       ->        $json_val
-str       <- '"' (!'"' ('\\\\' / '\\"' / any))* '"'        ->             $any
+str       <- '"' (!'"' ('\\\\' / '\\"' / v:.))* '"'        ->               $v
 number    <- int frac? exp?                                ->      (num $1 $2)
 int       <- d:'-'? (d:nz_digit d:digit+) / d:digit        ->               $d
 frac      <- '.' digit+                                    ->        (frac $2)
