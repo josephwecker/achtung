@@ -14,7 +14,7 @@ map! \empty ɛ
 map! \fail ϝ
 map! \dig ϝ
 
-map! \|= ⊧
+map! \|= ⊨
 map! <- ←
 map! -> →
 map! \\ ⑊
@@ -34,20 +34,36 @@ syn match   rewriteDoc             /\(##\s*\)\@<=@[A-Za-z_]\+/ contained
 syn match   rewriteComment         /#.*$/ contains=rewriteTodo,rewriteDoc,@Spell
 syn region  rewriteBlockComment    start="#|" skip="\(\\#|\|\\|#\)" end="|#" contains=rewriteBlockComment,rewriteTodo,rewriteDoc,@Spell
 
-syn match   rewriteAtom            /\%(\%(^-\)\|#\)\@<!\<[a-z][A-Za-z0-9_]*\>(\@!/
+syn match   rewriteAtom            /\%(\%(^-\)\|#\)\@<!\<[a-z][A-Za-z0-9_-]*\>(\@!/
 syn match   rewriteAtom            /\\\@<!'[^']*\\\@<!'/
-syn match   rewriteVariable        /[A-Z_@][A-Za-z0-9_@]*\>/
-syn match   rewriteIgnoredVar      /\<_[A-Za-z0-9@_]*\>/
+syn match   rewriteVariable        /[A-Z_@⌀][A-Za-z0-9_@-]*\>/
+syn match   rewriteIgnoredVar      /\<_[A-Za-z0-9@_-]*\>/
 
+syn match   rewriteAliasName       /[A-Z_@⌀-][A-Za-z0-9_@-]*\>\s*:=/ contains=rewriteOperators
+
+syn match   rewriteListBrackets    /\[\|\]/
+syn match   rewriteTupleBrackets   /(\|)/
+syn region  rewriteMapClause       start=/|/ end=/|=\|⊨/ contains=TOP
+syn match   rewriteOperators       /:=/
+syn match   rewriteDelimiters      /\//
+
+syn match   rewriteRuleName        /^[a-z][A-Za-z_\/-]*\s*/ contains=rewriteDelimiters
+
+hi link rewriteRuleName            Label
+hi link rewriteMapClause           Conditional
+hi link rewriteListBrackets        Type
+hi link rewriteTupleBrackets       Structure
 hi link rewriteStringModifier      SpecialChar
 hi link rewriteString              String
 hi link rewriteTodo                SpecialComment
 hi link rewriteDoc                 SpecialComment
 hi link rewriteComment             Comment
 hi link rewriteBlockComment        Comment
-
 hi link rewriteAtom                Constant
 hi link rewriteVariable            Identifier
 hi link rewriteIgnoredVar          Comment
+hi link rewriteAliasName           Macro
+hi link rewriteOperators           Operator
+hi link rewriteDelimiters          Delimiter
 
 let b:current_syntax = "rewrite"

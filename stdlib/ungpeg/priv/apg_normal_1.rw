@@ -1,19 +1,35 @@
-SEQ    ~ (Ps seq Ss)
-PCH    ~ (Pp pch Sp)
-XCH    ~ (Px xch Sx)
-LIT    ~ (Pl lit Sl)
-CHR    ~ (Pc chr Sc)
-REF    ~ (Pr ref Sr)
-EPS    ~ (Pe EPS Se)
-FAIL   ~ (Pf FAIL Sf)
+#------------- Aliases -------------------------------------------------------|
+SEQ    := (seq Ps Ss Xs)
+PCH    := (pch Pp Sp Xp)
+XCH    := (xch Px Sx Xx)
+LIT    := (lit Pl Sl Xl)
+CHR    := (chr Pc Sc Xc)
+REF    := (ref Pr Sr Xr)
+EPS    := (ɛ   Pe Se Xe)
+FAIL   := (ϝ   Pf Sf Xf)
 
-E1     ~ (Pe1 ET1 Se1)
-E2     ~ (Pe2 ET2 Se2)
+E1     := (ET1 Pe1 Se1 Xe1)
+E2     := (ET2 Pe2 Se2 Xe2)
+E3     := (ET3 Pe3 Se3 Xe3)
 
-@CHR   ~ ([] chr [])
-@LIT   ~ ([] lit [])
-@FAIL  ~ ([] fail [])
-@EPS   ~ ([] eps [])
-@E1    ~ ([] ET1 [])
-@E2    ~ ([] ET1 [])
+⌀SEQ   := (seq Ps Ss Xs)
+⌀PCH   := (pch Pp Sp Xp)
+⌀XCH   := (xch Px Sx Xx)
+⌀LIT   := (lit [] [] [])
+⌀CHR   := (chr [] [] [])
+⌀REF   := (ref Pr Sr Xr)
+⌀EPS   := (ɛ   [] [] [])
+⌀FAIL  := (ϝ   [] [] [])
 
+⌀E1    := (ET1 [] [] [])
+⌀E2    := (ET2 [] [] [])
+⌀E3    := (ET3 [] [] [])
+
+
+#------------- Rewrite Rules -------------------------------------------------|
+## Dead sequence removal (Simplification)
+## A ϝ term anywhere in a seq causes the whole thing to fail
+## A B ϝ D → ϝ
+general/simplification/remove-dead-seq
+  | ([blah]) : hba ⊨ blah
+#  | (SEQ <⌀FAIL>) ⊨       hi      w'Sequence always fails' ϝ | ɛ
