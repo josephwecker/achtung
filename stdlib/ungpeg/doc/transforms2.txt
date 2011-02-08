@@ -1,41 +1,13 @@
-
-
 Essential:
- - unwrap opt
- - unwrap star
- - unwrap (non-qualifier) predicates
+# (0) Preprocess (desugar kpl [kleene-plus] etc.)
+# (1) Expand opt (optional) in context of current E
+# (2) Expand kst (kleene-star) in context of E if possible, or extract
+# (3) Join qprs (qualifier predicates) with chrs
+# (4) Expand nqps (non-qualifier predicates) in context of E
+# (5) ?? Extract and merge (synthesis rules of) isomorphic runs
 
-
-'opt-unwrap-1'
-es ← e1? e2 e3
-   ← e1 e2 e3 / e2 e3
-
-'opt-unwrap-2'
-es ← e1 e2? e3
-   ← e1 (e2 e3 / e3)
-
-'opt-unwrap-3'
-es ← e1 e2 e3?
-   ← e1 e2 (e3 / ɛ)
-
-es ← e1?/e2/e3
-   ← e1/ɛ/e2/e3
-   ← e1/ɛ
-
-
-'General opt unwrap'
-### Remove opt attributes
-### A? →(A/ɛ)
-(E1 B) : opt(E1) → ((Pe1 pch Se1--[opt]) [B Ɛ])
-
-'General pch unwrap'
-### 
-###
-(SEQ [(PCH [H|Ɛ])|R]) → ((Ps++Pp pch Ss++Sp) [H|R])
-(SEQ [H1|(PCH [H2|αɛ])|R]) → (SEQ [H1|(PCH [H2|R])])
-
-
-
+# def: qpr = Any predicate whose inner E can be reduced to a single chr union
+# or another qpr.
 
 # Inner list matching
 #
@@ -54,3 +26,162 @@ es ← e1?/e2/e3
 
 # ( <H|T>   - ERROR Bad syntax. The pipes pair up with square ends only)
 # ( <H|T|R> - ERROR Bad syntax )
+
+
+
+1-- Beginning of a seq
+2-- Inside of a seq
+3-- End of a seq
+4-- Beginning of a ch (or just pch?)
+5-- Inside ch
+6-- End of a ch
+
+-----------------------
+(1) Expand opt in current E context
+
+'opt-unwrap-1'
+es ← e1? e2 e3
+   ← e1 e2 e3 / e2 e3
+
+'opt-unwrap-2' # See below- need to define if e4 is better to be outside or inside.
+es ← e1 e2? e3
+   ← e1 (e2 e3 / e3)
+
+'opt-unwrap-3'
+es ← e1 e2 e3?
+   ← e1 e2 (e3 / ɛ)
+
+'opt-unwrap-4,5,6'
+es ← e1?/e2/e3
+   ← e1/ɛ/e2/e3
+   ← e1/ɛ
+
+
+'General opt unwrap'
+### Remove opt attributes
+### A? →(A/ɛ)
+(E1 B) : opt(E1) → ((Pe1 pch Se1--[opt]) [B Ɛ])
+
+'General pch unwrap'
+### 
+###
+(SEQ [(PCH [H|Ɛ])|R]) → ((Ps++Pp pch Ss++Sp) [H|R])
+(SEQ [H1|(PCH [H2|αɛ])|R]) → (SEQ [H1|(PCH [H2|R])])
+
+
+e1? e2 ... → e1 e2 / e2 ...
+e1 e2? e3 ... → e1 (e2 e3 / e3) ...
+
+e1 e2? e3 e4 → e1 (e2 e3 / e3) e4
+                e1 (e2 / ɛ) e3 e4   # **** Here we _can_ factor out the right- but why? Need a proof.
+                  # AND, to which level do we _want_ to right-factor for
+                  # current purposes?
+
+-----------------------
+(2) Expand kst in context (or extract)
+
+'kst-unwrap-1'
+es ← e1* e2 e3
+   ← e1 es / e2 e3   # TODO: synth
+
+'kst-unwrap-2,3'
+es ← e1 e2* e3 e4
+   ← e1 (e2 < / e3) e4  # < shorthand for inner-E recurse
+
+'kst-unwrap-4,5,6'
+es ← e1*/e2/e3
+   ← e1 < / ɛ
+
+-----------------------
+(3) Join QPRs (Swap with (4)?)
+
+Finding qprs
+
+e1 !e2 == !(e1 e2) e1   (from peg-popI04 - second one merely invokes e1 2x at the same spot)
+e1 / e2 == e1 / !e1 e2 == !e1 e2 / e1
+
+e <- T (!T (a / b / any))* T
+e <=- T (T ⑊ (a⑊b⑊any) (a⑊b⑊any)* T)
+
+#Predicate means:
+# - Don't need to do any kind of synthesis
+# - Which means we can cut any _trailing_ expressions that are just there to
+# consume but are guaranteed to succeed.
+
+E = [a] E2?
+&E = &[a]
+!E = ![a]
+
+ (a) Pull off any trailing {s} expressions
+ (b) Consolidate any _CH Es that only have CHRs into a single CHR union
+ (c) ...?
+
+es ← e1 qpr chr e4 ...
+   ← e1 qpr++chr e4
+
+
+es ← (e1/qpr/e2) chr
+   ← (eq/qpr++chr/e2 chr)
+
+
+
+
+
+### Simplification: Merge character classes
+### If one character class is to be tried and then another, try them at the
+###   same time instead.
+### A/B/[0-9]/[x]/C → A/B/[0-9x]/C
+(Ord <(chr C1) (chr C2)>) →                               (ord <(chr C1∪C2)>)
+(Xrd <(chr C1) (chr C2)>) →                               (xrd <(chr C1∪C2)>)
+
+(seq <!(chr C) (chr Sub)>) : C ⊇ Sub →                                      ϝ
+(seq <!(chr C1) (chr C2)>) →                               (seq <(chr C1∖C2)>)
+(seq <&(chr C1) (chr C2)>) : C1∩C2 = {}→                                    ϝ
+(seq <&(chr C1) (chr C2)>) →                              (seq <(chr C1∩c2)>)
+
+-----------------------
+(4) Expand NQPs
+
+PRE Rest / FailPath
+(PRE = predicated Expression)
+
+(4.1) Beginning of seq
+es ← PRE e2 e3
+   ← PRE e2 e3 / ϝ
+
+(4.2) Middle of seq
+es ← e1 PRE e3
+   ← e1 (PRE e3 / ϝ)
+
+(4.3) End of seq
+es ← e1 e2 PRE
+   ← e1 e2 (PRE / ϝ)
+
+(4.4) Beginning of CH
+es ← PRE/e2/e3
+   ← PRE ɛ/e2/e3
+...
+
+#So whenever an E is called, one must specify it's success and failure paths,
+# especially here, because that's the only way a PRE can be reduced.
+
+
+given: &sE Rest / FailPath
+sE  ⊑ Rest & sE  ⊑ FailPath => Rest / FailPath
+sE !⊑ Rest & sE  ⊑ FailPath => FailPath
+sE  ⊑ Rest & sE !⊑ FailPath => Rest
+sE !⊑ Rest & sE !⊑ FailPath => ϝ
+
+given: !sE Rest / FailPath
+sE  ⊑ Rest & sE  ⊑ FailPath => &sE FailPath    # Probably very rare usage
+sE !⊑ Rest & sE  ⊑ FailPath => FailPath / Rest
+sE  ⊑ Rest & sE !⊑ FailPath => ϝ
+sE !⊑ Rest & sE !⊑ FailPath => &sE Rest        # Probably very rare usage
+
+The prefix function is the tricky one. It will fall into one of three
+categories:
+1* CHR intersection/division (in which it gets absorbed into the other CHR)
+2* Term & inner-term (isomorphic) matching
+3* (most difficult) NFA quasi-isomorphism check
+
+

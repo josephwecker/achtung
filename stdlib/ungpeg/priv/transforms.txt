@@ -49,6 +49,10 @@ E2 ~ (Pe2 ET2 Se2)
 ### A B ɛ C → A B C
 (Seq <([] ɛ [])|R]) →                                                (Seq <R])
 
+
+dead_choice_short_circuit |=
+⊧ ⊢
+
 'Dead choice short circuit (Simplification)'
 ### Anything after an ɛ in an ord or xrd is unreachable
 ### A/B/ɛ/C/D → A/B/ɛ

@@ -203,13 +203,13 @@ c <- something (!DELIM rest_a / DELIM rest_b)
 (via regrouping above)
 
 
-e / success == &e e
-(&e e)      == e?
-(!e .) e    == (&e e) / any
+FALSE e / success == &e e
+FALSE (&e e)      == e?
+FALSE (!e .) e    == (&e e) / any
 
 
 e <- T (!T (a / b / any))* T
-e <=- T (T ; (a;b;any) (a;b;any)* T)
+e <=- T (T ⑊ (a⑊b⑊any) (a⑊b⑊any)* T)
 
 str <- '"' (!'"' ('\\\\' / '\\"' / any))* '"'
 str </- '"' ('"' ; ('\\' ('\\' ║ '"') ; any)* '"') # not right because inner consumes trailing '"' - should give always fails warning
