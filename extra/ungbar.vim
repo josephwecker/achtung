@@ -20,7 +20,7 @@ syn region  ungbarBinaryString    start=+"+  skip=+\n\\\\\|\\"+  end=+"+ contain
 syn keyword ungbarTodo            TODO FIXME XXX NOTE NOTES contained
 syn match   ungbarDoc             /\(##\s*\)\@<=@[A-Za-z_]\+/ contained
 syn match   ungbarComment         /#.*$/ contains=ungbarTodo,ungbarDoc,@Spell
-syn region  ungbarBlockComment    start="#|" skip="\(\\#|\|\\|#\)" end="|#" contains=ungbarBlockComment,ungbarTodo,ungbrDoc,@Spell
+syn region  ungbarBlockComment    start="#|" skip="\(\\#|\|\\|#\)" end="|#" contains=ungbarBlockComment,ungbarTodo,ungbarDoc,@Spell
 
 syn keyword ungbarBoolean         true false
 syn keyword ungbarConditional     if else switch when
