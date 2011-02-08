@@ -22,6 +22,34 @@ pop all - combine into synthesis variable
 
 
 
+--------------
+
+parser-combinator → NFA decomposition
+
+E(j) → {〈succ,j+n〉,〈fail,j〉}
+E = combinator
+j = index into input
+
+
+# (0) Preprocess (desugar kpl [kleene-plus] etc.)
+# (1) Expand opt (optional) in context of current E
+# (2) Expand kst (kleene-star) in context of E if possible, or extract
+# (3) Join qprs (qualifier predicates) with chrs
+# (4) Expand nqps (non-qualifier predicates) in context of E
+
+# def: qpr = Any predicate whose inner E can be reduced to a single chr union
+# or another qpr.
+
+
+ɛ in seq shortcircuits to next in seq
+ϝ in seq shortcircuits to after seq
+ɛ in pch shortcircuits to after pch
+ϝ in pch shortcircuits to next pch
+
+
+--------------
+
+
 Stacks with only one kind of element (or with something that does not need the
 popped results) can be implemented as simply a counter.
 

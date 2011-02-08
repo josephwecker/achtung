@@ -1,0 +1,11 @@
+digraph G {
+  label = "a <- [a] [b] [c]";
+  a [shape=circle,style=filled,fillcolor="#dddddd"];
+  "[a]" [shape=circle];
+  "[b]" [shape=circle];
+  "[c]" [shape=circle];
+  a -> "[a]";
+  "[a]" -> "[b]";
+  "[b]" -> "[c]";
+  "[c]" -> succ;
+}
