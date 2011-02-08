@@ -1,3 +1,9 @@
+--- Current
+[ ] Transformation execution engine
+[ ] Pre-NFA normalization
+
+
+--- Overview (older)
 [ ] Opt backtracking/memoizing elimination
 [ ] Multi backtracking/memoization elimination
 [ ] Predicate backtracking/memoization elimination
