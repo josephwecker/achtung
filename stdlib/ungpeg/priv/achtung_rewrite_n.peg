@@ -1,0 +1,75 @@
+
+% Alias definition
+% Tuple
+% List Abbreviation
+% Mapping-name / title (optional)
+% Mapping
+% Mapping qualifier
+% Message generator
+% Comments / whitespace
+
+%------------ Grammar -------------------------------------------------------|
+%rewrite_map   <- mapping / alias
+rewrite_map   <- mapping                                                    ~;
+mapping       <- title? match_expr BECOMES dest_expr                        ~;
+
+
+
+`
+%------------ Misc Helpers --------------------------------------------------|
+
+-define(idx, {line(Index),column(Index)}).
+-define(N, Node).
+-define(pos, line(Index)).
+-define(e1, ?e1(?N)).
+-define(e2, ?e2(?N)).
+-define(e3, ?e3(?N)).
+-define(p1, ?p1(?N)).
+-define(p2, ?p2(?N)).
+-define(p3, ?p3(?N)).
+-define(p4, ?p4(?N)).
+-define(p5, ?p5(?N)).
+-define(p6, ?p6(?N)).
+-define(p7, ?p7(?N)).
+-define(p8, ?p8(?N)).
+-define(flat, ?flat(?N)).
+-define(rev, ?rev(?N)).
+-define(e1(T), element(1,T)).
+-define(e2(T), element(2,T)).
+-define(e3(T), element(3,T)).
+-define(p1(L), lnth(1,L)).
+-define(p2(L), lnth(2,L)).
+-define(p3(L), lnth(3,L)).
+-define(p4(L), lnth(4,L)).
+-define(p5(L), lnth(5,L)).
+-define(p6(L), lnth(6,L)).
+-define(p7(L), lnth(7,L)).
+-define(p8(L), lnth(8,L)).
+-define(i(OPos,IPos), [lnth(IPos, IL)||IL<-lnth(OPos,?N)]).
+-define(flat(L), lists:flatten(L)).
+-define(rev(L), lists:reverse(L)).
+-define(scan,?scan(?N)).
+-define(scan(V), % For simple terms that the erlang scanner can handle (most atomic literals)
+  case erl_scan:string(?flat(V),?pos) of
+    {ok, [One], _} -> element(3,One);
+    {ok, Tokens, _} ->
+      {ok, Parsed} = erl_parse:parse_term(Tokens ++ [{dot,?pos}]),
+      Abs = erl_parse:abstract(Parsed);
+    Err -> throw(Err)
+  end).
+lnth(Pos, L) ->
+  case (catch lists:nth(Pos,L)) of
+    {'EXIT',_}->[];
+    O->O
+  end.
+
+-define(fixlstr, ?fixlstr(?N)).
+-define(fixlstr(N), ["\"", rm_char($","\\\"",?flat(N)), "\""]).
+% Remove (or replace) a character
+%rm_char(C,L)        ->rm_char(C,[],L,[]).
+rm_char(C,R,L)      ->rm_char(C,R,L,[]).
+rm_char(_,_,[],A)   ->?flat(?rev(A));
+rm_char(C,R,[C|T],A)->rm_char(C,R,T,[R|A]);
+rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
+% vim: set noai filetype=erlang textwidth=100:
+`
