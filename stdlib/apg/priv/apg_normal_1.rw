@@ -31,5 +31,6 @@ E3     := (ET3 Pe3 Se3 Xe3)
 ## A ϝ term anywhere in a seq causes the whole thing to fail
 ## A B ϝ D → ϝ
 general/simplification/remove-dead-seq
-  | ([blah]) : hba ⊨ blah
-#  | (SEQ <⌀FAIL>) ⊨       hi      w'Sequence always fails' ϝ | ɛ
+  | ([blah]) : hba ⊨ blah ; hey ; [(yo yo (cheerio))]
+  | (SEQ [⌀FAIL]) ⊨ w ; ϝ
+#  | (SEQ <⌀FAIL>) ⊨ w'Sequence always fails'; ϝ

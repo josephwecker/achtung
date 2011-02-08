@@ -22,20 +22,24 @@ name          <- chained_atom / atom                                        ~;
 %------------ Clauses -------------------------------------------------------|
 rw_clauses    <- rwclause+                                         `?listify`;
 rwclause      <- _s "|" rw_expr _s match_qual?
-                 _s ENTAILS rw_expr             `{rwclause,?pos,?p3,?p5,?p8}`;
+                 _s ENTAILS rw_exprs            `{rwclause,?pos,?p3,?p5,?p8}`;
 match_qual    <- !ENTAILS ":" (_s guard_expr)*                      `?i(3,2)`;
 
 %------------ Expressions ---------------------------------------------------|
 guard_expr    <- _s atom                                                `?p2`; % TMP
-rw_expr       <- _s (r_tuple / r_list / atom / r_variable)              `?p2`;
+rw_exprs      <- rw_expr (_s ';' _s rw_expr)*                 `[?p1|?i(2,4)]`;
+rw_expr       <- _s (r_tuple / r_list / erl_atom / r_variable)          `?p2`;
 
 %------------ Terms ---------------------------------------------------------|
 chained_atom  <- atom ("/" atom)*                             `[?p1|?i(2,2)]`;
-atom          <- simple_atom / complex_atom                           `?scan`;
-simple_atom   <- [a-z] [a-zA-Z0-9_@?-]* / 'ϝ' / 'ɛ'            `[$',Node,$']`;
+erl_atom      <- atom                                        `{atom,?pos,?N}`;
+atom          <- special_atom / simple_atom / complex_atom            `?scan`;
+simple_atom   <- [a-z] [a-zA-Z0-9_@?-]*                        `[$',Node,$']`;
+special_atom  <- eps / fail                                                 ~;
+eps           <- 'ɛ'                                       `"'\\varepsilon'"`;
+fail          <- 'ϝ'                                          `"'\\digamma'"`;
 complex_atom  <- "'" not_apos* "'"                                          ~;
 not_apos      <- !"'" ("\\" . / !"\\" .)                                `?p2`;
-
 r_variable    <- ([A-Z_@] / '⌀') [A-Za-z0-9?_]*                      `?c_var`;
 
 
