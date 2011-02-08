@@ -9,15 +9,77 @@
 % Comments / whitespace
 
 %------------ Grammar -------------------------------------------------------|
-%rewrite_map   <- mapping / alias
-rewrite_map   <- mapping                                                    ~;
-mapping       <- title? match_expr BECOMES dest_expr                        ~;
+forms         <- (_s mapping)* _s                         `{ok,?pos,?i(1,2)}`; 
 
+%------------ Rewrite Rules -------------------------------------------------|
+mapping       <- name rw_clauses                     `{mapping,?pos,?p1,?p2}`;
+name          <- chained_atom / atom                                        ~;
+
+%------------ Clauses -------------------------------------------------------|
+rw_clauses    <- rwclause+                                         `?listify`;
+rwclause      <- _s "|" rw_expr _s match_qual?
+                 _s ENTAILS rw_expr             `{rwclause,?pos,?p3,?p5,?p8}`;
+match_qual    <- !ENTAILS "|" (_s guard_expr)*                      `?i(3,2)`;
+
+%------------ Expressions ---------------------------------------------------|
+guard_expr    <- _s atom                                                `?p2`; % TMP
+rw_expr       <- _s (r_tuple / r_list / atom)                           `?p2`;
+%rw_expr       <- _s atom `?p2`;
+
+%------------ Terms ---------------------------------------------------------|
+chained_atom  <- atom ("/" atom)*                             `[?p1|?i(2,2)]`;
+atom          <- simple_atom / complex_atom                           `?scan`;
+simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
+complex_atom  <- "'" not_apos* "'"                                          ~;
+not_apos      <- !"'" ("\\" . / !"\\" .)                                `?p2`;
+
+%------------ Tuples & Lists -------------------------------------------------
+r_tuple       <- _s (empty_t / r_comma_t / r_space_t)         `?c_tuple(?p2)`;
+r_comma_t     <- "(" _s rw_expr (_s "," _s rw_expr)* _s ")"   `[?p3|?i(4,4)]`;
+r_space_t     <- "(" _s rw_expr (sd rw_expr)* _s ")"          `[?p3|?i(4,2)]`;
+r_list        <- _s (empty_l / r_comma_l / r_space_l)          `?c_list(?p2)`;
+r_comma_l     <- "[" _s rw_expr (_s "," _s rw_expr)* _s r_t? "]" `{[?p3|?i(4,4)],?p6}`;
+r_space_l     <- "[" _s rw_expr (sd rw_expr)* _s r_t? "]"        `{[?p3|?i(4,2)],?p6}`;
+r_t           <- "|" _s rw_expr _s                                      `?p3`;
+empty_l       <- "[" _s "]"                                              `[]`;
+empty_t       <- "(" _s ")"                                              `[]`;
+
+%------------ Whitespace, Comments, Delimiters ------------------------------|
+ENTAILS       <- "⊧" / "|=" / "="                                        `?X`;
+_s            <- s?                                                      `?X`; % Optional whitespace
+s             <- (space / nl)+                                           `?X`; % At least one whitespace/newline
+nl            <- comment? newline                                        `?X`; % End of a line
+
+newline       <- "\n" / "\r\n" / "\r"                                    `?X`;
+space         <- [ \t] / ml_comment                                      `?X`;
+comment       <- "#" (!newline .)* &newline                              `?X`;
+ml_inner      <- ml_comment / (!"#|" !"|#" .)+                           `?X`;
+ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
+
+%--- from old ungbar. possibly useful later
+
+sd            <- ( "\\"? (space / nl) )+                                 `?X`; % Space delimiter
+%_sp           <- sp?                                                     `?X`; % Optional spacing (no newline)
+%sp            <- space+                                                  `?X`; % At least one space (not newline)
+%sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent) _s    `?X`;
+%eblock        <- _s ("}" _s dedent / dedent _s "}" / "}" / dedent) _s    `?X`;
+%eos           <- _sp (";" / nl / !.)                                     `?X`; % End of a statement
+%eol           <- _sp ";"? (nl _s / &eblock / !.)                         `?X`; % End of a expression line
+%indent        <- "\x06"                                                  `?X`;
+%dedent        <- "\x15"                                                  `?X`;
 
 
 `
 %------------ Misc Helpers --------------------------------------------------|
+-compile({nowarn_unused_function, [{rm_char,3},{rm_char,4}]}).
+-define(X, []). % Consume but ignore
+-define(I, Index).
+-define(inspect, ?inspect(?N)).
+-define(inspect(N), begin io:format("~n====== inspect =======~n~p~n"
+        "======================~n", [N]), N end).
 
+-define(listify, ?listify(?N)). % Ensure it's a list
+-define(listify(V), case V of [_|_]->V;_->[V] end).
 -define(idx, {line(Index),column(Index)}).
 -define(N, Node).
 -define(pos, line(Index)).
@@ -54,9 +116,28 @@ mapping       <- title? match_expr BECOMES dest_expr                        ~;
     {ok, [One], _} -> element(3,One);
     {ok, Tokens, _} ->
       {ok, Parsed} = erl_parse:parse_term(Tokens ++ [{dot,?pos}]),
-      Abs = erl_parse:abstract(Parsed);
+      Abs = erl_parse:abstract(Parsed), io:format("~p~n",[Parsed]);
     Err -> throw(Err)
   end).
+-define(c_tuple(Items), {tuple, ?pos, Items}).
+-define(c_list(IT),case IT of []->?c_nil;{I,T}->l2c(I,T,?pos) end).
+-define(c_nil, {nil,?pos}).
+
+% List to Conses - basically recursively (not tail recursively at the moment)
+% takes a proper list with a tail (usually [] when the result is going to be
+% proper) and turns it into nested cons tuples.
+% Usage: l2c(ProperList, TailForEnd, Position)
+l2c([H|R],T,Pos) ->
+  {cons, Pos, H,
+    case R of
+      []->  % Done with main proper-list, time for tail
+        case T of
+          [] -> {nil,Pos};    % Final result is proper
+          V  -> V             % Final result is improper
+        end;
+      [_|_] -> l2c(R, T, Pos) % Keep going deeper. I hope your stack loves you.
+    end}.
+
 lnth(Pos, L) ->
   case (catch lists:nth(Pos,L)) of
     {'EXIT',_}->[];
