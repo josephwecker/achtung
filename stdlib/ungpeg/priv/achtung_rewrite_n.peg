@@ -23,15 +23,17 @@ match_qual    <- !ENTAILS "|" (_s guard_expr)*                      `?i(3,2)`;
 
 %------------ Expressions ---------------------------------------------------|
 guard_expr    <- _s atom                                                `?p2`; % TMP
-rw_expr       <- _s (r_tuple / r_list / atom)                           `?p2`;
-%rw_expr       <- _s atom `?p2`;
+rw_expr       <- _s (r_tuple / r_list / atom / r_variable)              `?p2`;
 
 %------------ Terms ---------------------------------------------------------|
 chained_atom  <- atom ("/" atom)*                             `[?p1|?i(2,2)]`;
 atom          <- simple_atom / complex_atom                           `?scan`;
-simple_atom   <- [a-z] [a-z0-9_@?]*                            `[$',Node,$']`;
+simple_atom   <- [a-z] [a-zA-Z0-9_@?]*                         `[$',Node,$']`;
 complex_atom  <- "'" not_apos* "'"                                          ~;
 not_apos      <- !"'" ("\\" . / !"\\" .)                                `?p2`;
+
+r_variable    <- [A-Z_@] [A-Za-z0-9?_]*                              `?c_var`;
+
 
 %------------ Tuples & Lists -------------------------------------------------
 r_tuple       <- _s (empty_t / r_comma_t / r_space_t)         `?c_tuple(?p2)`;
@@ -47,6 +49,7 @@ empty_t       <- "(" _s ")"                                              `[]`;
 %------------ Whitespace, Comments, Delimiters ------------------------------|
 ENTAILS       <- "⊧" / "|=" / "="                                        `?X`;
 _s            <- s?                                                      `?X`; % Optional whitespace
+sd            <- ( "\\"? (space / nl) )+                                 `?X`; % Space delimiter
 s             <- (space / nl)+                                           `?X`; % At least one whitespace/newline
 nl            <- comment? newline                                        `?X`; % End of a line
 
@@ -58,7 +61,6 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 
 %--- from old ungbar. possibly useful later
 
-sd            <- ( "\\"? (space / nl) )+                                 `?X`; % Space delimiter
 %_sp           <- sp?                                                     `?X`; % Optional spacing (no newline)
 %sp            <- space+                                                  `?X`; % At least one space (not newline)
 %sblock        <- _s ("{" _s indent / indent _s "{" / "{" / indent) _s    `?X`;
@@ -122,6 +124,8 @@ sd            <- ( "\\"? (space / nl) )+                                 `?X`; %
 -define(c_tuple(Items), {tuple, ?pos, Items}).
 -define(c_list(IT),case IT of []->?c_nil;{I,T}->l2c(I,T,?pos) end).
 -define(c_nil, {nil,?pos}).
+-define(c_var, ?c_var(?N)).
+-define(c_var(Name), {var,?pos,list_to_atom(?flat(Name))}).
 
 % List to Conses - basically recursively (not tail recursively at the moment)
 % takes a proper list with a tail (usually [] when the result is going to be

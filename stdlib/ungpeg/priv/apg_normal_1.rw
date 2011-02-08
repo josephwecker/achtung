@@ -1,0 +1,19 @@
+SEQ    ~ (Ps seq Ss)
+PCH    ~ (Pp pch Sp)
+XCH    ~ (Px xch Sx)
+LIT    ~ (Pl lit Sl)
+CHR    ~ (Pc chr Sc)
+REF    ~ (Pr ref Sr)
+EPS    ~ (Pe EPS Se)
+FAIL   ~ (Pf FAIL Sf)
+
+E1     ~ (Pe1 ET1 Se1)
+E2     ~ (Pe2 ET2 Se2)
+
+@CHR   ~ ([] chr [])
+@LIT   ~ ([] lit [])
+@FAIL  ~ ([] fail [])
+@EPS   ~ ([] eps [])
+@E1    ~ ([] ET1 [])
+@E2    ~ ([] ET1 [])
+
