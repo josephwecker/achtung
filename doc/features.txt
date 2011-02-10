@@ -230,3 +230,8 @@ Expression ->
 <<  >>
 
 
+
+
+
+- Operator overloading, including lots of awesome mathematical & unicode
+  operators
