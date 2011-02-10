@@ -28,11 +28,17 @@ match_qual    <- !ENTAILS ":" (_s guard_expr)*                      `?i(3,2)`;
 %------------ Expressions ---------------------------------------------------|
 guard_expr    <- _s atom                                                `?p2`; % TMP
 rw_exprs      <- rw_expr (_s ';' _s rw_expr)*                 `[?p1|?i(2,4)]`;
-rw_expr       <- _s (r_tuple / r_list / erl_atom / r_variable)          `?p2`;
+rw_expr       <- _s (lstring
+               / r_tuple
+               / listsig
+               / atom
+               / r_variable
+               / string
+               )                                                        `?p2`;
 
 %------------ Terms ---------------------------------------------------------|
 chained_atom  <- atom ("/" atom)*                             `[?p1|?i(2,2)]`;
-erl_atom      <- atom                                        `{atom,?pos,?N}`;
+%erl_atom      <- atom                                        `{atom,?pos,?N}`;
 atom          <- special_atom / simple_atom / complex_atom            `?scan`;
 simple_atom   <- [a-z] [a-zA-Z0-9_@?-]*                        `[$',Node,$']`;
 special_atom  <- eps / fail                                                 ~;
@@ -40,19 +46,90 @@ eps           <- 'ɛ'                                       `"'\\varepsilon'"`;
 fail          <- 'ϝ'                                          `"'\\digamma'"`;
 complex_atom  <- "'" not_apos* "'"                                          ~;
 not_apos      <- !"'" ("\\" . / !"\\" .)                                `?p2`;
+
 r_variable    <- ([A-Z_@] / '⌀') [A-Za-z0-9?_]*                      `?c_var`;
 
+string        <- (_s string_part)+                              `?cats(?ip2)`;
+string_part   <- simple_string / long_string                          `?scan`;
+simple_string <- '"' not_quot* '"'                                          ~;
+not_quot      <- !'"' ("\\" . / !"\\" .)                                `?p2`;
+long_string   <- "'''" not_triple_ap* "'''"                   `?fixlstr(?p2)`;
+not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?p2`;
+
+lstring       <- atom string                     `{labeled_str,?pos,?p1,?p2}`;
 
 %------------ Tuples & Lists -------------------------------------------------
 r_tuple       <- _s (empty_t / r_comma_t / r_space_t)         `?c_tuple(?p2)`;
 r_comma_t     <- "(" _s rw_expr (_s "," _s rw_expr)* _s ")"   `[?p3|?i(4,4)]`;
 r_space_t     <- "(" _s rw_expr (sd rw_expr)* _s ")"          `[?p3|?i(4,2)]`;
-r_list        <- _s (empty_l / r_comma_l / r_space_l)          `?c_list(?p2)`;
-r_comma_l     <- "[" _s rw_expr (_s "," _s rw_expr)* _s r_t? "]" `{[?p3|?i(4,4)],?p6}`;
-r_space_l     <- "[" _s rw_expr (sd rw_expr)* _s r_t? "]"        `{[?p3|?i(4,2)],?p6}`;
-r_t           <- "|" _s rw_expr _s                                      `?p3`;
-empty_l       <- "[" _s "]"                                              `[]`;
 empty_t       <- "(" _s ")"                                              `[]`;
+
+listsig       <- _s (empty_listsig / norm_listsig)                      `?p2`;
+norm_listsig  <- (ls_head_match / ls_head_ign / ls_hd_anchor)
+                 ls_middle?
+                 (ls_tail_match / ls_tail_ign / ls_tl_anchor)
+                                                 `{listsig,?pos,?p1,?p2,?p3}`;
+ls_head_match <- "[" rw_expr _s "|"                        `{match,?pos,?p2}`;
+ls_head_ign   <- "<"                                                 `ignore`;
+ls_hd_anchor  <- "["                                                 `anchor`;
+
+ls_middle     <- rw_expr (","? rw_expr)*                      `[?p1|?i(2,2)]`;
+
+ls_tail_match <- _s "|" rw_expr _s "]"                     `{match,?pos,?p3}`;
+ls_tail_ign   <- ">"                                                 `ignore`;
+ls_tl_anchor  <- "]"                                                 `anchor`;
+
+empty_listsig <- "[" _s "]"                            `{listsig,?pos,empty}`;
+
+
+
+% head and tail can both be [] (?)
+
+% []         | no head     | no middle  | no tail     |
+% [e]        | no head     | e1 middle  | no tail     |
+% [e|e]      | exact head  | no middle  | exact tail  |
+% [e|e e|e]  | exact head  | 2 middle   | exact tail  | if head and tail not used, same as <e e>
+% [e e e]    | no head     | 3 middle   | no tail     |
+% [e|e e>    | exact head  |
+
+% HEAD  [_| (Capture) OR < (Ign) OR [ (Exact)
+% MIDDLE
+% TAIL  |_] (Capture) OR > (Ign) OR ] (Exact)
+
+% []        - {listsig, {exact,none}, [], {exact,none}}}
+% [E E E]   - {listsig, {exact,none}, [E E E], {exact,none}}}
+% [H|T]     - {listsig, {exact,{var,H}}, [], {exact,{var,H}}}     Does _not_ match [atom] - needs at least 2 terms
+% [H|E|T]   - 
+% [H|T>
+
+%   []      - Matches empty
+%   [M M M] - Tries to match once on whole thing. Inners can be listsigs, of course
+%   [H|T]   - Matches [A B C D] with H=A and T=[B C D]  (for [A] do we do H=A,T=[], or assume at
+%             least 2??)
+% [H|M|T] - Tries for every term except the first or last (H and R are
+%           sublists with 1 or more elements each)
+%           [A B C D E] would try to match in this order:
+%              H<-A, M<-B, T<-[C,D,E]
+%              H<-[A,B], M<-C, T<-[D,E]
+%              H<-[A,B,C], M<-D, T<-[E]
+%
+% [H M>   - (like 'a b *') only tries to match first two once
+% [H|M>   - Tries for every single term except the first
+% [H>     - Just the first element
+
+%   <M T] - (like '* b c') only tries to match last two parts once
+% <T]     - Just the last element
+% <H|T]   - Tries all but last (T will always hold at least one item if it
+%           matches)
+
+%   <T>   - (like '* b *') Tries for every single term, including first and last.
+
+% ( <H|T>   - ERROR Bad syntax. The pipes pair up with square ends only)
+% ( <H|T|R> - ERROR Bad syntax )
+
+% | is everything to the left or right
+%
+
 
 %------------ Whitespace, Comments, Delimiters ------------------------------|
 ENTAILS       <- "⊨" / "|=" / "="                                        `?X`;
@@ -134,27 +211,39 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
 -define(c_nil, {nil,?pos}).
 -define(c_var, ?c_var(?N)).
 -define(c_var(Name), {var,?pos,list_to_atom(?flat(Name))}).
+-define(ip1, ?ip1(?N)).
+-define(ip2, ?ip2(?N)).
+-define(ip3, ?ip3(?N)).
+-define(ip4, ?ip4(?N)).
+-define(ip1(L), [?p1(IL)||IL<-L]).
+-define(ip2(L), [?p2(IL)||IL<-L]).
+-define(ip3(L), [?p3(IL)||IL<-L]).
+-define(ip4(L), [?p4(IL)||IL<-L]).
 
 % List to Conses - basically recursively (not tail recursively at the moment)
 % takes a proper list with a tail (usually [] when the result is going to be
 % proper) and turns it into nested cons tuples.
 % Usage: l2c(ProperList, TailForEnd, Position)
-l2c([H|R],T,Pos) ->
-  {cons, Pos, H,
-    case R of
-      []->  % Done with main proper-list, time for tail
-        case T of
-          [] -> {nil,Pos};    % Final result is proper
-          V  -> V             % Final result is improper
-        end;
-      [_|_] -> l2c(R, T, Pos) % Keep going deeper. I hope your stack loves you.
-    end}.
+%l2c([H|R],T,Pos) ->
+%  {cons, Pos, H,
+%    case R of
+%      []->  % Done with main proper-list, time for tail
+%        case T of
+%          [] -> {nil,Pos};    % Final result is proper
+%          V  -> V             % Final result is improper
+%        end;
+%      [_|_] -> l2c(R, T, Pos) % Keep going deeper. I hope your stack loves you.
+%    end}.
 
 lnth(Pos, L) ->
   case (catch lists:nth(Pos,L)) of
     {'EXIT',_}->[];
     O->O
   end.
+
+-define(cats, ?cats(?N)).
+%-define(cats(Ss), erl_parse:abstract(?flat(lists:append([erl_parse:normalise(S)||S<-Ss])))).
+-define(cats(Ss), erl_parse:abstract(?flat(lists:append([S||S<-Ss])),?pos)).
 
 -define(fixlstr, ?fixlstr(?N)).
 -define(fixlstr(N), ["\"", rm_char($","\\\"",?flat(N)), "\""]).
@@ -164,5 +253,6 @@ rm_char(C,R,L)      ->rm_char(C,R,L,[]).
 rm_char(_,_,[],A)   ->?flat(?rev(A));
 rm_char(C,R,[C|T],A)->rm_char(C,R,T,[R|A]);
 rm_char(C,R,[H|T],A)->rm_char(C,R,T,[H|A]).
+
 % vim: set noai filetype=erlang textwidth=100:
 `

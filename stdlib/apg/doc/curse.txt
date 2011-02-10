@@ -387,7 +387,7 @@ A-+-《 left(A)|[0-9][-]|t《
 *** Hypothesis: Despite any tricks, _should_ never work in a PEG _UNLESS_ a cycle is a
   failure. So declaring non-termination a failure gives us the advantage of
   making left-recursion well defined as well as other things... (?)
-
+ (false I think)
 
 star expressions:
 

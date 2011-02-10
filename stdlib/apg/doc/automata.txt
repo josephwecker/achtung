@@ -1,4 +1,55 @@
+** In APG normal form 1
+   (No iteration and every predicate defined in terms of PS/F paths or chr
+   unions).
+  # (0) Preprocess (desugar kpl [kleene-plus] etc.)
+  # (1) Expand opt (optional) in context of current E
+  # (2) Expand kst (kleene-star) in context of E if possible, or extract
+  # (3) Join qprs (qualifier predicates) with chrs
+  # (4) Expand nqps (non-qualifier predicates) in context of E
 
+** Calculate common-suffixes and replace predicates wherever possible. (do
+   character unions whenever they are noticed)
+   * Unsolved: Under what configurations does this fall short of removing the
+     predicate?
+
+** Attempt to locate determination to convert all nondeterminant branches (pch)
+   into determinant + shortcut branches (xch)
+   * Unsolved: This will fail under certain forms of recursion- question
+     remains if those forms are easily identified and classified.
+   * There should be an easy way to do this even with most forms of
+     non-pathalogical recursion (such as when there are determinants at
+     recursion points)
+
+** Put left-recursion mechanism in place where possibly appropriate, doubling
+   as non-termination-failure checks.
+   * Unsolved: Does my earlier left-recursion mechanism break linear time
+     complexity? what is its space complexity?
+   * Unsolved: Can left-recursion mechanism be replaced when automaton stuff is
+     further advanced?
+
+** All that should remain at this point are the pathalogical cases of
+   non-determinant recursion / non-determinant mutual recursion.
+   * Unsolved: Can the pathalogical predicate prefix problems be unified with
+     the pahalogical "shaping" problems?
+   * Unsolved: Pathalogical predicate prefixes.
+   * Unsolved: Pathalogical shaping problems.
+   * Unsolved: Are there even more complex structures that I might be missing?
+     Some kind of complex combination of those that is not yet captured?
+   
+   ** Possible approaches:
+      * Since we have exhausted high-level mechanisms (?) - try converting all
+        pathalogical cases into automata (lba or multi-pushdown) and see if
+        there are suffix solutions or shaping solutions.
+      * (Keeping in mind that there is a natural determinism to the output
+        structures and acceptance patterns)
+      * Just memoize (give up. fail.) ;)
+
+So Automatons are possible solutions to the final problems, but probably cannot
+be studied carefully until the earlier transitions are done, AND they are also
+a possible intermediate translation for the final APG in order to help build a
+faster parsing engine.
+
+---------------------------------------------------------------------------------|
 
 
         |S1|=0
@@ -13,6 +64,10 @@
   |     S1/⊥/C
   |     {chars}
   +-----------------
+
+
+{chars}
+
 
 
 push Var
@@ -68,3 +123,40 @@ Hypothesis: The "strange" problem- a←&(y![b]) ... The predicate can be shown
 to be a prefix to the remaining via automaton analysis...
 
 
+
+-------------
+
+
+
+A ← aAa/a
+A ← aAb/a
+A ← aAc/b
+
+
+------
+
+
+A   ← Big A Big Tail / Big
+Collapses at Tail
+
+A ← aAa/a
+
+
+
+Strategy 1: memoized backtrack until it succeeds
+Strategy 2: data-structure of possible collapse points (with the next one
+            possible ready to pull if the next character is determinant)
+Strategy 3: constraints on counts etc. and programmatically construct the
+            correct structure after the fact.
+
+
+A ← nAn/n
+n ← [0-9]* '_'
+
+
+A ← n < n < m / n
+
+
+
+
+R ← a R a a a / a a R / a

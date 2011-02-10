@@ -1,3 +1,34 @@
+#| APG Normal Form One
+ 
+  Term rewriting expressions to normalize and simplify a PEG in preparation
+  for turning it into an optimized Analytic Parsing Grammar.
+
+  @author:    Joseph Wecker <joseph.wecker@gmail.com>
+  @copyright: Placed in Public Domain, 2011, Joseph Wecker
+
+  TODO:
+  [ ] - Move Normal Form One definition into the header here.
+  [ ] - EPS:=(ɛ...) --> ɛ:=(epsilon...) etc. (requires grammar fixes)
+  [ ] - Make sure rules make sense in light of prefixes, suffixes, and
+        synthesis attributes.
+  [ ] - Syntax-highliting for list-signatures & labeled strings
+  [ ] - Move the rest in from priv/transforms.rw (marking ones that need more
+        work)
+  [ ] - Get set binary operations parsing in guard sequences
+  [ ] - Get set count operations parsing in guard sequences
+  [ ] - Figure out a syntax for attribute rewriting (possibly just aliases and
+        listsigs on the attribute parts)
+  [ ] - Consolidate prefix/suffix? (and possibly even synthesis
+  [ ] - Get attribute rewriting rules from doc/ungpeg.asciidoc moved over here
+        (marking any that may need more work)
+  [ ] - Figure out any rewriting needed for synthesis functions (or detach them
+        possibly from the normal terms altogether and make them independent...)
+  [ ] - 
+
+
+|#
+
+
 #------------- Aliases -------------------------------------------------------|
 SEQ    := (seq Ps Ss Xs)
 PCH    := (pch Pp Sp Xp)
@@ -27,10 +58,32 @@ E3     := (ET3 Pe3 Se3 Xe3)
 
 
 #------------- Rewrite Rules -------------------------------------------------|
-## Dead sequence removal (Simplification)
-## A ϝ term anywhere in a seq causes the whole thing to fail
-## A B ϝ D → ϝ
+
 general/simplification/remove-dead-seq
-  | ([blah]) : hba ⊨ blah ; hey ; [(yo yo (cheerio))]
-  | (SEQ [⌀FAIL]) ⊨ w ; ϝ
-#  | (SEQ <⌀FAIL>) ⊨ w'Sequence always fails'; ϝ
+  ## A ϝ term anywhere in a seq causes the whole thing to fail
+  ## A B ϝ D → ϝ
+  | (SEQ <⌀FAIL>) ⊨                                 w"Sequence always fails"; ϝ
+
+general/simplification/remove-seq-nop
+  ## ɛ anywhere in a sequence doesn't do anything
+  ## A B ɛ C → A B C
+  | (SEQ <⌀EPS|R]) ⊨                                                  (SEQ <R])
+
+general/simplification/shortcircuit-dead-choice
+  ## Anything after an ɛ in an ord or xrd is unreachable
+  ## A/B/ɛ/C/D → A/B/ɛ
+  | (PCH <⌀EPS|R]) ⊨                          w"Unreachable code"; (PCH <⌀EPS])
+  | (XCH <⌀EPS|R]) ⊨                          w"Unreachable code"; (XCH <⌀EPS])
+
+general/simplification/remove-choice-nop
+  ## A term in an pch/xch that is guaranteed to fail can be skipped
+  ## A/B/ϝ/C/D → A/B/C/D
+  | (PCH <⌀FAIL|R]) ⊨                                                 (PCH <R])
+  | (XCH <⌀FAIL|R]) ⊨                                                 (XCH <R])
+
+
+attribute/simplification/opt-opt
+  | (E <opt opt> S) ⊨                                               (E <opt> S)
+
+# TODO: alphabetized PCH - so that there can only be one normal form, and so
+# that XCH can left-factor much better...
