@@ -77,9 +77,10 @@ Suffixes / Quantifiers::
 === Applicable to all (all)
 
 . Every +call+ inlined except entry-points, recursive calls, and accumulators.
-. Attributes on all expressions are normalized / reduced (see below)
-. All `+` expressions normalized to `*` expressions. (only after attributes
-  fully normalized).
+  (NIX)
+. Attributes on all expressions are normalized / reduced (see below) (NIX -
+  redundant)
+. All `+` expressions normalized to `*` expressions.
 . No potential degenerate loops - or warnings emitted if applicable.
 
 === Ordered Choice (ord)

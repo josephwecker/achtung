@@ -1,65 +1,98 @@
-#| APG Normal Form One
+#|asciidoc|-------------------------------------------------------------------|
+
+APG Normal Form One
+===================
+Joseph Wecker <joseph.wecker@gmail.com>
+:copyright: Public Domain, 2011, Joseph Wecker
+:icons:
+:toc:
+:encoding: utf-8
+:lang:     en
+
  
-  Term rewriting expressions to normalize and simplify a PEG in preparation
-  for turning it into an optimized Analytic Parsing Grammar.
+Term rewriting expressions to normalize and simplify a PEG in preparation for
+turning it into an optimized Analytic Parsing Grammar.
 
-  @author:    Joseph Wecker <joseph.wecker@gmail.com>
-  @copyright: Placed in Public Domain, 2011, Joseph Wecker
+.High-Level ToDo
+- Rewrite rules for PEGs/APGs
+- Parser for rewrite rules
+- (Syntax highlighter for rewrite rules)
+- Compiler for rewrite rules (examples first)
+- AST preparation to run them
 
-  TODO:
-  [ ] - Move Normal Form One definition into the header here.
-  [ ] - EPS:=(ɛ...) --> ɛ:=(epsilon...) etc. (requires grammar fixes)
-  [ ] - Make sure rules make sense in light of prefixes, suffixes, and
-        synthesis attributes.
-  [ ] - Syntax-highliting for list-signatures & labeled strings
-  [ ] - Move the rest in from priv/transforms.rw (marking ones that need more
-        work)
-  [ ] - Get set binary operations parsing in guard sequences
-  [ ] - Get set count operations parsing in guard sequences
-  [ ] - Figure out a syntax for attribute rewriting (possibly just aliases and
-        listsigs on the attribute parts)
-  [ ] - Consolidate prefix/suffix? (and possibly even synthesis
-  [ ] - Get attribute rewriting rules from doc/ungpeg.asciidoc moved over here
-        (marking any that may need more work)
-  [ ] - Figure out any rewriting needed for synthesis functions (or detach them
-        possibly from the normal terms altogether and make them independent...)
-  [ ] - 
+.Misc ToDo
+- Binary operators for sets:
+  * `∋` (or =- as 'containing' boolean operator)
+  * `∈` (or -= as 'contained-in' boolean operator)
+  * `⦒x` (or >> as 'remove' - removes right-hand item from set on left)
+  * `⦑x` (or << as 'insert' - inserts x into the set on the left)
+- Move Normal Form One definition into the header here.
+- EPS:=(ɛ...) --> ɛ:=(epsilon...) etc. (requires grammar fixes)
+- Make sure rules make sense in light of prefixes, suffixes, and synthesis
+  attributes.
+- Syntax-highliting for list-signatures & labeled strings
+- Move the rest in from priv/transforms.rw (marking ones that need more work)
+- Get set binary operations parsing in guard sequences
+- Get set count operations parsing in guard sequences
+- Figure out a syntax for attribute rewriting (possibly just aliases and
+  listsigs on the attribute parts)
+- Consolidate prefix/suffix? (and possibly even synthesis
+- Get attribute rewriting rules from doc/ungpeg.asciidoc moved over here
+  (marking any that may need more work)
+- Figure out any rewriting needed for synthesis functions (or detach them
+  possibly from the normal terms altogether and make them independent...)
 
+== AST
 
-|#
-
-
-#------------- Aliases -------------------------------------------------------|
-SEQ    := (seq Ps Ss Xs)
-PCH    := (pch Pp Sp Xp)
-XCH    := (xch Px Sx Xx)
-LIT    := (lit Pl Sl Xl)
-CHR    := (chr Pc Sc Xc)
-REF    := (ref Pr Sr Xr)
-EPS    := (ɛ   Pe Se Xe)
-FAIL   := (ϝ   Pf Sf Xf)
-
-E1     := (ET1 Pe1 Se1 Xe1)
-E2     := (ET2 Pe2 Se2 Xe2)
-E3     := (ET3 Pe3 Se3 Xe3)
-
-⌀SEQ   := (seq Ps Ss Xs)
-⌀PCH   := (pch Pp Sp Xp)
-⌀XCH   := (xch Px Sx Xx)
-⌀LIT   := (lit [] [] [])
-⌀CHR   := (chr [] [] [])
-⌀REF   := (ref Pr Sr Xr)
-⌀EPS   := (ɛ   [] [] [])
-⌀FAIL  := (ϝ   [] [] [])
-
-⌀E1    := (ET1 [] [] [])
-⌀E2    := (ET2 [] [] [])
-⌀E3    := (ET3 [] [] [])
+The following rules expect the nodes of the AST to be in the following form:
+  (ExpressionInfo Body)
+  where
+  ExpressionInfo :: (Type Attributes XAttributes)
+  Body           :: TypeSpecific # For atomic types
+                  | [Expression] # For CH and SEQ types
 
 
-#------------- Rewrite Rules -------------------------------------------------|
 
-general/simplification/remove-dead-seq
+== Aliases
+
+These are expanded at compile-time, becoming shorthand so that the rules are
+more intelligible.
+
+|-------------------------------------------------------------------|asciidoc|#
+
+SEQ    ≔ (seq As Xs)
+PCH    ≔ (pch Ap Xp)
+XCH    ≔ (xch Ax Xx)
+LIT    ≔ (lit Al Xl)
+CHR    ≔ (chr Ac Xc)
+REF    ≔ (ref Ar Xr)
+EPS    ≔ (ɛ   Ae Xe)
+FAIL   ≔ (ϝ   Af Xf)
+
+E1     ≔ (ET1 Ae1 Xe1)
+E2     ≔ (ET2 Ae2 Xe2)
+E3     ≔ (ET3 Ae3 Xe3)
+
+⌀SEQ   ≔ (seq [] [])
+⌀PCH   ≔ (pch [] [])
+⌀XCH   ≔ (xch [] [])
+⌀LIT   ≔ (lit [] [])
+⌀CHR   ≔ (chr [] [])
+⌀REF   ≔ (ref [] [])
+⌀EPS   ≔ (ɛ   [] [])
+⌀FAIL  ≔ (ϝ   [] [])
+
+⌀E1    ≔ (ET1 [] [])
+⌀E2    ≔ (ET2 [] [])
+⌀E3    ≔ (ET3 [] [])
+
+
+#|asciidoc|
+== Convergent Reductions
+|asciidoc|#
+
+
+general/simplification/r1/remove-dead-seq
   ## A ϝ term anywhere in a seq causes the whole thing to fail
   ## A B ϝ D → ϝ
   | (SEQ <⌀FAIL>) ⊨                                 w"Sequence always fails"; ϝ
@@ -87,3 +120,18 @@ attribute/simplification/opt-opt
 
 # TODO: alphabetized PCH - so that there can only be one normal form, and so
 # that XCH can left-factor much better...
+
+
+#|
+#|asciidoc|
+== Initial Expansions
+After at least one reduction pass.
+|asciidoc|#
+
+initial/expansion/r1/expand-plus-expressions
+  ## All plus expressions converted to single and star. Conserves any
+  #  attributes other than the `plus` designation, and attaches any expressions
+  #  to the second `star` part.
+  ## A B+ C → A (B B*) C
+  | ((ET A∋plus X) V) ⊨ (⌀SEQ [((ET A⦒plus []) V) ((ET A⦒plus X) V)])
+|#
