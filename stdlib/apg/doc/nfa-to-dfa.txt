@@ -1,0 +1,10 @@
+A ← ab* [a] ab ab ab ab
+ab ← [a] / [b]
+
+# The always greedy nature of the PEG doesn't allow such a construct. Which
+# also means that if you can write a CFG that accepts such a construct it would
+# narrow PEGs to something less powerful (in some instances). On the other
+# hand, if they can't be constructed, can it be shown that there is a
+# non-exponential NFA-DFA reduction possible? Finally, is there an undiscovered
+# way to get exponential DFA complexity with a PEG that I just haven't
+# realized?
