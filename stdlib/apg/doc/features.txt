@@ -36,6 +36,9 @@ Future directions
 
 
 --------------------------
+ - Placeholders in AST (with minor warning) for when a rule has no reduction
+   (instead of failing outright- which makes building from top-down a pain in
+   the butt)
  - Only memoize when it's truly necessary,
  - Remove memoized entry at the earliest possible time.
 
@@ -99,3 +102,11 @@ Future directions
 
  - Tail recursion on all star expressions means no memory usage for
    backtracking them.
+
+
+
+
+------
+
+* Show that under PEG-like semantics, all NFA-DFA reductions result in
+* something much smaller than exponential blowup
