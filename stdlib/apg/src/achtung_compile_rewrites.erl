@@ -6,18 +6,19 @@ parse(Txt) when is_list(Txt) -> crewrites(achtung_rewrite_n:parse(Txt)).
 
 crewrites({ok, _, AST}) ->
   AST2 = apply_aliases(AST),
-  AST2.
+  AST2. % TODO YOU ARE HERE!!!
 
 
+%--------- Alias Expansion ---------------------------------------------------|
 apply_aliases(AST) ->
   {AliasTable,AST2} = sep_aliases(AST),
-  ast_mapfold(fun(Node,Acc)-> expand_alias(Node,AliasTable,Acc) end, dict:new(), AST2).
-
+  {AST3,_} = ast_mapfold(
+    fun(Node,Acc)-> expand_alias(Node,AliasTable,Acc) end, dict:new(), AST2),
+  AST3.
 sep_aliases(AST) -> sep_aliases(AST,dict:new(),[]).
 sep_aliases([],AccA,AccR) -> {AccA,lists:reverse(AccR)};
 sep_aliases([{alias,_,Name,Mapping}|R],AccA,AccR) -> sep_aliases(R,AccA:store(Name,Mapping),AccR);
 sep_aliases([TLN|R],AccA,AccR) -> sep_aliases(R,AccA,[TLN|AccR]).
-
 expand_alias({var,Pos,Name},Aliases,Seen) ->
   case Seen:find({Pos,Name}) of
     {ok,true} -> throw({"Recursive alias expansion.",Name,Pos,Seen:to_list()});
@@ -30,8 +31,11 @@ expand_alias({var,Pos,Name},Aliases,Seen) ->
 expand_alias(N,_,Seen) -> {N,Seen}.
 
 
-% Allows one to fold deeply within, whether the children terms are lists or
-% tuples.
+
+
+%--------- Misc Utilities ----------------------------------------------------|
+
+% Allows one to fold deeply within, whether the children terms are lists or tuples.
 ast_mapfold(Fun,UserAcc,Node) when is_list(Node) ->
   {Node2,UserAcc2} = Fun(Node,UserAcc),
   lists:mapfoldl(fun(N,A)->ast_mapfold(Fun,A,N) end, UserAcc2, Node2);

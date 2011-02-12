@@ -95,7 +95,7 @@ E3     ≔ (ET3 Ae3 Xe3)
 general/simplification/r1/remove-dead-seq
   ## A ϝ term anywhere in a seq causes the whole thing to fail
   ## A B ϝ D → ϝ
-  | (SEQ <⌀FAIL>) ⊨                                 w"Sequence always fails"; ϝ
+  | (SEQ <⌀FAIL>) ⊨                             w"Sequence always fails"; ⌀FAIL
 
 general/simplification/remove-seq-nop
   ## ɛ anywhere in a sequence doesn't do anything
@@ -133,5 +133,6 @@ initial/expansion/r1/expand-plus-expressions
   #  attributes other than the `plus` designation, and attaches any expressions
   #  to the second `star` part.
   ## A B+ C → A (B B*) C
-  | ((ET A∋plus X) V) ⊨ (⌀SEQ [((ET A⦒plus []) V) ((ET A⦒plus X) V)])
+#  | ((ET A∋plus X) V) ⊨ (⌀SEQ [((ET A⦒plus []) V) ((ET A⦒plus X) V)])
+  | ((ET <plus> S) V) ⊨ (⌀SEQ [((ET <> []) V) ((ET <> S) V)])
 |#
