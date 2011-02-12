@@ -9,20 +9,20 @@
 % Comments / whitespace
 
 %------------ Grammar -------------------------------------------------------|
-forms         <- (_s (mapping / alias_def))* _s           `{ok,?pos,?i(1,2)}`; 
+forms         <- (_s (mapping / alias_def))* _s             `{ok,?I,?i(1,2)}`; 
 
 %------------ Aliases -------------------------------------------------------|
-alias_def     <- r_variable _s ':=' _s rw_expr
-                                            `{alias,?pos,element(3,?p1),?p5}`;
+alias_def     <- r_variable _s (':=' / '≔') _s rw_expr
+                                              `{alias,?I,element(3,?p1),?p5}`;
 
 %------------ Rewrite Rules -------------------------------------------------|
-mapping       <- name rw_clauses                     `{mapping,?pos,?p1,?p2}`;
+mapping       <- name rw_clauses                       `{mapping,?I,?p1,?p2}`;
 name          <- chained_atom / atom                                        ~;
 
 %------------ Clauses -------------------------------------------------------|
 rw_clauses    <- rwclause+                                         `?listify`;
 rwclause      <- _s "|" rw_expr _s match_qual?
-                 _s ENTAILS rw_exprs            `{rwclause,?pos,?p3,?p5,?p8}`;
+                 _s ENTAILS rw_exprs              `{rwclause,?I,?p3,?p5,?p8}`;
 match_qual    <- !ENTAILS ":" (_s guard_expr)*                      `?i(3,2)`;
 
 %------------ Expressions ---------------------------------------------------|
@@ -38,7 +38,7 @@ rw_expr       <- _s (lstring
 
 %------------ Terms ---------------------------------------------------------|
 chained_atom  <- atom ("/" atom)*                             `[?p1|?i(2,2)]`;
-%erl_atom      <- atom                                        `{atom,?pos,?N}`;
+%erl_atom      <- atom                                          `{atom,?I,?N}`;
 atom          <- special_atom / simple_atom / complex_atom            `?scan`;
 simple_atom   <- [a-z] [a-zA-Z0-9_@?-]*                        `[$',Node,$']`;
 special_atom  <- eps / fail                                                 ~;
@@ -56,7 +56,7 @@ not_quot      <- !'"' ("\\" . / !"\\" .)                                `?p2`;
 long_string   <- "'''" not_triple_ap* "'''"                   `?fixlstr(?p2)`;
 not_triple_ap <- !"'''" ("\\" "'''" / "\\" . / !"\\" .)                 `?p2`;
 
-lstring       <- atom string                     `{labeled_str,?pos,?p1,?p2}`;
+lstring       <- atom string                       `{labeled_str,?I,?p1,?p2}`;
 
 %------------ Tuples & Lists -------------------------------------------------
 r_tuple       <- _s (empty_t / r_comma_t / r_space_t)         `?c_tuple(?p2)`;
@@ -68,18 +68,18 @@ listsig       <- _s (empty_listsig / norm_listsig)                      `?p2`;
 norm_listsig  <- (ls_head_match / ls_head_ign / ls_hd_anchor)
                  ls_middle?
                  (ls_tail_match / ls_tail_ign / ls_tl_anchor)
-                                                 `{listsig,?pos,?p1,?p2,?p3}`;
-ls_head_match <- "[" rw_expr _s "|"                        `{match,?pos,?p2}`;
+                                                   `{listsig,?I,?p1,?p2,?p3}`;
+ls_head_match <- "[" rw_expr _s "|"                          `{match,?I,?p2}`;
 ls_head_ign   <- "<"                                                 `ignore`;
 ls_hd_anchor  <- "["                                                 `anchor`;
 
 ls_middle     <- rw_expr (","? rw_expr)*                      `[?p1|?i(2,2)]`;
 
-ls_tail_match <- _s "|" rw_expr _s "]"                     `{match,?pos,?p3}`;
+ls_tail_match <- _s "|" rw_expr _s "]"                       `{match,?I,?p3}`;
 ls_tail_ign   <- ">"                                                 `ignore`;
 ls_tl_anchor  <- "]"                                                 `anchor`;
 
-empty_listsig <- "[" _s "]"                            `{listsig,?pos,empty}`;
+empty_listsig <- "[" _s "]"                              `{listsig,?I,empty}`;
 
 
 
@@ -206,11 +206,11 @@ ml_comment    <- "#|" ml_inner* "|#"                                     `?X`;
       Abs = erl_parse:abstract(Parsed), io:format("~p~n",[Parsed]);
     Err -> throw(Err)
   end).
--define(c_tuple(Items), {tuple, ?pos, Items}).
+-define(c_tuple(Items), {tuple, ?I, Items}).
 -define(c_list(IT),case IT of []->?c_nil;{I,T}->l2c(I,T,?pos) end).
--define(c_nil, {nil,?pos}).
+-define(c_nil, {nil,?I}).
 -define(c_var, ?c_var(?N)).
--define(c_var(Name), {var,?pos,list_to_atom(?flat(Name))}).
+-define(c_var(Name), {var,?I,list_to_atom(?flat(Name))}).
 -define(ip1, ?ip1(?N)).
 -define(ip2, ?ip2(?N)).
 -define(ip3, ?ip3(?N)).
