@@ -235,3 +235,7 @@ Expression ->
 
 - Operator overloading, including lots of awesome mathematical & unicode
   operators
+
+- Most list and set and ordset (etc.) common operations done with some of the
+  mentioned mathematical operators. For example, member, map, fold,
+  concatenate, etc.
