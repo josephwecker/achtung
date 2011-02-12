@@ -239,3 +239,15 @@ Expression ->
 - Most list and set and ordset (etc.) common operations done with some of the
   mentioned mathematical operators. For example, member, map, fold,
   concatenate, etc.
+
+- Multiple matches with single mapped output:
+  blah
+    | a1 |
+    | a2 |
+    | a3 |-> result
+  # (or)
+  blah
+    |a1|a2|a3|-> result
+
+- Tuples with no commas, or tuples with no brackets:
+  |a,b,c|->  ==   |(a b c)|->   ==?  |a b c|
