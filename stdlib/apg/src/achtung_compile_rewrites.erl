@@ -1,13 +1,16 @@
 -module(achtung_compile_rewrites).
--export([file/1,parse/1]).
+-export([file/1,parse/2]).
 
-file(FName) -> crewrites(achtung_rewrite_n:file(FName)).
-parse(Txt) when is_list(Txt) -> crewrites(achtung_rewrite_n:parse(Txt)).
+file(FName) ->
+  crewrites(achtung_rewrite_n:file(FName),module_from_filename(FName),FName).
+parse(Txt,ModuleName) when is_list(Txt) ->
+  crewrites(achtung_rewrite_n:parse(Txt),ModuleName,"").
 
-crewrites({ok, _, AST}) ->
+crewrites({ok, _, AST},ModuleName,FName) ->
   AST2 = apply_aliases(AST),
-  AST2. % TODO YOU ARE HERE!!!
-
+  Forms = generate_forms(AST2,ModuleName,FName),
+  % TODO: compile:forms(Forms)
+  Forms.
 
 %--------- Alias Expansion ---------------------------------------------------|
 apply_aliases(AST) ->
@@ -30,10 +33,42 @@ expand_alias({var,Pos,Name},Aliases,Seen) ->
   end;
 expand_alias(N,_,Seen) -> {N,Seen}.
 
+%--------- Generate Forms ----------------------------------------------------|
+generate_forms(AST,Name,FName) ->
+  TopMap = generate_topmap(AST),
+  ExportNames = TopMap:fetch_keys() ++ TopMap:fetch(all),
+  Exports = [{N,1}||N<-ExportNames],
+  lists:flatten([{attribute,1,file,{FName,1}},
+      {attribute,1,module,Name},
+      {attribute,2,export,Exports},
+      {eof,100}]).
 
+generate_topmap(AST) -> generate_topmap(AST,dict:new()).
+generate_topmap([],Map) -> Map;
+generate_topmap([{mapping,_,NameParts,_}|R],Map) ->
+  generate_topmap(
+    R,append_tops(lists:reverse(NameParts),chain_atom(NameParts),Map));
+generate_topmap([_|R],Map) -> generate_topmap(R,Map).
 
+append_tops([],_,Map) -> Map;
+append_tops([_|T],FullName,Map) ->
+  append_tops(T,FullName,
+    safe_append(Map,
+      chain_atom(
+        lists:reverse(case T of []->[all];_->T end)),FullName)).
+
+safe_append(Dict,Key,Value) ->
+  case Dict:is_key(Key) of
+    true -> Dict:append(Key,Value);
+    false -> Dict:store(Key,[Value])
+  end.
 
 %--------- Misc Utilities ----------------------------------------------------|
+chain_atom(Chain)->list_to_atom(string:join([atom_to_list(C)||C<-Chain],"/")).
+
+module_from_filename(FName) ->
+  [Base|_] = string:tokens(filename:rootname(filename:basename(FName)),"."),
+  list_to_atom(Base).
 
 % Allows one to fold deeply within, whether the children terms are lists or tuples.
 ast_mapfold(Fun,UserAcc,Node) when is_list(Node) ->
