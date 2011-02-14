@@ -7,3 +7,37 @@ not-predicate/range-match →range-match
 
 left-recurse-memoizer
 
+
+
+-----------
+⦅n⦆T1⦅n⦆T2 T3⦅n⦆
+
+MTL = 3
+
+
+MTL = 2
+
+
+[0,1,2,3,4,5,6,7,8,9]
+
+
+[T1,T2]
+
+loop through until T1 is found, while aggregating for the other side,
+then with remainder repeat.
+
+------------------
+a|(o <T1..T2>)|
+a|(o [⦅A1⦆T1⦅A2⦆T2⦅A3⦆])|= (p <T1 T2>)
+------------------
+
+a({o,L}) when is_list(L) ->
+  
+
+il1(L) when length(L) < 2 -> L;
+il1([T1|[T2|R]]) -> {[],T1,[],T2,R};
+il1(L) -> il2(L,[],[]).
+
+il2([T2|R],A,Res) -> list_to_tuple(lists:reverse([R|[T2|[lists:reverse(A)|Res]]]));
+il2([O|R],A,Res) -> il2(R,[O|A]
+

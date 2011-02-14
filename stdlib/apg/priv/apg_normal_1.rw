@@ -41,6 +41,7 @@ turning it into an optimized Analytic Parsing Grammar.
   (marking any that may need more work)
 - Figure out any rewriting needed for synthesis functions (or detach them
   possibly from the normal terms altogether and make them independent...)
+- Eventually allow pattern-matching type assignments in rewrite-expressions.
 
 == AST
 
@@ -91,16 +92,15 @@ E3     ≔ (ET3 Ae3 Xe3)
 == Convergent Reductions
 |asciidoc|#
 
-
 general/simplification/r1/remove-dead-seq
   ## A ϝ term anywhere in a seq causes the whole thing to fail
   ## A B ϝ D → ϝ
-  | (SEQ <⌀FAIL>) ⊨                             w"Sequence always fails"; ⌀FAIL
+  | <(SEQ <⌀FAIL>)> ⊨                         w"Sequence always fails"; <⌀FAIL>
 
 general/simplification/remove-seq-nop
   ## ɛ anywhere in a sequence doesn't do anything
   ## A B ɛ C → A B C
-  | (SEQ <⌀EPS|R]) ⊨                                                  (SEQ <R])
+  | <(SEQ <⌀EPS|R])> ⊨                                              <(SEQ <R])>
 
 general/simplification/shortcircuit-dead-choice
   ## Anything after an ɛ in an ord or xrd is unreachable
@@ -108,12 +108,14 @@ general/simplification/shortcircuit-dead-choice
   | (PCH <⌀EPS|R]) ⊨                          w"Unreachable code"; (PCH <⌀EPS])
   | (XCH <⌀EPS|R]) ⊨                          w"Unreachable code"; (XCH <⌀EPS])
 
+
 general/simplification/remove-choice-nop
   ## A term in an pch/xch that is guaranteed to fail can be skipped
   ## A/B/ϝ/C/D → A/B/C/D
   | (PCH <⌀FAIL|R]) ⊨                                                 (PCH <R])
   | (XCH <⌀FAIL|R]) ⊨                                                 (XCH <R])
 
+    {PCH,[FAIL|R]}
 
 attribute/simplification/opt-opt
   | (E <opt opt> S) ⊨                                               (E <opt> S)
@@ -135,4 +137,22 @@ initial/expansion/r1/expand-plus-expressions
   ## A B+ C → A (B B*) C
 #  | ((ET A∋plus X) V) ⊨ (⌀SEQ [((ET A⦒plus []) V) ((ET A⦒plus X) V)])
   | ((ET <plus> S) V) ⊨ (⌀SEQ [((ET <> []) V) ((ET <> S) V)])
+
+
+
+# This is just experimenting with nested list-signatures. It's not complete in
+# the larger since because: not named correctly necessarily, StarName is going
+# to be unbound, brackets are probably messed up in there, and finally, I'm not
+# even sure if I want to do this transition instead of local-recurse inlines.
+# But in any case, it gives a realistic example of nested lsigs and how they
+# match up on the other side correctly.
+
+#phase2/extraction/star-expressions
+#  | <(rule Name <((ET <star> S) V)>)> ⊨
+#      <(rule Name <((ref <> S) StarName)>)
+#       (rule StarName [(⌀PCH [(⌀SEQ [((ET [] []) V) (⌀REF StarName)]) ⌀EPS])])>
+
+
+
+
 |#
