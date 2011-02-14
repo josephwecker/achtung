@@ -98,6 +98,38 @@ Future directions
 
  - {finish, AST, Rest}, {cont, State, AST}, {finish, AST}, {fail, Failures}
 
+
+ - Idea: Trusted-Mode: If set to true it can actually skip ahead when it knows
+   there is only one thing that could come next. Trusted in this case implies
+   that the input is expected to succeed, and that it is mostly a matter of
+   gathering the relevant information. In some grammars it would not do much
+   good, but in others it might- especially where it would be skipping lots of
+   tokens and sequences etc. Come to think of it, analysis of the result (what
+   is actually skipable) is a good analysis of what in the grammar does not
+   provide any real information, and can be considered a weakness of the
+   grammar.
+
+ - When there are a couple of upcoming groups that are a different range of
+   characters and we are not collecting the results, it might make sense to
+   look at every other input instead (or even larger chunks)- kind of like
+   higher-order-determinant allowing us to skip characters.
+
+ - In a C implementation, look at as many characters as possible
+   simultaneously. Also look into cache-aware algorithms.
+
+ - Whenever an exact sequence of characters is being looked for, move forward
+   based on Boyer-Moore
+
+ - Very-Untrusted-Mode - Perform an initial recognition scan (in sublinear
+   time) before trying to really parse and extract - for when the amortized
+   savings of the recognition scan (maybe even probabilistic at first) are
+   worth it because of the number of expected input 'languages' that are
+   expected to fail.
+
+ - When the discriminants allow for it, in C version, use bitmap-algorithm-like
+   gathering on * terms etc. (or Commentz–Walter algorithm adapted for regular
+   languages as per the PhD thesis in the research folder)
+
 --------------------- PEG
 
  - Tail recursion on all star expressions means no memory usage for
