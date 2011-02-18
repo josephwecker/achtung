@@ -4,30 +4,32 @@
 draw_result(FName, Form) ->
   file:write_file(FName, [
     "digraph ast {",
-      "edge [color=\"#666666\"];",
-      "node [fontname=\"Helvetica\",shape=circle,style=filled,",
-      "fillcolor=\"#f0f0ff\",color=\"#666677\",fontcolor=\"#444455\"];",
+      "edge [color=\"#666666\",arrowsize=0.4];",
+      "node [fontname=\"Helvetica\",style=filled,",
+      "fillcolor=\"#f8f8ff\",color=\"#666677\",fontcolor=\"#444455\"];",
       draw_nodes(Form),
     "}"]).
 
 draw_nodes(Form) ->
   D = dict:new(),
-  {Groups,Conns} = traverse_nodes(mark(Form),uid(g),D:store(1,[]),[]),
+  {Groups,Conns} = traverse_nodes(mark(Form),uid(g),D:store(1,[]),[],1),
   Conns2 = lists:reverse(Conns),
   [
     [["{rank=same;",[nrank(N)||N<-Nodes],"}\n"] || {_,Nodes} <- lists:sort(Groups:to_list())],
     [edge(From,To) ||{From,To} <- lists:zip(['']++Conns2,Conns2++['']),From=/='',To =/='']
   ].
 
-traverse_nodes([[_|_]=L],_CurrGroup,Groups,Conns) ->
-  traverse_nodes(L,uid(g),Groups,Conns);
-traverse_nodes([V],CurrGroup,Groups,Conns) ->
+traverse_nodes([[_|_]=L],_CurrGroup,Groups,Conns,Depth) ->
+  traverse_nodes(L,f("g~s",[Depth]),Groups,Conns,Depth+1);
+  %traverse_nodes(L,uid(g),Groups,Conns);
+traverse_nodes([V],CurrGroup,Groups,Conns,_Depth) ->
   {Groups:append(CurrGroup,V), [V|Conns]};
-traverse_nodes([[_|_]=L|R],CurrGroup,Groups,Conns) ->
-  {Groups2,Conns2} = traverse_nodes(L,uid(g),Groups,Conns),
-  traverse_nodes(R,CurrGroup,Groups2,Conns2);
-traverse_nodes([V|R],CurrGroup,Groups,Conns) ->
-  traverse_nodes(R,CurrGroup,Groups:append(CurrGroup,V),[V|Conns]).
+traverse_nodes([[_|_]=L|R],CurrGroup,Groups,Conns,Depth) ->
+  {Groups2,Conns2} = traverse_nodes(L,f("g~s",[Depth]),Groups,Conns,Depth+1),
+  %{Groups2,Conns2} = traverse_nodes(L,uid(g),Groups,Conns),
+  traverse_nodes(R,CurrGroup,Groups2,Conns2,Depth);
+traverse_nodes([V|R],CurrGroup,Groups,Conns,Depth) ->
+  traverse_nodes(R,CurrGroup,Groups:append(CurrGroup,V),[V|Conns],Depth).
 
 nrank({_,[$h|_]=ID}) -> f("~s[shape=point];",ID);
 nrank({_,[$t|_]=ID}) -> f("~s[shape=point];",ID);
