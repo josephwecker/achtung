@@ -38,6 +38,7 @@ generate_forms(AST,Name,FName) ->
   TopMap = generate_topmap(AST),
   ExportNames = TopMap:fetch_keys() ++ TopMap:fetch(all),
   Exports = [{N,1}||N<-ExportNames],
+  
   lists:flatten([{attribute,1,file,{FName,1}},
       {attribute,1,module,Name},
       {attribute,2,export,Exports},
@@ -57,13 +58,15 @@ append_tops([_|T],FullName,Map) ->
       chain_atom(
         lists:reverse(case T of []->[all];_->T end)),FullName)).
 
+
+
+%--------- Misc Utilities ----------------------------------------------------|
 safe_append(Dict,Key,Value) ->
   case Dict:is_key(Key) of
     true -> Dict:append(Key,Value);
     false -> Dict:store(Key,[Value])
   end.
 
-%--------- Misc Utilities ----------------------------------------------------|
 chain_atom(Chain)->list_to_atom(string:join([atom_to_list(C)||C<-Chain],"/")).
 
 module_from_filename(FName) ->

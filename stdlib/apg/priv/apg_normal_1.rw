@@ -115,7 +115,6 @@ general/simplification/remove-choice-nop
   | (PCH <⌀FAIL|R]) ⊨                                                 (PCH <R])
   | (XCH <⌀FAIL|R]) ⊨                                                 (XCH <R])
 
-    {PCH,[FAIL|R]}
 
 attribute/simplification/opt-opt
   | (E <opt opt> S) ⊨                                               (E <opt> S)
@@ -130,13 +129,13 @@ attribute/simplification/opt-opt
 After at least one reduction pass.
 |asciidoc|#
 
-initial/expansion/r1/expand-plus-expressions
+#initial/expansion/r1/expand-plus-expressions
   ## All plus expressions converted to single and star. Conserves any
   #  attributes other than the `plus` designation, and attaches any expressions
   #  to the second `star` part.
   ## A B+ C → A (B B*) C
 #  | ((ET A∋plus X) V) ⊨ (⌀SEQ [((ET A⦒plus []) V) ((ET A⦒plus X) V)])
-  | ((ET <plus> S) V) ⊨ (⌀SEQ [((ET <> []) V) ((ET <> S) V)])
+#  | ((ET <plus> S) V) ⊨ (⌀SEQ [((ET <> []) V) ((ET <> S) V)])
 
 
 
