@@ -1,6 +1,10 @@
 -module(apg_canyons).
 -export([draw_result/2]).
 
+
+
+
+
 draw_result(FName, Form) ->
   file:write_file(FName, [
     "digraph ast {",
@@ -8,7 +12,10 @@ draw_result(FName, Form) ->
       "node [fontname=\"Helvetica\",style=filled,",
       "fillcolor=\"#f8f8ff\",color=\"#666677\",fontcolor=\"#444455\"];",
       draw_nodes(Form),
-    "}"]).
+    "}"]),
+  os:cmd(binary_to_list(f("dot -Tsvg -o '~s' '~s'",[svg_name(FName),FName]))).
+
+svg_name(DotName) -> f("~s.svg",filename:rootname(DotName,".dot")).
 
 draw_nodes(Form) ->
   D = dict:new(),
