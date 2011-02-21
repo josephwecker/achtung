@@ -9,8 +9,11 @@ parse(Txt,ModuleName) when is_list(Txt) ->
 crewrites({ok, _, AST},ModuleName,FName) ->
   AST2 = apply_aliases(AST),
   Forms = generate_forms(AST2,ModuleName,FName),
-  % TODO: compile:forms(Forms)
-  Forms.
+  io:format("~p~n",[Forms]),
+  io:format("~s~n",[erl_prettypr:format(erl_syntax:form_list(Forms))]),
+  {ok, Module, Bin} = compile:forms(Forms),
+  code:soft_purge(Module),
+  code:load_binary(Module,FName,Bin).
 
 %--------- Alias Expansion ---------------------------------------------------|
 apply_aliases(AST) ->
@@ -38,10 +41,15 @@ generate_forms(AST,Name,FName) ->
   TopMap = generate_topmap(AST),
   ExportNames = TopMap:fetch_keys() ++ TopMap:fetch(all),
   Exports = [{N,1}||N<-ExportNames],
+  io:format("~p~n~n~p~n~n",[AST,TopMap:to_list()]),
+  GFuns = generate_group_funs(TopMap),
+  Functions = generate_functions(AST),
   
   lists:flatten([{attribute,1,file,{FName,1}},
-      {attribute,1,module,Name},
+      {attribute,1,module,atom(Name)},
       {attribute,2,export,Exports},
+      GFuns,
+      Functions,
       {eof,100}]).
 
 generate_topmap(AST) -> generate_topmap(AST,dict:new()).
@@ -58,7 +66,26 @@ append_tops([_|T],FullName,Map) ->
       chain_atom(
         lists:reverse(case T of []->[all];_->T end)),FullName)).
 
+generate_group_funs(Map) ->
+  lists:map(fun group_fun/1,Map:to_list()).
+group_fun({Name,[OneFun]}) ->
+  {function,1,Name,1,[{clause,1,[{var,1,'T'}],[],[
+          {call,1,{atom,1,OneFun},[{var,1,'T'}]}
+        ]}]};
+group_fun({Name,Inners}) ->
+  {function,1,Name,1, [{clause,1,[{var,1,'T'}], [],
+        [{'case',1,
+            lists:foldl(fun(F,Chain)->{call,1,{atom,1,F},[Chain]} end,
+              {var,1,'T'}, Inners),
+          [{clause,1,[{var,1,'T'}],[],[{var,1,'T'}]},
+           {clause,1,[{var,1,'T2'}],[],[{call,1,{atom,1,Name},[{var,1,'T2'}]}]}]}]}]}.
 
+generate_functions(AST) -> generate_functions(AST,[]).
+generate_functions([],Acc) -> lists:reverse(Acc);
+generate_functions([{mapping,{{line,L},_},NameParts,_Clauses}|R],Acc) ->
+  F = {function,L,chain_atom(NameParts),1,[{clause,1,[{var,1,'T'}],[],[{var,1,'T'}]}]},
+  generate_functions(R,[F|Acc]);
+generate_functions([_|R],Acc) -> generate_functions(R,Acc).
 
 %--------- Misc Utilities ----------------------------------------------------|
 safe_append(Dict,Key,Value) ->
@@ -84,4 +111,6 @@ ast_mapfold(Fun,UserAcc,Node) when is_tuple(Node) ->
   {list_to_tuple(Node3),UserAcc3};
 ast_mapfold(Fun,UserAcc,Node) ->
   Fun(Node,UserAcc).
-  
+
+atom(A) when is_atom(A) -> A;
+atom(L) when is_list(L) -> list_to_atom(L).
