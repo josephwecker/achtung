@@ -84,11 +84,33 @@ group_fun({Name,Inners}) ->
 
 generate_functions(AST) -> generate_functions(AST,[]).
 generate_functions([],Acc) -> lists:reverse(Acc);
-generate_functions([{mapping,{{line,L},_},NameParts,_Clauses}|R],Acc) ->
-  F = {function,L,chain_atom(NameParts),1,
-    [{clause,1,[{var,1,'T'}],[],[{var,1,'T'}]}]},
+generate_functions([{mapping,{{line,L},_},NameParts,Clauses}|R],Acc) ->
+  F = {function,L,chain_atom(NameParts),1,generate_clauses(Clauses)},
+    %[{clause,1,[{var,1,'T'}],[],[{var,1,'T'}]}]},
   generate_functions(R,[F|Acc]);
 generate_functions([_|R],Acc) -> generate_functions(R,Acc).
+
+generate_clauses(RWCs) -> generage_clauses(RWCs,1).
+generate_clauses([],Acc) -> lists:reverse(Acc);
+generate_clauses([RWC|R], Acc) ->
+  %  1. Left-side Toplevel clause pattern to erlang pattern-
+  %     * All variables given new prefixes
+  %     * Number all ignored/anon aggs so they automatically match up on the
+  %       other side.
+  %     * Listsigs turned into normal match-exprs if possible (implies no aggs
+  %       except possibly one at the end.)
+  %     * (Otherwise turn them into L-variables & is_list(L<n>) pairs.
+  %  2. Rewrite right-side as expression
+  %     * Listsigs are now reconstructions using lists:append and the various
+  %       matched variables.
+  %  3. IF there are non-right aggs, pair them up with the match terms to their
+  %     right and use those pairs to generate the inner-call-chain.
+  %     * Case statement for the listsig
+  %     * "match" pattern+expression(from #2) as a case clause
+  %     * Other clause that returns the original term.
+  %  4. Function chain-link for each pair, that iterates, aggregates, and tries
+  %     to match the upcoming "real" match.
+
 
 %--------- Misc Utilities ----------------------------------------------------|
 safe_append(Dict,Key,Value) ->

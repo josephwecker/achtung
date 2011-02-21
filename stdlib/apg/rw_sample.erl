@@ -86,12 +86,15 @@
 %
 %  # (expanded)
 %
-%  a |(o [⦅A1⦆opt⦅A2⦆(opt N)⦅A3⦆])|= (p <N>)
+%  a |(o [⦅A1⦆opt⦅A2⦆(opt N)⦅A3⦆])|= (p [⦅A1⦆N⦅A3⦆])
 %------------------
 
-a({o,L}=INTERM) when is_list(L) ->
-  case il1(L,[],[]) of
-    {A1,_,_,{opt,N},A3} -> {p,lists:append([A1,[N],A3])};
+a({o,L}=INTERM) when is_list(L) ->             % L<n> and is_list(L<n>) on every listsig
+                                               % MatchTerm=INTERM (to pass it
+                                               % along by itself if needed)
+  case il1(L,[],[]) of  % On each listsig
+    {A1,_,_,{opt,N},A3} -> {p,lists:append([A1,[N],A3])};   % Left side is
+                                                            % expanded version of listsig
     _ -> INTERM
   end;
 a(INTERM) -> INTERM.
