@@ -1,7 +1,9 @@
 -module(apg_canyons).
 -export([draw_result/2]).
 
-
+% TODO:
+%  - left-nested expressions not working right. e.g., [[[[a],b],c],d]
+%  - waiting for svg-animator...
 
 
 
