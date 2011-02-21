@@ -23,7 +23,8 @@ apply_aliases(AST) ->
   AST3.
 sep_aliases(AST) -> sep_aliases(AST,dict:new(),[]).
 sep_aliases([],AccA,AccR) -> {AccA,lists:reverse(AccR)};
-sep_aliases([{alias,_,Name,Mapping}|R],AccA,AccR) -> sep_aliases(R,AccA:store(Name,Mapping),AccR);
+sep_aliases([{alias,_,Name,Mapping}|R],AccA,AccR) ->
+  sep_aliases(R,AccA:store(Name,Mapping),AccR);
 sep_aliases([TLN|R],AccA,AccR) -> sep_aliases(R,AccA,[TLN|AccR]).
 expand_alias({var,Pos,Name},Aliases,Seen) ->
   case Seen:find({Pos,Name}) of
@@ -78,12 +79,14 @@ group_fun({Name,Inners}) ->
             lists:foldl(fun(F,Chain)->{call,1,{atom,1,F},[Chain]} end,
               {var,1,'T'}, Inners),
           [{clause,1,[{var,1,'T'}],[],[{var,1,'T'}]},
-           {clause,1,[{var,1,'T2'}],[],[{call,1,{atom,1,Name},[{var,1,'T2'}]}]}]}]}]}.
+           {clause,1,[{var,1,'T2'}],[],
+             [{call,1,{atom,1,Name},[{var,1,'T2'}]}]}]}]}]}.
 
 generate_functions(AST) -> generate_functions(AST,[]).
 generate_functions([],Acc) -> lists:reverse(Acc);
 generate_functions([{mapping,{{line,L},_},NameParts,_Clauses}|R],Acc) ->
-  F = {function,L,chain_atom(NameParts),1,[{clause,1,[{var,1,'T'}],[],[{var,1,'T'}]}]},
+  F = {function,L,chain_atom(NameParts),1,
+    [{clause,1,[{var,1,'T'}],[],[{var,1,'T'}]}]},
   generate_functions(R,[F|Acc]);
 generate_functions([_|R],Acc) -> generate_functions(R,Acc).
 
@@ -100,7 +103,8 @@ module_from_filename(FName) ->
   [Base|_] = string:tokens(filename:rootname(filename:basename(FName)),"."),
   list_to_atom(Base).
 
-% Allows one to fold deeply within, whether the children terms are lists or tuples.
+% Allows one to fold deeply within, whether the children terms are lists or
+% tuples.
 ast_mapfold(Fun,UserAcc,Node) when is_list(Node) ->
   {Node2,UserAcc2} = Fun(Node,UserAcc),
   lists:mapfoldl(fun(N,A)->ast_mapfold(Fun,A,N) end, UserAcc2, Node2);
