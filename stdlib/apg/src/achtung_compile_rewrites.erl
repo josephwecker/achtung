@@ -102,7 +102,7 @@ fclause(Left,Qual,Right) ->
   Left2 = enumerate_anons(Left),
   {LeftPattern, LSigs} = normalize_left(Left2,[]),
   WhenClause = Qual ++ [{call,P,{atom,P,is_list},[{var,P,AVName}]}||
-      [{var,P,AVName}|_] <- LSigs, used(AVName,LeftPattern)],
+    {{var,P,AVName},_} <- LSigs, used(AVName,LeftPattern)],
   WhenClause2 = case WhenClause of [] -> []; WList -> [WList] end,
   io:format("LEFTPATTERN:~n~p~n~nLEFTSIGS:~n~p~n-----~n",[LeftPattern,LSigs]),
   Right2 = enumerate_anons(Right),
