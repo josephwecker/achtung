@@ -99,18 +99,35 @@ generate_clauses([{rwclause,_Pos,Left,Qual,Right}|R], Acc) ->
   generate_clauses(R,[fclause(Left,Qual,Right)|Acc]).
 
 fclause(Left,Qual,Right) ->
-  put(left_count,1),
-  {LeftPattern, LSigs} = normalize_left(Left,[]),
+  Left2 = enumerate_anons(Left),
+  {LeftPattern, LSigs} = normalize_left(Left2,[]),
   WhenClause = Qual ++ [{call,P,{atom,P,is_list},[{var,P,AVName}]}||
       [{var,P,AVName}|_] <- LSigs, used(AVName,LeftPattern)],
+  WhenClause2 = case WhenClause of [] -> []; WList -> [WList] end,
   io:format("LEFTPATTERN:~n~p~n~nLEFTSIGS:~n~p~n-----~n",[LeftPattern,LSigs]),
+  Right2 = enumerate_anons(Right),
+  {RightExpr, _LSigs2} = normalize_right(hd(Right2), []),  % TEMPORARY
+  %{NextFun, RightExpr} = normalize_right(Right, LSigs),
 
-  {clause,1,[LeftPattern],WhenClause,[{var,1,'T_ARW'}]}.
+  % TODO: chain of case statements so that variables are bound - check to see
+  % if they're used in result and prefix with underscores as appropriate (don't
+  % completely replace with underscore because that would break trying to match
+  % the same binding more than once in the left-clause)
+
+  {clause,1,[LeftPattern],WhenClause2,[RightExpr]}.
+
+
+enumerate_anons(T) ->
+  put(agg_count,1),
+  {T2, _} = ast_mapfold(fun enum_anon/2, nil, T),
+  T2.
+
+enum_anon('__ARW_ANON_R'=N,_) -> {{var,{{line,0},nil},next_agg(N)},nil};
+enum_anon('__ARW_ANON_L'=N,_) -> {{var,{{line,0},nil},next_agg(N)},nil};
+enum_anon('__ARW_ANON_M'=N,_) -> {{var,{{line,0},nil},next_agg(N)},nil};
+enum_anon(V,_) -> {V,nil}.
 
 normalize_left({atom,?POS,Val},Acc) ->      {{atom,Pos,Val}, Acc};
-normalize_left('__ACHT_RW_ANON_R'=N,Acc) -> {{var,0,next_agg(N)},Acc};
-normalize_left('__ACHT_RW_ANON_L'=N,Acc) -> {{var,0,next_agg(N)},Acc};
-normalize_left('__ACHT_RW_ANON_M'=N,Acc) -> {{var,0,next_agg(N)},Acc};
 normalize_left(A,Acc) when is_atom(A) ->    {{atom,0,A},Acc};
 normalize_left({lsig,?POS,[]},Acc) ->       {{nil,Pos},Acc};
 normalize_left([],Acc) ->                   {{nil,0},Acc};
@@ -125,16 +142,29 @@ normalize_left({var,?POS,Val},Acc) ->
 normalize_left({lsig,?POS,L},Acc) ->
   {H,T} = lists:splitwith(fun({match_term,_,_})->true;(_)->false end, L),
   {L2,Acc2} = lists:mapfoldl(fun normalize_left/2, Acc, H),
-  %io:format("----------~n~p~n~p~n~p~n~p~n--------~n",[H,T,L2,Acc2]),
   case T of
     [] -> {conses(L2,Pos), Acc2};
     [T1] ->
       {T2,Acc3} = normalize_left(T1,Acc2),
       {conses(L2,Pos,T2), Acc3};
-    TList ->
-      {[TL1|_]=TL2,Acc3} = lists:mapfoldl(fun normalize_left/2, Acc2, TList),
-      {conses(L2,Pos,TL1), [TL2 | Acc3]}
+    [T1|_TR]=TList ->
+      {VarName, Acc3} = normalize_left(T1,Acc2),
+      {conses(L2,Pos,VarName), [{VarName, TList}|Acc3]}
   end.
+
+normalize_right({atom,?POS,Val},Acc) ->      {{atom,Pos,Val}, Acc};
+normalize_right(A,Acc) when is_atom(A) ->    {{atom,0,A},Acc};
+normalize_right({lsig,?POS,[]},Acc) ->       {{nil,Pos},Acc};
+normalize_right([],Acc) ->                   {{nil,0},Acc};
+normalize_right({match_term,_P,V},Acc) ->    normalize_right(V,Acc);
+normalize_right({agg_term,_P,V},Acc) ->      normalize_right(V,Acc);
+normalize_right({tuple,?POS,L},Acc) ->
+  {Pattern, Acc2} = lists:mapfoldl(fun normalize_right/2, Acc, L),
+  {{tuple,Pos,Pattern}, Acc2};
+normalize_right({var,?POS,Val},Acc) ->
+  Val2 = list_to_atom(atom_to_list(Val)++"_ARW"),
+  {{var,Pos,Val2}, Acc}.
+
 
 conses(L,Pos) -> conses(L,Pos,{nil,Pos}).
 conses(L,Pos,[]) -> conses(L,Pos,{nil,Pos});
@@ -155,8 +185,8 @@ used(_,_) -> false.
 
 next_agg(Pref) when is_atom(Pref) -> next_agg(atom_to_list(Pref));
 next_agg(Pref) ->
-  C = case get(left_count) of undefined -> 0; V -> V end,
-  put(left_count, C + 1),
+  C = case get(agg_count) of undefined -> 0; V -> V end,
+  put(agg_count, C + 1),
   list_to_atom(Pref ++ integer_to_list(C)).
 
 
