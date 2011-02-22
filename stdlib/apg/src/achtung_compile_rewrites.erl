@@ -1,6 +1,9 @@
 -module(achtung_compile_rewrites).
 -export([file/1,parse/2]).
 
+-define(POS,{{line,Pos},_}).
+-define(R(T),lists:reverse(T)).
+
 file(FName) ->
   crewrites(achtung_rewrite_n:file(FName),module_from_filename(FName),FName).
 parse(Txt,ModuleName) when is_list(Txt) ->
@@ -9,7 +12,7 @@ parse(Txt,ModuleName) when is_list(Txt) ->
 crewrites({ok, _, AST},ModuleName,FName) ->
   AST2 = apply_aliases(AST),
   Forms = generate_forms(AST2,ModuleName,FName),
-  io:format("~p~n",[Forms]),
+  %io:format("~p~n",[Forms]),
   io:format("~s~n",[erl_prettypr:format(erl_syntax:form_list(Forms))]),
   {ok, Module, Bin} = compile:forms(Forms),
   code:soft_purge(Module),
@@ -22,7 +25,7 @@ apply_aliases(AST) ->
     fun(Node,Acc)-> expand_alias(Node,AliasTable,Acc) end, dict:new(), AST2),
   AST3.
 sep_aliases(AST) -> sep_aliases(AST,dict:new(),[]).
-sep_aliases([],AccA,AccR) -> {AccA,lists:reverse(AccR)};
+sep_aliases([],AccA,AccR) -> {AccA,?R(AccR)};
 sep_aliases([{alias,_,Name,Mapping}|R],AccA,AccR) ->
   sep_aliases(R,AccA:store(Name,Mapping),AccR);
 sep_aliases([TLN|R],AccA,AccR) -> sep_aliases(R,AccA,[TLN|AccR]).
@@ -42,7 +45,8 @@ generate_forms(AST,Name,FName) ->
   TopMap = generate_topmap(AST),
   ExportNames = TopMap:fetch_keys() ++ TopMap:fetch(all),
   Exports = [{N,1}||N<-ExportNames],
-  io:format("~p~n~n~p~n~n",[AST,TopMap:to_list()]),
+  io:format("~p~n~n",[AST]),
+  %io:format("~p~n~n~p~n~n",[AST,TopMap:to_list()]),
   GFuns = generate_group_funs(TopMap),
   Functions = generate_functions(AST),
   
@@ -57,7 +61,7 @@ generate_topmap(AST) -> generate_topmap(AST,dict:new()).
 generate_topmap([],Map) -> Map;
 generate_topmap([{mapping,_,NameParts,_}|R],Map) ->
   generate_topmap(
-    R,append_tops(lists:reverse(NameParts),chain_atom(NameParts),Map));
+    R,append_tops(?R(NameParts),chain_atom(NameParts),Map));
 generate_topmap([_|R],Map) -> generate_topmap(R,Map).
 
 append_tops([],_,Map) -> Map;
@@ -65,7 +69,7 @@ append_tops([_|T],FullName,Map) ->
   append_tops(T,FullName,
     safe_append(Map,
       chain_atom(
-        lists:reverse(case T of []->[all];_->T end)),FullName)).
+        ?R(case T of []->[all];_->T end)),FullName)).
 
 generate_group_funs(Map) ->
   lists:map(fun group_fun/1,Map:to_list()).
@@ -83,16 +87,79 @@ group_fun({Name,Inners}) ->
              [{call,1,{atom,1,Name},[{var,1,'T2'}]}]}]}]}]}.
 
 generate_functions(AST) -> generate_functions(AST,[]).
-generate_functions([],Acc) -> lists:reverse(Acc);
+generate_functions([],Acc) -> ?R(Acc);
 generate_functions([{mapping,{{line,L},_},NameParts,Clauses}|R],Acc) ->
   F = {function,L,chain_atom(NameParts),1,generate_clauses(Clauses)},
-    %[{clause,1,[{var,1,'T'}],[],[{var,1,'T'}]}]},
   generate_functions(R,[F|Acc]);
 generate_functions([_|R],Acc) -> generate_functions(R,Acc).
 
-generate_clauses(RWCs) -> generage_clauses(RWCs,1).
-generate_clauses([],Acc) -> lists:reverse(Acc);
-generate_clauses([RWC|R], Acc) ->
+generate_clauses(RWCs) -> generate_clauses(RWCs,[]).
+generate_clauses([],Acc) -> ?R(Acc);
+generate_clauses([{rwclause,_Pos,Left,Qual,Right}|R], Acc) ->
+  generate_clauses(R,[fclause(Left,Qual,Right)|Acc]).
+
+fclause(Left,Qual,Right) ->
+  put(left_count,1),
+  {LeftPattern, LSigs} = normalize_left(Left,[]),
+  WhenClause = Qual ++ [{call,P,{atom,P,is_list},[{var,P,AVName}]}||
+      [{var,P,AVName}|_] <- LSigs, used(AVName,LeftPattern)],
+  io:format("LEFTPATTERN:~n~p~n~nLEFTSIGS:~n~p~n-----~n",[LeftPattern,LSigs]),
+
+  {clause,1,[LeftPattern],WhenClause,[{var,1,'T_ARW'}]}.
+
+normalize_left({atom,?POS,Val},Acc) ->      {{atom,Pos,Val}, Acc};
+normalize_left('__ACHT_RW_ANON_R'=N,Acc) -> {{var,0,next_agg(N)},Acc};
+normalize_left('__ACHT_RW_ANON_L'=N,Acc) -> {{var,0,next_agg(N)},Acc};
+normalize_left('__ACHT_RW_ANON_M'=N,Acc) -> {{var,0,next_agg(N)},Acc};
+normalize_left(A,Acc) when is_atom(A) ->    {{atom,0,A},Acc};
+normalize_left({lsig,?POS,[]},Acc) ->       {{nil,Pos},Acc};
+normalize_left([],Acc) ->                   {{nil,0},Acc};
+normalize_left({match_term,_P,V},Acc) ->    normalize_left(V,Acc);
+normalize_left({agg_term,_P,V},Acc) ->      normalize_left(V,Acc);
+normalize_left({tuple,?POS,L},Acc) ->
+  {Pattern, Acc2} = lists:mapfoldl(fun normalize_left/2, Acc, L),
+  {{tuple,Pos,Pattern}, Acc2};
+normalize_left({var,?POS,Val},Acc) ->
+  Val2 = list_to_atom(atom_to_list(Val)++"_ARW"),
+  {{var,Pos,Val2}, Acc};
+normalize_left({lsig,?POS,L},Acc) ->
+  {H,T} = lists:splitwith(fun({match_term,_,_})->true;(_)->false end, L),
+  {L2,Acc2} = lists:mapfoldl(fun normalize_left/2, Acc, H),
+  %io:format("----------~n~p~n~p~n~p~n~p~n--------~n",[H,T,L2,Acc2]),
+  case T of
+    [] -> {conses(L2,Pos), Acc2};
+    [T1] ->
+      {T2,Acc3} = normalize_left(T1,Acc2),
+      {conses(L2,Pos,T2), Acc3};
+    TList ->
+      {[TL1|_]=TL2,Acc3} = lists:mapfoldl(fun normalize_left/2, Acc2, TList),
+      {conses(L2,Pos,TL1), [TL2 | Acc3]}
+  end.
+
+conses(L,Pos) -> conses(L,Pos,{nil,Pos}).
+conses(L,Pos,[]) -> conses(L,Pos,{nil,Pos});
+conses([],_,Tail) -> Tail;
+conses([H|R],Pos,Tail) ->
+  {cons,Pos,H,
+    case R of
+      []    -> Tail;
+      [_|_] -> conses(R,Pos,Tail)
+    end}.
+
+used(Name,Name) -> true;
+used(Name,T) when is_tuple(T) ->
+  lists:any(fun(E)->used(Name,E) end, tuple_to_list(T));
+used(Name,L) when is_list(L) ->
+  lists:any(fun(E)->used(Name,E) end, L);
+used(_,_) -> false.
+
+next_agg(Pref) when is_atom(Pref) -> next_agg(atom_to_list(Pref));
+next_agg(Pref) ->
+  C = case get(left_count) of undefined -> 0; V -> V end,
+  put(left_count, C + 1),
+  list_to_atom(Pref ++ integer_to_list(C)).
+
+
   %  1. Left-side Toplevel clause pattern to erlang pattern-
   %     * All variables given new prefixes
   %     * Number all ignored/anon aggs so they automatically match up on the
@@ -111,6 +178,7 @@ generate_clauses([RWC|R], Acc) ->
   %  4. Function chain-link for each pair, that iterates, aggregates, and tries
   %     to match the upcoming "real" match.
 
+  % TODO: special case listsig with only one _agg_ param inside.
 
 %--------- Misc Utilities ----------------------------------------------------|
 safe_append(Dict,Key,Value) ->

@@ -125,7 +125,9 @@ match_term    <- rw_expr                                 `{match_term,?I,?N}`;
 AGG_START     <- "(|" / "⦅" / "⦇" / "|"                         `'AGG_START'`;
 AGG_END       <- "|)" / "⦆" / "⦈"                                 `'AGG_END'`;
 
-agg_expr      <- _s (lstring / lsig / r_variable / string)              `?p2`;
+agg_expr      <- _s r_variable                                          `?p2`;
+% TODO: lstring, string, and possibly lsig(??)
+%agg_expr      <- _s (lstring / lsig / r_variable / string)              `?p2`;   %  <(|"heya"|)> |= <(|"wow"|)>
 
 %------------ Whitespace, Comments, Delimiters ------------------------------|
 ENTAILS       <- "⊨" / "|=" / "="                                        `?X`;
