@@ -115,14 +115,14 @@ norm_lsig     <- (lsig_left_m / lsig_left_a)
                  left_term? lsig_term* right_term?
                  (lsig_right_m / lsig_right_a)      `?flat(lists:append(?N))`;
 lsig_left_m   <- "["                                                     `[]`;
-lsig_left_a   <- "<"                         `[{agg_term,?I,'__ARW_ANON_L'}]`;
+lsig_left_a   <- "<"                                   `[{agg_term,?I,'_L'}]`;
 lsig_right_m  <- "]"                                                     `[]`;
-lsig_right_a  <- ">"                         `[{agg_term,?I,'__ARW_ANON_R'}]`;
+lsig_right_a  <- ">"                                   `[{agg_term,?I,'_R'}]`;
 left_term     <- agg_expr _s AGG_END _s                 `[{agg_term,?I,?p1}]`;
 right_term    <- _s AGG_START agg_expr _s               `[{agg_term,?I,?p3}]`;
 lsig_term     <- (agg_term / anon_agg_term / match_term) _s                 ~;
 agg_term      <- _s AGG_START agg_expr _s AGG_END       `[{agg_term,?I,?p3}]`;
-anon_agg_term <- "..." / ".." / "…"         `[{agg_term,?I,'__ARW_ANON_M'}]`;
+anon_agg_term <- "..." / ".." / "…"                   `[{agg_term,?I,'_M'}]`;
 match_term    <- rw_expr                                 `{match_term,?I,?N}`;
 
 AGG_START     <- "(|" / "⦅" / "⦇" / "|"                         `'AGG_START'`;

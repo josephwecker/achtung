@@ -89,20 +89,22 @@ group_fun({Name,Inners}) ->
 generate_functions(AST) -> generate_functions(AST,[]).
 generate_functions([],Acc) -> ?R(Acc);
 generate_functions([{mapping,{{line,L},_},NameParts,Clauses}|R],Acc) ->
-  F = {function,L,chain_atom(NameParts),1,generate_clauses(Clauses)},
-  generate_functions(R,[F|Acc]);
+  {RWClauses, LSFuns} = generate_clauses(Clauses),
+  F = {function,L,chain_atom(NameParts),1,RWClauses},
+  generate_functions(R,LSFuns ++ [F|Acc]);
 generate_functions([_|R],Acc) -> generate_functions(R,Acc).
 
-generate_clauses(RWCs) -> generate_clauses(RWCs,[]).
-generate_clauses([],Acc) -> ?R(Acc);
-generate_clauses([{rwclause,_Pos,Left,Qual,Right}|R], Acc) ->
-  generate_clauses(R,[fclause(Left,Qual,Right)|Acc]).
+generate_clauses(RWCs) -> generate_clauses(RWCs,[],[]).
+generate_clauses([],CAcc,FAcc) -> {?R(CAcc), ?R(FAcc)};
+generate_clauses([{rwclause,_Pos,Left,Qual,Right}|R], CAcc, FAcc) ->
+  {Clause, LSFuns} = fclause(Left,Qual,Right),
+  generate_clauses(R,[Clause|CAcc],LSFuns++FAcc).
 
 fclause(Left,Qual,Right) ->
-  Left2 = enumerate_anons(Left),
+  Left2 = enumerate_anons(mark_variables(Left)),
   {LeftPattern, LSigs} = normalize_left(Left2,[]),
-  WhenClause = Qual ++ [{call,P,{atom,P,is_list},[{var,P,AVName}]}||
-    {{var,P,AVName},_} <- LSigs, used(AVName,LeftPattern)],
+  WhenClause = Qual ++ [{call,0,{atom,0,is_list},[{var,0,AVName}]}||
+    {AVName,_} <- LSigs, used(AVName,LeftPattern)],
   WhenClause2 = case WhenClause of [] -> []; WList -> [WList] end,
   io:format("LEFTPATTERN:~n~p~n~nLEFTSIGS:~n~p~n-----~n",[LeftPattern,LSigs]),
   Right2 = enumerate_anons(Right),
@@ -114,18 +116,24 @@ fclause(Left,Qual,Right) ->
   % completely replace with underscore because that would break trying to match
   % the same binding more than once in the left-clause)
 
-  {clause,1,[LeftPattern],WhenClause2,[RightExpr]}.
+  {{clause,1,[LeftPattern],WhenClause2,[RightExpr]}, []}.
 
+
+mark_variables(T) ->
+  {T2,_} = ast_mapfold(fun mark_variables/2, nil, T),
+  T2.
+mark_variables({var,P,Val},_) ->
+  Val2 = list_to_atom(atom_to_list(Val)++"_ARW"),
+  {{var,P,Val2},nil};
+mark_variables(V,_) -> {V,nil}.
 
 enumerate_anons(T) ->
   put(agg_count,1),
-  {T2, _} = ast_mapfold(fun enum_anon/2, nil, T),
+  {T2, _} = ast_mapfold(fun enumerate_anons/2, nil, T),
   T2.
-
-enum_anon('__ARW_ANON_R'=N,_) -> {{var,{{line,0},nil},next_agg(N)},nil};
-enum_anon('__ARW_ANON_L'=N,_) -> {{var,{{line,0},nil},next_agg(N)},nil};
-enum_anon('__ARW_ANON_M'=N,_) -> {{var,{{line,0},nil},next_agg(N)},nil};
-enum_anon(V,_) -> {V,nil}.
+enumerate_anons({agg_term,P,N},_) when is_atom(N) ->
+  {{agg_term,P,{var,P,next_agg(N)}},nil};
+enumerate_anons(V,_) -> {V,nil}.
 
 normalize_left({atom,?POS,Val},Acc) ->      {{atom,Pos,Val}, Acc};
 normalize_left(A,Acc) when is_atom(A) ->    {{atom,0,A},Acc};
@@ -133,12 +141,10 @@ normalize_left({lsig,?POS,[]},Acc) ->       {{nil,Pos},Acc};
 normalize_left([],Acc) ->                   {{nil,0},Acc};
 normalize_left({match_term,_P,V},Acc) ->    normalize_left(V,Acc);
 normalize_left({agg_term,_P,V},Acc) ->      normalize_left(V,Acc);
+normalize_left({var,?POS,Val},Acc) ->       {{var,Pos,Val}, Acc};
 normalize_left({tuple,?POS,L},Acc) ->
   {Pattern, Acc2} = lists:mapfoldl(fun normalize_left/2, Acc, L),
   {{tuple,Pos,Pattern}, Acc2};
-normalize_left({var,?POS,Val},Acc) ->
-  Val2 = list_to_atom(atom_to_list(Val)++"_ARW"),
-  {{var,Pos,Val2}, Acc};
 normalize_left({lsig,?POS,L},Acc) ->
   {H,T} = lists:splitwith(fun({match_term,_,_})->true;(_)->false end, L),
   {L2,Acc2} = lists:mapfoldl(fun normalize_left/2, Acc, H),
@@ -148,8 +154,9 @@ normalize_left({lsig,?POS,L},Acc) ->
       {T2,Acc3} = normalize_left(T1,Acc2),
       {conses(L2,Pos,T2), Acc3};
     [T1|_TR]=TList ->
-      {VarName, Acc3} = normalize_left(T1,Acc2),
-      {conses(L2,Pos,VarName), [{VarName, TList}|Acc3]}
+      {{var,P2,VarName}, Acc3} = normalize_left(T1,Acc2),
+      VarName2 = list_to_atom("L" ++ atom_to_list(VarName)),
+      {conses(L2,Pos,{var,P2,VarName2}), [{VarName2, TList}|Acc3]}
   end.
 
 normalize_right({atom,?POS,Val},Acc) ->      {{atom,Pos,Val}, Acc};
@@ -188,6 +195,11 @@ next_agg(Pref) ->
   C = case get(agg_count) of undefined -> 0; V -> V end,
   put(agg_count, C + 1),
   list_to_atom(Pref ++ integer_to_list(C)).
+
+next_lfun() ->
+  C = case get(lsfun_count) of undefined -> 0; V -> V end,
+  put(lsfun_count, C + 1),
+  list_to_atom("__arw_lsig" ++ integer_to_list(C)).
 
 
   %  1. Left-side Toplevel clause pattern to erlang pattern-
