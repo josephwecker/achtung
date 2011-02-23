@@ -95,29 +95,46 @@ generate_functions([{mapping,{{line,L},_},NameParts,Clauses}|R],Acc) ->
 generate_functions([_|R],Acc) -> generate_functions(R,Acc).
 
 generate_clauses(RWCs) -> generate_clauses(RWCs,[],[]).
-generate_clauses([],CAcc,FAcc) -> {?R(CAcc), ?R(FAcc)};
-generate_clauses([{rwclause,_Pos,Left,Qual,Right}|R], CAcc, FAcc) ->
-  {Clause, LSFuns} = fclause(Left,Qual,Right),
+generate_clauses([],CAcc,FAcc) -> {?R([catchall_clause()|CAcc]), ?R(FAcc)};
+generate_clauses([{rwclause,?POS,Left,Qual,Right}|R], CAcc, FAcc) ->
+  {Clause, LSFuns} = fclause(Left,Qual,Right,Pos),
   generate_clauses(R,[Clause|CAcc],LSFuns++FAcc).
 
-fclause(Left,Qual,Right) ->
+% TODO: put qualifiers in innermost case statement instead of at the function
+% level so everything is ready.
+
+% TODO: figure out return mechanism / trigger mechanism for warnings / errors
+
+catchall_clause() -> {clause,1,[{var,1,'T'}],[],[{var,1,'T'}]}.
+
+fclause(Left,Qual,Right,Pos) ->
+  % Left side (top-level)
   Left2 = enumerate_anons(mark_variables(Left)),
   {LeftPattern, LSigs} = normalize_left(Left2,[]),
-  WhenClause = Qual ++ [{call,0,{atom,0,is_list},[{var,0,AVName}]}||
+  TLWhen = [{call,0,{atom,0,is_list},[{var,0,AVName}]} ||
     {AVName,_} <- LSigs, used(AVName,LeftPattern)],
-  WhenClause2 = case WhenClause of [] -> []; WList -> [WList] end,
+  TLWhen2 = case TLWhen of [] -> []; WList -> [WList] end,
+
+  % DEBUG
   io:format("LEFTPATTERN:~n~p~n~nLEFTSIGS:~n~p~n-----~n",[LeftPattern,LSigs]),
+
+  % Right Side
   Right2 = enumerate_anons(Right),
   {RightExpr, _LSigs2} = normalize_right(hd(Right2), []),  % TEMPORARY
   %{NextFun, RightExpr} = normalize_right(Right, LSigs),
 
-  % TODO: chain of case statements so that variables are bound - check to see
-  % if they're used in result and prefix with underscores as appropriate (don't
-  % completely replace with underscore because that would break trying to match
-  % the same binding more than once in the left-clause)
+  % Body and helper functions for listsigs
+  {TLW, Body, LFuns} = case LSigs of
+    [] -> {Qual, RightExpr, []};
+    _ ->
+      {LSigs2, B} = generate_body(LSigs,RightExpr,Qual,Pos),
+      LF = generate_lfuns(LSigs2,Pos),
+      {TLWhen2, B, LF}
+  end,
 
-  {{clause,1,[LeftPattern],WhenClause2,[RightExpr]}, []}.
+  {{clause,1,[{match,1,LeftPattern,{var,1,'Original'}}],TLW,[Body]}, LFuns}.
 
+% TODO: nowarn on unused variables
 
 mark_variables(T) ->
   {T2,_} = ast_mapfold(fun mark_variables/2, nil, T),
@@ -173,6 +190,43 @@ normalize_right({var,?POS,Val},Acc) ->
   {{var,Pos,Val2}, Acc}.
 
 
+
+generate_body(LSigs,Right,Qual,Pos) ->
+  {Sigs2, {_,Body}} = lists:mapfoldl(fun lsig_case/2, {Pos, inner, Qual,
+      Right}, LSigs),
+  {Sigs2, Body}.
+
+%lsig_case(LSig, Core) -> {NewLSig, NewCore}.
+% (case (call (atom ..) [(var ..)])
+%   [(clause [(atom nomatch)] [] [(var Original)])
+%    (clause [(tuple lsig-tuple)] [] [NEXT])])
+lsig_case({VName,Parts},{Pos,inner,Qual,Right}) ->
+  FName = next_lfun(),
+  {{FName,VName,Parts},
+    {Pos,
+      {'case',Pos,{call,Pos,{atom,Pos,FName},[{var,Pos,VName}]},
+        [{clause,Pos,[{tuple,Pos,[{atom,Pos,tmp}]}],Qual,[Right]},
+          {clause,Pos,[{var,Pos,'_'}],[],[{var,Pos,'Original'}]}]}
+    }
+  };
+lsig_case({VName,Parts},{Pos,Core}) ->
+  FName = next_lfun(),
+  {{FName,VName,Parts},
+    {Pos,
+      {'case',Pos,{call,Pos,{atom,Pos,FName},[{var,Pos,VName}]},
+        [{clause,Pos,[{atom,Pos,nomatch}],[],[{var,Pos,'Original'}]},
+          {clause,Pos,[{tuple,Pos,[{atom,Pos,tmp}]}],[],[Core]}]}
+    }
+  }.
+
+
+generate_lfuns(_LSigs,_Pos) ->
+  [].
+
+
+
+
+
 conses(L,Pos) -> conses(L,Pos,{nil,Pos}).
 conses(L,Pos,[]) -> conses(L,Pos,{nil,Pos});
 conses([],_,Tail) -> Tail;
@@ -199,7 +253,7 @@ next_agg(Pref) ->
 next_lfun() ->
   C = case get(lsfun_count) of undefined -> 0; V -> V end,
   put(lsfun_count, C + 1),
-  list_to_atom("__arw_lsig" ++ integer_to_list(C)).
+  list_to_atom("--arwlsig" ++ integer_to_list(C) ++ "--").
 
 
   %  1. Left-side Toplevel clause pattern to erlang pattern-

@@ -13,6 +13,9 @@ Benefits shared with other extensions to PEGs/packrat-parsers
  - "Inline" expression syntax (APEXP/PEGEXP)
  - (Implementation specific: automatic unicode support)
 
+Drawbacks to AP/APGs
+ - Parser is no longer "intuitive"
+
 Benefits unique to AP/APGs
  - Constant space complexity
  - Sometimes sublinear time complexity (fail and succ shortcircuits)

@@ -178,3 +178,13 @@ end
 
 
 
+case '--arwlsig1--'(L_L1) of
+  nomatch -> original-term;
+  {full-nested-tuple-res} ->
+    case '--arwlsig2--'(L_L2) of
+      nomatch -> original-term;
+      {full-nested-tuple-res2} ->
+        right-side
+    end
+end
+
