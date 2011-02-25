@@ -204,8 +204,8 @@ lsig_case({VName,Parts},{Pos,inner,Qual,Right}) ->
   FName = next_lfun(),
   {{FName,VName,Parts},
     {Pos,
-      {'case',Pos,{call,Pos,{atom,Pos,FName},[{var,Pos,VName}]},
-        [{clause,Pos,[{tuple,Pos,[{atom,Pos,tmp}]}],Qual,[Right]},
+      {'case',Pos,{call,Pos,{atom,Pos,FName},[{var,Pos,VName},{nil,Pos}]},
+        [{clause,Pos,[agg_tuple(Parts,Pos)],Qual,[Right]},
           {clause,Pos,[{var,Pos,'_'}],[],[{var,Pos,'Original'}]}]}
     }
   };
@@ -213,18 +213,47 @@ lsig_case({VName,Parts},{Pos,Core}) ->
   FName = next_lfun(),
   {{FName,VName,Parts},
     {Pos,
-      {'case',Pos,{call,Pos,{atom,Pos,FName},[{var,Pos,VName}]},
+      {'case',Pos,{call,Pos,{atom,Pos,FName},[{var,Pos,VName},{nil,Pos}]},
         [{clause,Pos,[{atom,Pos,nomatch}],[],[{var,Pos,'Original'}]},
-          {clause,Pos,[{tuple,Pos,[{atom,Pos,tmp}]}],[],[Core]}]}
+          {clause,Pos,[agg_tuple(Parts,Pos)],[],[Core]}]}
     }
   }.
 
 
-generate_lfuns(_LSigs,_Pos) ->
-  [].
+generate_lfuns(LSigs,Pos) -> generate_lfuns(LSigs,Pos,[]).
+generate_lfuns([],_,Acc) -> lists:reverse(Acc);
+generate_lfuns([{FName,VName,Parts}|R],P,Acc) ->
+  % TODO:
+  %  1st clause: length shortcircuit (if list isn't long enough to succeed,
+  %    then say so right away)
+  F = {function,P,FName,2,
+    [{clause,P,[{var,P,VName},{nil,P}],[[{op,P,'<',{call,P,{atom,P,length},[{var,P,VName}]},{integer,P,mlen(Parts)}}]],[{atom,P,nomatch}]}]
+  },
 
+  generate_lfuns(R,P,[F|Acc]).
 
+mlen(P) -> mlen(P,0).
+mlen([],N) -> N;
+mlen([{match_term,_,_}|R],N) -> mlen(R,N+1);
+mlen([_|R],N) -> mlen(R,N).
 
+agg_tuple(AggParts, Pos) -> agg_tuple(AggParts, Pos, []).
+agg_tuple([],Pos,Acc) -> {tuple,Pos,lists:reverse(Acc)};
+agg_tuple([{_,_,Part}|R], Pos, Acc) ->
+  case normalize_left(Part,[]) of
+    {Norm,[]} -> agg_tuple(R,Pos,[Norm|Acc]);
+    {_Norm,[{_Name,InnerParts}]} ->
+      agg_tuple(R,Pos,[agg_tuple(InnerParts,Pos)|Acc]);
+    {Norm,LSigs} ->
+      {Inners,_} = ast_mapfold(fun sub_parts/2,LSigs,Norm),
+      agg_tuple(R,Pos,[Inners|Acc])
+  end.
+sub_parts({var,P,N},LSigs) ->
+  {case proplists:lookup(N,LSigs) of
+      none -> {var,P,N};
+      {_,Parts} -> agg_tuple(Parts,P)
+    end, LSigs};
+sub_parts(O,LSigs) -> {O, LSigs}.
 
 
 conses(L,Pos) -> conses(L,Pos,{nil,Pos}).
