@@ -6,3 +6,4 @@ bin/ungbarc
 grammar/*.erl
 ebin
 stdlib/*/priv/*.erl
+.deps
