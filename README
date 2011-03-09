@@ -1,4 +1,5 @@
-Erlish: An alternate Erlang syntax that doesn't try to be anything other than
-Erlang (with an alternate syntax).  Inspired heavily by
-http://marianoguerra.com.ar/efene/ (highly recommended), but with my own biased
-asthetics.
+Achtung Language: An alternate Erlang syntax that tries to be a natural
+extension and simplification of Erlang rather than a repurposing of the VM.
+Inspired by http://marianoguerra.com.ar/efene/ (highly recommended), but with
+my own biased asthetics, and currently with a lot of PEG research thrown in the
+mix.
