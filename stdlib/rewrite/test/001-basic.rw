@@ -1,0 +1,5 @@
+rw1| atom ⊨ ok
+rw2
+  | atom |= atomic
+  | [A B] ⊨ toofer
+  | A |= ending
