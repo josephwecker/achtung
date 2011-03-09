@@ -9,10 +9,10 @@ file(FName) ->
 parse(Txt,ModuleName) when is_list(Txt) ->
   crewrites(achtung_rewrite_n:parse(Txt),ModuleName,"").
 
+crewrites({ok, _, []},ModuleName,FName) -> no_forms;
 crewrites({ok, _, AST},ModuleName,FName) ->
   AST2 = apply_aliases(AST),
   Forms = generate_forms(AST2,ModuleName,FName),
-  %io:format("~p~n",[Forms]),
   io:format("~s~n",[erl_prettypr:format(erl_syntax:form_list(Forms))]),
   {ok, Module, Bin} = compile:forms(Forms),
   code:soft_purge(Module),
