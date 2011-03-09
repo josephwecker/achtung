@@ -46,7 +46,6 @@ generate_forms(AST,Name,FName) ->
   ExportNames = TopMap:fetch_keys() ++ TopMap:fetch(all),
   Exports = [{N,1}||N<-ExportNames],
   io:format("~p~n~n",[AST]),
-  %io:format("~p~n~n~p~n~n",[AST,TopMap:to_list()]),
   GFuns = generate_group_funs(TopMap),
   Functions = generate_functions(AST),
   
