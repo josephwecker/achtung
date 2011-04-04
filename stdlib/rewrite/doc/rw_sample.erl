@@ -188,3 +188,36 @@ case '--arwlsig1--'(L_L1) of
     end
 end
 
+
+
+%-----------------------------------------------------------------------------
+% a|  [A|) <c> b>  |= b
+%
+%
+
+-module(testing_it).
+
+-export([all/1, a/1]).
+
+all(T) -> a(T).
+
+a(LA_ARW = Original) when is_list(LA_ARW) ->
+    case '--arwlsig3--'(LA_ARW, []) of
+      {A_ARW, {_L1, c, _R2}, b, _R3} -> b;
+      _ -> Original
+    end;
+a(T) -> T.
+
+'--arwlsig3--'(LA_ARW, []) when length(LA_ARW) < 2 ->
+  nomatch.
+%'--arwlsig3--'([^^^|R], A) ->
+'--arwlsig3--'([Lsig2_ARW|R], A) when is_list(Lsig2_ARW) ->
+  case '--arwlsig4--'(Lsig2_ARW,[]) of
+    {_L1, c, _R2} -> {_L1, c, _R2};
+    nomatch -> '--arwlsig3--'(R,[
+
+% TODO: YOU ARE HERE AND IT IS A MESS
+% * Try to keep going on failure-
+% * Chain of things doesn't seem to be working just right. What's the point of
+%   having the whole clause be a list which is then checked in a case?
+

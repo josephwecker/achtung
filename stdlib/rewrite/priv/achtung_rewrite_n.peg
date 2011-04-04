@@ -28,11 +28,11 @@ match_qual    <- !ENTAILS ":" (_s guard_expr)*                      `?i(3,2)`;
 %------------ Expressions ---------------------------------------------------|
 guard_expr    <- _s atom                                                `?p2`; % TMP
 rw_exprs      <- rw_expr (_s ';' _s rw_expr)*                 `[?p1|?i(2,4)]`;
-rw_expr       <- _s (lstring
+rw_expr       <- _s (lsig
                / r_tuple
-               / lsig
-               / atom
                / r_variable
+               / lstring
+               / atom
                / string
                )                                                        `?p2`;
 % TODO: calls
@@ -133,7 +133,7 @@ agg_expr      <- _s r_variable                                          `?p2`;
 %agg_expr      <- _s (lstring / lsig / r_variable / string)              `?p2`;   %  <(|"heya"|)> |= <(|"wow"|)>
 
 %------------ Whitespace, Comments, Delimiters ------------------------------|
-ENTAILS       <- "⊨" / "|=" / "="                                        `?X`;
+ENTAILS       <- "⊧" / "⊨" / "|=" / "="                                  `?X`;
 _s            <- s?                                                      `?X`; % Optional whitespace
 sd            <- ( "\\"? (space / nl) )+                                 `?X`; % Space delimiter
 s             <- (space / nl)+                                           `?X`; % At least one whitespace/newline

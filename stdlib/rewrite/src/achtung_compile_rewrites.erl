@@ -9,12 +9,12 @@ file(FName) ->
 parse(Txt,ModuleName) when is_list(Txt) ->
   crewrites(achtung_rewrite_n:parse(Txt),ModuleName,"").
 
-crewrites({ok, _, []},ModuleName,FName) -> no_forms;
+crewrites({ok, _, []},_ModuleName,_FName) -> no_forms;
 crewrites({ok, _, AST},ModuleName,FName) ->
   AST2 = apply_aliases(AST),
   Forms = generate_forms(AST2,ModuleName,FName),
   io:format("~s~n",[erl_prettypr:format(erl_syntax:form_list(Forms))]),
-  {ok, Module, Bin} = compile:forms(Forms),
+  {ok, Module, Bin} = compile:noenv_forms(Forms,[report]),
   code:soft_purge(Module),
   code:load_binary(Module,FName,Bin).
 
@@ -222,9 +222,6 @@ lsig_case({VName,Parts},{Pos,Core}) ->
 generate_lfuns(LSigs,Pos) -> generate_lfuns(LSigs,Pos,[]).
 generate_lfuns([],_,Acc) -> lists:reverse(Acc);
 generate_lfuns([{FName,VName,Parts}|R],P,Acc) ->
-  % TODO:
-  %  1st clause: length shortcircuit (if list isn't long enough to succeed,
-  %    then say so right away)
   F = {function,P,FName,2,
     [{clause,P,[{var,P,VName},{nil,P}],[[{op,P,'<',{call,P,{atom,P,length},[{var,P,VName}]},{integer,P,mlen(Parts)}}]],[{atom,P,nomatch}]}]
   },

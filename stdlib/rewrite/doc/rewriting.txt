@@ -40,4 +40,11 @@ il1(L) -> il2(L,[],[]).
 
 il2([T2|R],A,Res) -> list_to_tuple(lists:reverse([R|[T2|[lists:reverse(A)|Res]]]));
 il2([O|R],A,Res) -> il2(R,[O|A]
+------------------------
+
+
+* Give everything meaningful names- even functions (just do not export internal
+  ones and check them specifically for conflicts first)
+* How to handle permutations of aggregates to get a good match? Or when a
+  variable needs binding...
 

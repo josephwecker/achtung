@@ -1,12 +1,14 @@
 #hey/there
-hey
-  |a               |= [a b c]
-  |[(wow sers)|a]      |= me
+hey/zoink
+  |a               |= (a b c)
+  |[(wow sers)|A]      |= me
   |another             |= you
+
 another
   |dude                |= wow
 
-#(Lit [C|R]) →                                       (Seq [(αchr C) (αlit R)]) 
-#expansion/lit_to_chrs
-#  | (LIT [C|R]) ⊧ (Seq [(@CHR C) (@LIT R)])
+#(Lit [C|R]) →                                       (Seq [(αchr C) (αlit R)])
+expansion/lit_to_chrs
+#  | (LIT [C|R]) ⊨ (Seq [(@CHR C) (@LIT R)])
+  | (LIT [C|R]) ⊨ (seq (chr C) (lit R))
 
