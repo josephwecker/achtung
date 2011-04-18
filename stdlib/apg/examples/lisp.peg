@@ -1,0 +1,35 @@
+sexpr_doc    ← sexpr+ eof
+sexpr        ← WS '(' expression* WS ')'
+expression   ← WS (sexpr / number / symbol)
+number       ← digit+ ([.] digit+)? S
+digit        ← [-]? [0-9]
+symbol       ← (!WS ![(] !')' .)+
+WS           ← S?
+S            ← [ \t\n\r]+
+
+
+
+(329480239840239482343209a)
+
+
+
+
+a+  ==   a a*  == &a a*
+a*  ==   new rule → a new-rule / ɛ
+a?  ==   a / ɛ
+[a-c] == [a] / [b] / [c]
+'abc' == [a] [b] [c]
+&a  == !(!a)
+============================
+
+
+ϝ ← a* a
+
+a b ϝ c d   →  ϝ
+
+a/b/ϝ/c/d  → a/b/c/d
+
+
+![a] ![b] → ![ab]
+
+

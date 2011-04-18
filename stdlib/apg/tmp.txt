@@ -1,0 +1,30 @@
+rulename → 'abc' / 'adf' / 'afg'
+            
+
+rulename → 'a' ('bfwjeiofjewc' / 'djwoiejfewf' / 'fifjewojfeg')
+
+rulename →  'a' ('basdf' ⑊ 'alsdkfj lwekf' ⑊ 'lsejfewoij')
+
+
+
+
+A → [b]* 'cd'
+
+A → B c d
+B → (b B) / ɛ
+
+A → [b]+ 'cd'
+
+A → [b] [b]* 'cd'
+
+
+
+A → &(AB [c]) a* b* c
+AB→ [a] AB [b] /
+
+
+
+
+
+bob@poekert.com  rabbidsnail
+
