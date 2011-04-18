@@ -1,6 +1,7 @@
 @module urlget
 @export [test direct proxy get_http/5]
 
+
 test
   |1|-> direct("http://www.ericsson.se/cslab/~joe")
   |2|-> direct("http://www.viasat.se/index9.html")

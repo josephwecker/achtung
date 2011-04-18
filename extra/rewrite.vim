@@ -9,22 +9,25 @@ set ambiwidth=double
 " epsilon: Empty string / success
 map! \eps ɛ
 map! \succ ɛ
-map! \empty ɛ
+" Empty set / empty list
+map! \empty ∅
+map! [] ∅
 " digamma: failure / !ɛ
 map! \fail ϝ
 map! \dig ϝ
-map! := ≔
-map! \|= ⊨
-map! <- ←
-map! -> →
-map! \\ ⑊
+
+"map! := ≔
+"map! \|= ⊨
+"map! <- ←
+"map! -> →
+"map! \\ ⑊
 map! << ⦑
 map! >> ⦒
 "map! <<< 《
 "map! << 〈
 "map! >>> 》
 "map! >> 〉
-map! ++ ⧺
+"map! ++ ⧺
 
 " x -= y  (means)  x in y:list
 " x =- y  (means)  y:list having-member x
@@ -53,15 +56,17 @@ syn match   rewriteIgnoredVar      /\<_[A-Za-z0-9@_-]*\>/
 
 syn match   rewriteAliasName       /[A-Z_@⌀-][A-Za-z0-9_@-]*\>\s*\(:=\|≔\)/ contains=rewriteOperators
 
-syn match   rewriteListBrackets    /\[\|\]/
-syn match   rewriteTupleBrackets   /(\|)/
+syn match   rewriteListBrackets    /\[\|\]\|<\|>/
+syn match   rewriteTupleBrackets   /{\|}/
 syn region  rewriteMapClause       start=/|/ end=/|=\|⊨/ contains=TOP
 syn match   rewriteOperators       /:=\|≔\|⦒\|>>\|⦑\|<<\|∋\|-=\|∈\|=-/
 syn match   rewriteDelimiters      /\//
 
-syn match   rewriteRuleName        /^[a-z][A-Za-z0-9_\/-]*\s*/ contains=rewriteDelimiters
+syn match   rewriteRuleName        /^[a-z][A-Za-z0-9_\/-]*/ contains=rewriteDelimiters
+syn match   rewriteRuleSubName     /^\s\+[a-z][A-Za-z0-9_\/-]*/ contains=rewriteDelimiters
 
 hi link rewriteRuleName            Label
+hi link rewriteRuleSubName         Operator
 hi link rewriteMapClause           Conditional
 hi link rewriteListBrackets        Type
 hi link rewriteTupleBrackets       Structure
