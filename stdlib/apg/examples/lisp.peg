@@ -1,35 +1,36 @@
 sexpr_doc    ← sexpr+ eof
 sexpr        ← WS '(' expression* WS ')'
 expression   ← WS (sexpr / number / symbol)
-number       ← digit+ ([.] digit+)? S
-digit        ← [-]? [0-9]
-symbol       ← (!WS ![(] !')' .)+
+number       ← [-]? [0-9]+ ([.] [0-9]+)? S
+symbol       ← (!S ![(] !')' .)+
 WS           ← S?
 S            ← [ \t\n\r]+
 
+---------------------
+
+1 ← 2:2*:<eof>
+2 ← 6:[(]:3*:6:[)]
+3 ← 6:(2/4/5)
+4 ← ([-]/ɛ):[0-9]:[0-9]*:(([.]:[0-9]:[0-9]*)/ɛ):7
+5 ← (!7:![(]:![)]:.):(!7:![(]:![)]:.)*
+6 ← 7/ɛ
+7 ← [ \t\n\r]:[ \t\n\r]*
+
+---------------------
+
+Rule names / 'ref's are aliases for the toplevel expression in their definition
+
+ No. | Parent | Expression                     | Fail     | Succeed |
+-----+--------+--------------------------------+----------+---------+
+   1 |   none | seq: sexpr sexpr* <eof>        | fail     | succ    |
+   2 |      1 | seq: WS <(> expression* WS <)> | 1.fail   | 1.succ=succ|
+   3 |      2 | pch: (< \t\n\r> < \t\n\r>*)/ɛ  | --       | 2.next=6 |
+   4 |      3 | chr: < \t\n\r>                 | 3.next   | 3.succ=6 |
+   5 |      3 | chr: < \t\n\r>*                | --       | 3.succ=6 |
+   6 | 
 
 
-(329480239840239482343209a)
 
 
-
-
-a+  ==   a a*  == &a a*
-a*  ==   new rule → a new-rule / ɛ
-a?  ==   a / ɛ
-[a-c] == [a] / [b] / [c]
-'abc' == [a] [b] [c]
-&a  == !(!a)
-============================
-
-
-ϝ ← a* a
-
-a b ϝ c d   →  ϝ
-
-a/b/ϝ/c/d  → a/b/c/d
-
-
-![a] ![b] → ![ab]
 
 
